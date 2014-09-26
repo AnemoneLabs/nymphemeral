@@ -1,0 +1,9 @@
+#!/usr/bin/env python
+"""
+    This script is used to start the GUI
+"""
+from nymphemeral.gui import NymphemeralGUI
+
+if __name__ == '__main__':
+    win = NymphemeralGUI()
+    win.window_login.mainloop()

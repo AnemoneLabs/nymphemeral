@@ -1,0 +1,5 @@
+include COPYING
+include README.rst
+include db/generic.db
+recursive-include scripts *
+recursive-include connections *

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 aampy - a simple message downloader for a.a.m
 
@@ -32,13 +31,14 @@ For more information, https://github.com/felipedau/nymphemeral
 import nntplib
 import time
 import email
+import socket
 import string
 import sys
 
 import hsub
 
 
-def aam(event, cfg):
+def aam(event, queue, cfg):
     # load configs
     is_debugging = cfg.getboolean('main', 'debug_switch')
     directory_unread_messages = cfg.get('main', 'unread_folder')
@@ -46,9 +46,20 @@ def aam(event, cfg):
     group = cfg.get('newsgroup', 'group')
     newsserver = cfg.get('newsgroup', 'server')
     newsport = int(cfg.get('newsgroup', 'port'))
+    newnews = cfg.get('newsgroup', 'newnews')
 
     if is_debugging:
         print 'aampy is running'
+
+    try:
+        server = nntplib.NNTP(newsserver, newsport)
+        queue.put(True)
+    except socket.error:
+        if is_debugging:
+            print 'The news server cannot be found'
+        queue.put(False)
+        event.set()
+        return
 
     try:
         hsubpassphrases = readDict(file_hsub)
@@ -67,10 +78,9 @@ def aam(event, cfg):
         sys.exit(1)
 
     # connect to server
-    server = nntplib.NNTP(newsserver, newsport)
-    server.newnews(group, YYMMDD, HHMMSS, '.newnews')
+    server.newnews(group, YYMMDD, HHMMSS, newnews)
 
-    with open('.newnews', 'r') as f:
+    with open(newnews, 'r') as f:
         ids = f.read().splitlines()
 
         for msg_id in ids:

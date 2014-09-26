@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-nymphemeral.py - an ephemeral nymserver GUI client
+nymphemeral - an ephemeral nymserver GUI client
 
 Messages are retrieved from a.a.m using aampy.py and hsub.py
 from https://github.com/rxcomm/aampy
@@ -33,7 +33,7 @@ For more information, see https://github.com/felipedau/nymphemeral
 
 __author__ = 'Felipe Dau and David R. Andersen'
 __license__ = 'GPL'
-__version__ = '1.0.4'
+__version__ = '1.1.0'
 __status__ = 'Prototype'
 
 import Tkinter as tk
@@ -43,12 +43,12 @@ import re
 import subprocess
 import hashlib
 import sys
+import shutil
 import tkMessageBox
 import threading
 import Queue
 import time
 import ConfigParser
-from tkFileDialog import askdirectory
 from binascii import b2a_base64, a2b_base64
 
 import gnupg
@@ -61,14 +61,19 @@ import message
 
 cfg = ConfigParser.ConfigParser()
 
+BASE_FILES_PATH = '/usr/share/nymphemeral'
 USER_PATH = os.path.expanduser('~')
-NYMPHEMERAL_PATH = os.path.dirname(os.path.abspath(__file__))
+NYMPHEMERAL_PATH = USER_PATH + '/.config/nymphemeral'
 CONFIG_FILE = NYMPHEMERAL_PATH + '/nymphemeral.cfg'
 
 
 def files_in_path(path):
     return [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
 
+
+def create_directory(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
 class NymphemeralGUI():
     def __init__(self):
@@ -80,20 +85,21 @@ class NymphemeralGUI():
         self.file_hsub = None
         self.file_mix_binary = None
         self.file_mix_cfg = None
-        self.load_configs()
+        self.check_base_files()
 
         self.aampy = aampy
         self.axolotl = None
 
         # attributes to handle aampy using threads
         self.event_aampy = None
+        self.queue_ammpy = Queue.Queue()
         self.thread_event = None
         self.thread_aampy = None
         self.aampy_is_done = True
         self.id_after = None
 
         # attributes to decrypt messages using threads
-        self.queue = Queue.Queue()
+        self.queue_pyaxo = Queue.Queue()
         self.thread_decrypt = None
 
         self.users = self.retrieve_users()
@@ -107,7 +113,6 @@ class NymphemeralGUI():
 
         self.messages = []
         self.current_message_index = None
-        self.create_messages_folders()
 
         self.gpg = None
         self.setup_gpg()
@@ -118,8 +123,6 @@ class NymphemeralGUI():
         self.window_login = None
         self.entry_address_login = None
         self.entry_passphrase_login = None
-        self.string_directory_login = None
-        self.text_directory_login = None
 
         # servers window
         self.window_servers = None
@@ -172,41 +175,52 @@ class NymphemeralGUI():
         if self.is_debugging:
             print info
 
-    def load_configs(self, base_folder=None):
+    def load_configs(self):
         try:
-            if not os.path.exists(CONFIG_FILE) or base_folder:
-                if not os.path.exists(CONFIG_FILE):
-                    cfg.add_section('main')
-                    cfg.set('main', 'debug_switch', 'False')
-                    cfg.set('main', 'base_folder', NYMPHEMERAL_PATH)
-                    cfg.set('main', 'db_folder', '%(base_folder)s/db')
-                    cfg.set('main', 'messages_folder', '%(base_folder)s/messages')
-                    cfg.set('main', 'read_folder', '%(messages_folder)s/read')
-                    cfg.set('main', 'unread_folder', '%(messages_folder)s/unread')
-                    cfg.set('main', 'hsub_file', '%(base_folder)s/hsubpass.txt')
-                    cfg.add_section('mixmaster')
-                    cfg.set('mixmaster', 'mixmaster_folder', USER_PATH + '/Mix')
-                    cfg.set('mixmaster', 'mixmaster_binary', '%(mixmaster_folder)s/mixmaster')
-                    cfg.set('mixmaster', 'mixmaster_cfg', '%(mixmaster_folder)s/mix.cfg')
-                    cfg.add_section('newsgroup')
-                    cfg.set('newsgroup', 'group', 'alt.anonymous.messages')
-                    cfg.set('newsgroup', 'server', 'localhost')
-                    cfg.set('newsgroup', 'port', '119')
-                elif base_folder:
-                    cfg.set('main', 'base_folder', base_folder)
+            if not os.path.exists(CONFIG_FILE):
+                cfg.add_section('main')
+                cfg.set('main', 'base_folder', NYMPHEMERAL_PATH)
+                cfg.set('main', 'db_folder', '%(base_folder)s/db')
+                cfg.set('main', 'messages_folder', '%(base_folder)s/messages')
+                cfg.set('main', 'read_folder', '%(messages_folder)s/read')
+                cfg.set('main', 'unread_folder', '%(messages_folder)s/unread')
+                cfg.set('main', 'hsub_file', '%(base_folder)s/hsubpass.txt')
+                cfg.set('main', 'debug_switch', 'False')
+                cfg.add_section('mixmaster')
+                cfg.set('mixmaster', 'base_folder', USER_PATH + '/Mix')
+                cfg.set('mixmaster', 'binary', '%(base_folder)s/mixmaster')
+                cfg.set('mixmaster', 'cfg', '%(base_folder)s/mix.cfg')
+                cfg.add_section('newsgroup')
+                cfg.set('newsgroup', 'base_folder', NYMPHEMERAL_PATH)
+                cfg.set('newsgroup', 'group', 'alt.anonymous.messages')
+                cfg.set('newsgroup', 'server', 'localhost')
+                cfg.set('newsgroup', 'port', '119')
+                cfg.set('newsgroup', 'newnews', '%(base_folder)s/.newnews')
+                create_directory(NYMPHEMERAL_PATH)
                 with open(CONFIG_FILE, 'w') as config_file:
                     cfg.write(config_file)
             cfg.read(CONFIG_FILE)
-            self.is_debugging = cfg.getboolean('main', 'debug_switch')
             self.directory_base = cfg.get('main', 'base_folder')
             self.directory_db = cfg.get('main', 'db_folder')
             self.directory_read_messages = cfg.get('main', 'read_folder')
             self.directory_unread_messages = cfg.get('main', 'unread_folder')
             self.file_hsub = cfg.get('main', 'hsub_file')
-            self.file_mix_binary = cfg.get('mixmaster', 'mixmaster_binary')
-            self.file_mix_cfg = cfg.get('mixmaster', 'mixmaster_cfg')
+            self.is_debugging = cfg.getboolean('main', 'debug_switch')
+            self.file_mix_binary = cfg.get('mixmaster', 'binary')
+            self.file_mix_cfg = cfg.get('mixmaster', 'cfg')
         except IOError:
             print 'Error while opening ' + str(CONFIG_FILE).split('/')[-1]
+            raise
+
+    def check_base_files(self):
+        try:
+            self.load_configs()
+            create_directory(self.directory_db)
+            shutil.copyfile(BASE_FILES_PATH + '/db/generic.db', self.directory_db + '/generic.db')
+            create_directory(self.directory_read_messages)
+            create_directory(self.directory_unread_messages)
+        except IOError:
+            print 'Error while creating the base files'
             raise
 
     def retrieve_mix_chain(self):
@@ -218,7 +232,7 @@ class NymphemeralGUI():
                     if line[:5] == 'CHAIN':
                         chain = 'Mix Chain: ' + line.replace('CHAIN ', '').strip()
         except IOError:
-            print 'Error while manipulating ' + self.file_mix_cfg.split('/')[-1] + ':', sys.exc_info()[0]
+            self.debug('Error while manipulating ' + self.file_mix_cfg.split('/')[-1])
         return chain
 
     def close_all_windows(self):
@@ -240,12 +254,6 @@ class NymphemeralGUI():
         self.window_login.deiconify()
         self.window_login.focus_force()
         self.entry_address_login.focus_set()
-
-    def create_messages_folders(self):
-        if not os.path.exists(self.directory_read_messages):
-            os.makedirs(self.directory_read_messages)
-        if not os.path.exists(self.directory_unread_messages):
-            os.makedirs(self.directory_unread_messages)
 
     def retrieve_users(self):
         users = {}
@@ -305,41 +313,39 @@ class NymphemeralGUI():
         return servers
 
     def start_session(self, event=None):
-        if re.match(r'[^@]+@[^@]+\.[^@]+', self.entry_address_login.get()):
-            self.address = self.entry_address_login.get().lower()
-            self.nym_server = self.address.split('@')[1]
-            self.passphrase = self.entry_passphrase_login.get()
-            user_not_found = True
-            try:
-                if self.nym_server not in self.servers:
-                    if tkMessageBox.askyesno('Server Not Found',
-                                             self.nym_server + "'s public key was not found in the keyring.\n"
-                                             "Would you like to add it right now?"):
-                        self.build_manage_key_window()
-                        return
-                if self.address in self.users:
-                    user_not_found = False
-                    self.hsub = self.users[self.address]
-                    self.fingerprint = self.retrieve_fingerprint(self.address)
-                    if not self.fingerprint:
-                        tkMessageBox.showerror('Fingerprint Not Found',
-                                               'Fingerprint for this user was not found in the keyring.')
-                        return
-                    db_name = self.directory_db + '/' + self.fingerprint + '.db'
-                    self.axolotl = Axolotl(self.fingerprint, dbname=db_name, dbpassphrase=self.passphrase)
-                if user_not_found:
-                    if not tkMessageBox.askyesno('Nym Not Found',
-                                                 'Would you like to create a nym with the following address?\n\n'
-                                                 + self.address):
-                        return
-                self.build_main_window()
-                self.window_login.withdraw()
-            except SystemExit:
-                print 'Error while starting session' + ':', sys.exc_info()[0]
-                tkMessageBox.showerror('Database Error', 'Error when accessing the database.\nCheck the password!')
+        if not re.match(r'[^@]+@[^@]+\.[^@]+', self.entry_address_login.get()):
+            tkMessageBox.showerror('Invalid Email Address', 'Please verify the email address provided.')
+            return
+        self.address = self.entry_address_login.get().lower()
+        self.nym_server = self.address.split('@')[1]
+        self.passphrase = self.entry_passphrase_login.get()
+        if self.nym_server not in self.servers:
+            if tkMessageBox.askyesno('Server Not Found',
+                                     self.nym_server + "'s public key was not found in the keyring.\n"
+                                     'Would you like to add it right now?'):
+                self.build_manage_key_window()
+            return
+        if self.address not in self.users:
+            if not tkMessageBox.askyesno('Nym Not Found',
+                                         'Would you like to create a nym with the following address?\n\n'
+                                         + self.address):
                 return
         else:
-            tkMessageBox.showerror('Invalid Email Address', 'Please verify the email address provided.')
+            self.hsub = self.users[self.address]
+            self.fingerprint = self.retrieve_fingerprint(self.address)
+            if not self.fingerprint:
+                tkMessageBox.showerror('Fingerprint Not Found',
+                                       'Fingerprint for this user was not found in the keyring.')
+                return
+            db_name = self.directory_db + '/' + self.fingerprint + '.db'
+            try:
+                self.axolotl = Axolotl(self.fingerprint, dbname=db_name, dbpassphrase=self.passphrase)
+            except SystemExit:
+                self.debug('Error while starting session' + ':', sys.exc_info()[0])
+                tkMessageBox.showerror('Database Error', 'Error when accessing the database.\nCheck the password!')
+                return
+        self.build_main_window()
+        self.window_login.withdraw()
 
     def append_messages_to_list(self, user, from_encrypted_folder, messages_list):
         if from_encrypted_folder:
@@ -381,7 +387,7 @@ class NymphemeralGUI():
     def build_login_window(self):
         self.window_login = tk.Tk()
         self.window_login.title('nymphemeral')
-        self.window_login.bind("<Return>", self.start_session)
+        self.window_login.bind('<Return>', self.start_session)
 
         frame_login = tk.Frame(self.window_login)
         frame_login.grid(sticky='w', padx=15, pady=15)
@@ -405,17 +411,6 @@ class NymphemeralGUI():
         # servers
         button_servers = tk.Button(frame_login, text='Manage Servers', command=self.build_servers_window)
         button_servers.grid(pady=(5, 0))
-
-        # base directory
-        label_directory = tk.Label(frame_login, text='Base Directory')
-        label_directory.grid(sticky='w', pady=(10, 0))
-        self.string_directory_login = tk.StringVar()
-        self.string_directory_login.set(self.directory_base)
-        self.text_directory_login = tk.Entry(frame_login, textvariable=self.string_directory_login)
-        self.text_directory_login.grid(sticky='we')
-        button_change_directory = tk.Button(frame_login, text='Change Base Directory',
-                                            command=self.select_base_directory)
-        button_change_directory.grid(pady=(5, 0))
 
         # output radio buttons
         frame_radio = tk.LabelFrame(frame_login, text='Output Method')
@@ -739,12 +734,6 @@ class NymphemeralGUI():
         scrollbar.grid(row=0, column=1, sticky='ns')
         self.text_config['yscrollcommand'] = scrollbar.set
 
-    def select_base_directory(self):
-        directory = askdirectory()
-        if len(directory):
-            self.string_directory_login.set(self.directory_base)
-            self.load_configs(directory)
-
     def toggle_server_interface(self, event=None):
         if event:
             self.button_modify_servers.config(state=tk.NORMAL)
@@ -798,7 +787,11 @@ class NymphemeralGUI():
 
     def wait_for_event(self):
         if self.aampy_is_done:
-            self.load_messages()
+            if self.queue_ammpy.get():
+                self.load_messages()
+            else:
+                self.disable_decrypt_interface(False)
+                tkMessageBox.showerror('Socket Error', 'The news server cannot be found!')
         else:
             self.id_after = self.window_main.after(1000, self.wait_for_event)
 
@@ -823,7 +816,7 @@ class NymphemeralGUI():
             self.event_aampy = threading.Event()
             self.thread_event = threading.Thread(target=self.wait_for_aampy)
             self.thread_event.daemon = True
-            self.thread_aampy = threading.Thread(target=self.aampy.aam, args=(self.event_aampy, cfg))
+            self.thread_aampy = threading.Thread(target=self.aampy.aam, args=(self.event_aampy, self.queue_ammpy, cfg))
             self.thread_aampy.daemon = True
             self.thread_event.start()
             self.thread_aampy.start()
@@ -989,7 +982,7 @@ class NymphemeralGUI():
             self.axolotl.saveState()
         except SystemExit:
             self.debug('Error while decrypting message')
-        self.queue.put(ciphertext)
+        self.queue_pyaxo.put(ciphertext)
 
     def select_message(self, event):
         if self.aampy_is_done and len(self.messages):
@@ -1015,7 +1008,7 @@ class NymphemeralGUI():
                 self.thread_decrypt = threading.Thread(target=self.decrypt_message, args=(fingerprint, msg, ))
                 self.thread_decrypt.start()
                 self.thread_decrypt.join()
-                ciphertext = self.queue.get()
+                ciphertext = self.queue_pyaxo.get()
                 self.delete_message_from_disk()
                 if ciphertext:
                     plaintext = str(self.gpg.decrypt(ciphertext, passphrase=passphrase, always_trust=True))
@@ -1055,7 +1048,7 @@ class NymphemeralGUI():
         try:
             msg = self.messages[self.current_message_index]
             new_identifier = self.directory_read_messages + '/' + msg.identifier.split('/')[-1]
-            with open(new_identifier, "w") as file:
+            with open(new_identifier, 'w') as file:
                 file.write(msg.processed_message.as_string())
                 self.messages[self.current_message_index].identifier = new_identifier
                 self.debug('Message saved to disk')
