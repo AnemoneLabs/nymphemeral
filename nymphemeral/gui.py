@@ -33,7 +33,7 @@ For more information, see https://github.com/felipedau/nymphemeral
 
 __author__ = 'Felipe Dau and David R. Andersen'
 __license__ = 'GPL'
-__version__ = '1.1.0'
+__version__ = '1.1.1'
 __status__ = 'Prototype'
 
 import Tkinter as tk
@@ -341,7 +341,7 @@ class NymphemeralGUI():
             try:
                 self.axolotl = Axolotl(self.fingerprint, dbname=db_name, dbpassphrase=self.passphrase)
             except SystemExit:
-                self.debug('Error while starting session' + ':', sys.exc_info()[0])
+                self.debug('Error while starting session')
                 tkMessageBox.showerror('Database Error', 'Error when accessing the database.\nCheck the password!')
                 return
         self.build_main_window()

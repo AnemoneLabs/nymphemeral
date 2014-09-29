@@ -13,7 +13,7 @@ Features
 
 Current Release
 ---------------
-The current version of nymphemeral is 1.1.0, a prototype, released 2014-09-26.
+The current version of nymphemeral is 1.1.1, a prototype, released 2014-09-28.
 
 Installation (on a Debian Wheezy/Ubuntu Trusty system)
 ------------------------------------------------------
