@@ -1,5 +1,5 @@
-nymphemeral
-===========
+`nymphemeral`_
+==============
 
 Features
 --------
@@ -109,7 +109,7 @@ for the original nymserv software.**
 .. _`mixmaster`: http://www.zen19351.zen.co.uk/mixmaster302
 .. _`new nymserv`: https://github.com/rxcomm/nymserv
 .. _`nym.now.im`: http://nym.now.im/nymserver
-.. _`nymphemeral`: https://github.com/felipedau/nymphemeral
+.. _`nymphemeral`: https://felipedau.github.io/nymphemeral
 .. _`openssl`: https://www.openssl.org
 .. _`pip`: https://pypi.python.org/pypi/pip
 .. _`pyaxo`: https://github.com/rxcomm/pyaxo
