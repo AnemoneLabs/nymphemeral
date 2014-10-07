@@ -75,6 +75,27 @@ def create_directory(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
 
+
+def search_pgp_message(data):
+    re_pgp = re.compile('-----BEGIN PGP MESSAGE-----.*-----END PGP MESSAGE-----', flags=re.DOTALL)
+    return re_pgp.search(data)
+
+
+def is_pgp_message(data):
+    re_pgp = re.compile('-----BEGIN PGP MESSAGE-----.*-----END PGP MESSAGE-----$', flags=re.DOTALL)
+    return re_pgp.match(data)
+
+
+def save_data(data, identifier):
+    try:
+        with open(identifier, 'w') as f:
+            f.write(data)
+            return True
+    except IOError:
+        print 'Error while writing to ' + identifier
+    return False
+
+
 class NymphemeralGUI():
     def __init__(self):
         self.is_debugging = None
@@ -175,6 +196,25 @@ class NymphemeralGUI():
         if self.is_debugging:
             print info
 
+    def encrypt_data(self, data, recipient, fingerprint, passphrase):
+        result = self.gpg.encrypt(data, recipients=recipient, sign=fingerprint, passphrase=passphrase,
+                                  always_trust=True)
+        if result.status == 'encryption ok':
+            return str(result)
+        else:
+            return None
+
+    def decrypt_data(self, data, passphrase):
+        result = self.gpg.decrypt(data, passphrase=passphrase, always_trust=True)
+        if result.status == 'decryption ok':
+            return str(result)
+        else:
+            return None
+
+    def save_configs(self):
+        with open(CONFIG_FILE, 'w') as config_file:
+            cfg.write(config_file)
+
     def load_configs(self):
         try:
             if not os.path.exists(CONFIG_FILE):
@@ -197,8 +237,7 @@ class NymphemeralGUI():
                 cfg.set('newsgroup', 'port', '119')
                 cfg.set('newsgroup', 'newnews', '%(base_folder)s/.newnews')
                 create_directory(NYMPHEMERAL_PATH)
-                with open(CONFIG_FILE, 'w') as config_file:
-                    cfg.write(config_file)
+                self.save_configs()
             cfg.read(CONFIG_FILE)
             self.directory_base = cfg.get('main', 'base_folder')
             self.directory_db = cfg.get('main', 'db_folder')
@@ -347,31 +386,41 @@ class NymphemeralGUI():
         self.build_main_window()
         self.window_login.withdraw()
 
-    def append_messages_to_list(self, user, from_encrypted_folder, messages_list):
-        if from_encrypted_folder:
-            path = self.directory_unread_messages
-        else:
+    def append_messages_to_list(self, user, read_messages, messages, messages_without_date):
+        if read_messages:
             path = self.directory_read_messages
+        else:
+            path = self.directory_unread_messages
         files = files_in_path(path)
-        for file in files:
-            if re.match('message_' + user + '_.*', file):
-                file_path = path + '/' + file
+        for file_name in files:
+            if re.match('message_' + user + '_.*', file_name):
+                file_path = path + '/' + file_name
                 data = ''
                 with open(file_path, 'r') as f:
                     for line in f:
                         data += line
-                new_message = message.Message(from_encrypted_folder, data, file_path)
-                messages_list.append(new_message)
+                if read_messages:
+                    search_pgp_message(data)
+                    if is_pgp_message(data):
+                        decrypted_data = self.decrypt_data(data, self.passphrase)
+                        if decrypted_data:
+                            data = decrypted_data
+                    else:
+                        encrypted_data = self.encrypt_data(data, user, self.fingerprint, self.passphrase)
+                        if encrypted_data:
+                            save_data(encrypted_data, file_path)
+                            self.debug(file_path.split('/')[-1] + ' is now encrypted')
+                new_message = message.Message(not read_messages, data, file_path)
+                if new_message.date:
+                    messages.append(new_message)
+                else:
+                    messages_without_date.append(new_message)
 
     def retrieve_messages_from_disk(self, user):
         messages = []
         messages_without_date = []
-        self.append_messages_to_list(user, False, messages)
-        self.append_messages_to_list(user, True, messages)
-        for i, m in enumerate(messages):
-            if not m.date:
-                messages_without_date.append(messages.pop(i))
-        # Sort and display the newest messages first
+        self.append_messages_to_list(user, False, messages, messages_without_date)
+        self.append_messages_to_list(user, True, messages, messages_without_date)
         messages = sorted(messages, key=lambda item: item.date, reverse=True)
         messages += messages_without_date
         return messages
@@ -951,18 +1000,15 @@ class NymphemeralGUI():
 
     def encrypt_and_send(self, data, recipient, fingerprint, passphrase, send_choice, target_text):
         success = False
-        ciphertext = self.gpg.encrypt(data, recipients=recipient,
-                                      sign=fingerprint, passphrase=passphrase, always_trust=True)
-        if str(ciphertext) is None or str(ciphertext) == '':
-            tkMessageBox.showerror('Message Not Sent', 'Bad nym passphrase!')
-        else:
+        ciphertext = self.encrypt_data(data, recipient, fingerprint, passphrase)
+        if ciphertext:
             success = True
             if send_choice == 3:
                 info = 'Send the following message to ' + recipient
-                if self.copy_pgp_message(str(ciphertext)):
+                if self.copy_pgp_message(ciphertext):
                     info += '\nIt has been copied to the clipboard'
             else:
-                data = 'To: ' + recipient + '\nSubject: test\n\n' + str(ciphertext)
+                data = 'To: ' + recipient + '\nSubject: test\n\n' + ciphertext
                 if self.send_data(data, send_choice):
                     info = 'The following message was successfully sent'
                 else:
@@ -971,7 +1017,9 @@ class NymphemeralGUI():
             info += '\n\n'
             target_text.delete(1.0, tk.END)
             target_text.insert(tk.INSERT, info)
-            target_text.insert(tk.INSERT, str(ciphertext))
+            target_text.insert(tk.INSERT, ciphertext)
+        else:
+            tkMessageBox.showerror('Message Not Sent', 'Bad nym passphrase!')
         return success
 
     def decrypt_message(self, fingerprint, data):
@@ -993,7 +1041,7 @@ class NymphemeralGUI():
 
             self.text_content_decrypt.delete(1.0, tk.END)
 
-            if selected_message.is_encrypted:
+            if selected_message.is_unread:
                 self.button_save_del_decrypt.config(state=tk.DISABLED)
                 self.button_reply_decrypt.config(state=tk.DISABLED)
                 passphrase = self.passphrase
@@ -1011,8 +1059,8 @@ class NymphemeralGUI():
                 ciphertext = self.queue_pyaxo.get()
                 self.delete_message_from_disk()
                 if ciphertext:
-                    plaintext = str(self.gpg.decrypt(ciphertext, passphrase=passphrase, always_trust=True))
-                    if not len(plaintext):
+                    plaintext = self.decrypt_data(ciphertext, passphrase)
+                    if not plaintext:
                         plaintext = 'The message could not be decrypted by GPG. Ciphertext:\n\n' + ciphertext
                     m = message.Message(False, plaintext, selected_message.identifier)
                     self.text_content_decrypt.insert(tk.INSERT, m.content)
@@ -1048,11 +1096,18 @@ class NymphemeralGUI():
         try:
             msg = self.messages[self.current_message_index]
             new_identifier = self.directory_read_messages + '/' + msg.identifier.split('/')[-1]
-            with open(new_identifier, 'w') as file:
-                file.write(msg.processed_message.as_string())
+            data = msg.processed_message.as_string()
+            result = self.encrypt_data(data, self.address, self.fingerprint, self.passphrase)
+            if result:
+                data = result
+            else:
+                self.debug('Message encryption failed. Will be saved as plain text')
+            if save_data(data, new_identifier):
                 self.messages[self.current_message_index].identifier = new_identifier
                 self.debug('Message saved to disk')
                 return True
+            else:
+                self.debug('Message could not be saved')
         except IOError:
             print 'Error while saving to disk' + ':', sys.exc_info()[0]
         return False
@@ -1112,8 +1167,7 @@ class NymphemeralGUI():
         self.text_send.focus_set()
 
     def copy_pgp_message(self, data):
-        re_pgp = re.compile('-----BEGIN PGP MESSAGE-----.*-----END PGP MESSAGE-----', flags=re.DOTALL)
-        m = re_pgp.search(data)
+        m = search_pgp_message(data)
         if m:
             self.window_login.clipboard_clear()
             self.window_login.clipboard_append(m.group())
@@ -1124,9 +1178,9 @@ class NymphemeralGUI():
         home = self.directory_base
         binary = '/usr/bin/gpg'
         keyring = [home + '/pubring.gpg', USER_PATH + '/.gnupg/pubring.gpg']
-        wecret_keyring = [home + '/secring.gpg', USER_PATH + '/.gnupg/secring.gpg']
+        secret_keyring = [home + '/secring.gpg', USER_PATH + '/.gnupg/secring.gpg']
         self.gpg = gnupg.GPG(gnupghome=home, gpgbinary=binary, keyring=keyring,
-                             secret_keyring=wecret_keyring, options=['--personal-digest-preferences=sha256',
+                             secret_keyring=secret_keyring, options=['--personal-digest-preferences=sha256',
                                                                      '--s2k-digest-algo=sha256'])
         self.gpg.encoding = 'latin-1'
 

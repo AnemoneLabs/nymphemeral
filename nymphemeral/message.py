@@ -8,8 +8,8 @@ from dateutil import parser
 
 
 class Message():
-    def __init__(self, is_encrypted, string, identifier):
-        self.is_encrypted = is_encrypted
+    def __init__(self, is_unread, string, identifier):
+        self.is_unread = is_unread
         self.processed_message = email.message_from_string(string)
         self.identifier = identifier
         self.sender = None
@@ -59,7 +59,7 @@ class Message():
 
             self.content = content
 
-            if self.is_encrypted:
+            if self.is_unread:
                 title = 'Undecrypted message'
                 if self.date:
                     title += ' - ' + str(self.date)
