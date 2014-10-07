@@ -380,11 +380,9 @@ class NymphemeralGUI():
             try:
                 self.axolotl = Axolotl(self.fingerprint, dbname=db_name, dbpassphrase=self.passphrase)
             except SystemExit:
-                self.debug('Error while starting session')
                 tkMessageBox.showerror('Database Error', 'Error when accessing the database.\nCheck the password!')
                 return
         self.build_main_window()
-        self.window_login.withdraw()
 
     def append_messages_to_list(self, user, read_messages, messages, messages_without_date):
         if read_messages:
@@ -392,6 +390,7 @@ class NymphemeralGUI():
         else:
             path = self.directory_unread_messages
         files = files_in_path(path)
+        notify = True
         for file_name in files:
             if re.match('message_' + user + '_.*', file_name):
                 file_path = path + '/' + file_name
@@ -406,6 +405,11 @@ class NymphemeralGUI():
                         if decrypted_data:
                             data = decrypted_data
                     else:
+                        if notify:
+                            tkMessageBox.showinfo('Unencrypted Message Found',
+                                                  'All plaintext saved messages will be encrypted right now.\n'
+                                                  'It might take some time depending on the number of messages.')
+                            notify = False
                         encrypted_data = self.encrypt_data(data, user, self.fingerprint, self.passphrase)
                         if encrypted_data:
                             save_data(encrypted_data, file_path)
@@ -619,6 +623,11 @@ class NymphemeralGUI():
         self.window_main.geometry('%dx%d+%d+%d'
                                   % (window_w, window_h, (screen_w - window_w) / 2, (screen_h - window_h) / 2))
 
+        self.window_login.withdraw()
+
+        if user_exists:
+            self.load_messages()
+
     def build_create_tab(self):
         frame_tab = tk.Frame(self.tab_create)
         frame_tab.grid(sticky='nswe', padx=15, pady=15)
@@ -739,8 +748,6 @@ class NymphemeralGUI():
         # notification label
         self.label_save_del_decrypt = tk.Label(frame_tab)
         self.label_save_del_decrypt.grid(row=buttons_row, pady=(10, 0))
-
-        self.load_messages()
 
     def build_config_tab(self):
         frame_tab = tk.Frame(self.tab_configure)
