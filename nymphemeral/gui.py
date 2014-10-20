@@ -434,7 +434,7 @@ class NymphemeralGUI():
             state = tk.NORMAL
         else:
             state = tk.DISABLED
-        for index in range(3):
+        for index in range(4):
             self.notebook_login.tab(index, state=state)
 
     def build_login_window(self):
@@ -588,6 +588,9 @@ class NymphemeralGUI():
         self.tab_configure = tk.Frame(self.notebook_login)
         self.notebook_login.add(self.tab_configure, text='Configure Nym')
         self.build_config_tab()
+        self.tab_unread = tk.Frame(self.notebook_login)
+        self.notebook_login.add(self.tab_unread, text='Unread Counter')
+        self.build_unread_tab()
         if not user_exists:
             self.tab_create = tk.Frame(self.notebook_login)
             self.notebook_login.add(self.tab_create, text='Create Nym')
@@ -749,6 +752,21 @@ class NymphemeralGUI():
         self.label_save_del_decrypt = tk.Label(frame_tab)
         self.label_save_del_decrypt.grid(row=buttons_row, pady=(10, 0))
 
+    def build_unread_tab(self):
+        frame_tab = tk.Frame(self.tab_unread)
+        frame_tab.grid(sticky='nswe', padx=15, pady=15)
+
+        frame_retrieve = tk.Frame(frame_tab)
+        frame_retrieve.grid(sticky='w')
+
+        frame_list = tk.LabelFrame(frame_tab, text='Nyms With Unread Messages')
+        frame_list.grid(sticky='we')
+        self.list_unread = tk.Listbox(frame_list, height=39, width=70)
+        self.list_unread.grid(row=0, column=0, sticky='we')
+        scrollbar_list = tk.Scrollbar(frame_list, command=self.list_unread.yview)
+        scrollbar_list.grid(row=0, column=1, sticky='nsew')
+        self.list_unread['yscrollcommand'] = scrollbar_list.set
+
     def build_config_tab(self):
         frame_tab = tk.Frame(self.tab_configure)
         frame_tab.grid(sticky='nswe', padx=15, pady=15)
@@ -825,11 +843,30 @@ class NymphemeralGUI():
             self.list_servers.insert(tk.END, s)
         self.toggle_server_interface()
 
+    def update_unread_counter(self):
+        messages = files_in_path(self.directory_unread_messages)
+        self.list_unread.delete(0, tk.END)
+        if messages:
+            counter = {}
+            for m in messages:
+                nym = re.search('(?<=message_).+(?=_.{5}.txt)', m)
+                if nym:
+                    try:
+                        counter[nym.group()] += 1
+                    except KeyError:
+                        counter[nym.group()] = 1
+            for nym in counter:
+                entry = nym + ' (' + str(counter[nym]) + ')'
+                self.list_unread.insert(tk.END, entry)
+        else:
+            self.list_unread.insert(tk.END, 'No messages found')
+
     def update_messages_list(self):
         self.disable_decrypt_interface(False)
         self.list_messages_decrypt.delete(0, tk.END)
         for m in self.messages:
             self.list_messages_decrypt.insert(tk.END, m.title)
+        self.update_unread_counter()
 
     def load_messages(self):
         self.messages = self.retrieve_messages_from_disk(self.address)
