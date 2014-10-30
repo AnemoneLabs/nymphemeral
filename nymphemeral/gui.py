@@ -57,6 +57,7 @@ from pyaxo import Axolotl
 
 import aampy
 import message
+from nym import Nym
 
 
 cfg = ConfigParser.ConfigParser()
@@ -108,6 +109,9 @@ class NymphemeralGUI():
         self.file_mix_cfg = None
         self.check_base_files()
 
+        self.gpg = None
+        self.setup_gpg()
+
         self.aampy = aampy
         self.axolotl = None
 
@@ -123,21 +127,13 @@ class NymphemeralGUI():
         self.queue_pyaxo = Queue.Queue()
         self.thread_decrypt = None
 
-        self.users = self.retrieve_users()
-        self.address = None
-        self.nym_server = None
-        self.passphrase = None
-        self.hsub = None
-        self.fingerprint = None
+        self.nym = None
         self.chain = None
         self.send_choice = None
 
         self.messages = []
         self.current_message_index = None
 
-        self.gpg = None
-        self.setup_gpg()
-        self.keys = self.gpg.list_keys()
         self.servers = self.retrieve_servers()
 
         # login window
@@ -258,6 +254,12 @@ class NymphemeralGUI():
             shutil.copyfile(BASE_FILES_PATH + '/db/generic.db', self.directory_db + '/generic.db')
             create_directory(self.directory_read_messages)
             create_directory(self.directory_unread_messages)
+            if not os.path.exists(self.file_hsub):
+                self.debug(
+                    'Creating ' + self.file_hsub.split('/')[-1] + ' - aampy will download messages from last hour')
+                time_stamp = time.time() - 3600.0
+                with open(self.file_hsub, 'w') as f:
+                    f.write('time ' + str(time_stamp) + '\n')
         except IOError:
             print 'Error while creating the base files'
             raise
@@ -279,10 +281,8 @@ class NymphemeralGUI():
         self.window_login.destroy()
         self.window_main.destroy()
 
-    def change_user(self):
-        self.address = None
-        self.passphrase = None
-        self.hsub = None
+    def change_nym(self):
+        self.nym = None
         self.entry_address_login.delete(0, tk.END)
         self.entry_passphrase_login.delete(0, tk.END)
         if not self.aampy_is_done:
@@ -294,48 +294,64 @@ class NymphemeralGUI():
         self.window_login.focus_force()
         self.entry_address_login.focus_set()
 
-    def retrieve_users(self):
-        users = {}
+    def retrieve_hsubs(self):
+        hsubs = {}
         try:
-            if not os.path.exists(self.file_hsub):
-                self.debug(
-                    'Creating ' + self.file_hsub.split('/')[-1] + ' - aampy will download messages from last hour')
-                time_stamp = time.time() - 3600.0
-                with open(self.file_hsub, 'w') as file:
-                    file.write('time ' + str(time_stamp) + '\n')
-            users = self.aampy.readDict(self.file_hsub)
+            hsubs = self.aampy.readDict(self.file_hsub)
         except IOError:
-            print 'Error while manipulating ' + self.file_hsub.split('/')[-1] + ':', sys.exc_info()[0]
-        return users
+            print 'Error while manipulating ' + self.file_hsub.split('/')[-1]
+        return hsubs
 
-    def add_user(self, address, hsub_key):
-        try:
-            if hsub_key not in self.users.values():
-                self.users[address] = hsub_key
-                self.aampy.writeDict(self.file_hsub, self.users)
-                return True
-        except IOError:
-            print 'Error while manipulating ' + self.file_hsub.split('/')[-1] + ':', sys.exc_info()[0]
-        return False
+    def retrieve_nyms(self):
+        nyms = []
+        hsubs = self.retrieve_hsubs()
+        keys = self.gpg.list_keys()
+        for item in keys:
+            if len(item['uids']) is 1:
+                search = re.search('(?<=<).*(?=>)', item['uids'][0])
+                if search:
+                    address = search.group()
+                    hsub = None
+                    if address in hsubs:
+                        hsub = hsubs[address]
+                    nym = Nym(address=address,
+                              fingerprint=item['fingerprint'],
+                              hsub=hsub)
+                    nyms.append(nym)
+        return nyms
 
-    def delete_user(self, address):
+    def add_nym(self, nym):
         try:
-            del self.users[address]
-            self.aampy.writeDict(self.file_hsub, self.users)
+            hsubs = self.retrieve_hsubs()
+            hsubs[nym.address] = nym.hsub
+            self.aampy.writeDict(self.file_hsub, hsubs)
+            self.nym = nym
             return True
         except IOError:
-            print 'Error while manipulating ' + self.file_hsub.split('/')[-1] + ':', sys.exc_info()[0]
+            print 'Error while manipulating ' + self.file_hsub.split('/')[-1]
+        return False
+
+    def delete_nym(self, nym):
+        try:
+            hsubs = self.retrieve_hsubs()
+            del hsubs[nym.address]
+            self.aampy.writeDict(self.file_hsub, hsubs)
+            return True
+        except IOError:
+            print 'Error while manipulating ' + self.file_hsub.split('/')[-1]
         return False
 
     def retrieve_fingerprint(self, address):
-        for item in self.keys:
+        keys = self.gpg.list_keys()
+        for item in keys:
             if address in item['uids'][0]:
                 return item['fingerprint']
         return None
 
     def retrieve_servers(self):
         servers = {}
-        for item in self.keys:
+        keys = self.gpg.list_keys()
+        for item in keys:
             config_match = None
             send_match = None
             url_match = None
@@ -352,39 +368,41 @@ class NymphemeralGUI():
         return servers
 
     def start_session(self, event=None):
-        if not re.match(r'[^@]+@[^@]+\.[^@]+', self.entry_address_login.get()):
+        nym = Nym(address=self.entry_address_login.get().lower(),
+                  passphrase=self.entry_passphrase_login.get())
+        if not re.match(r'[^@]+@[^@]+\.[^@]+', nym.address):
             tkMessageBox.showerror('Invalid Email Address', 'Please verify the email address provided.')
             return
-        self.address = self.entry_address_login.get().lower()
-        self.nym_server = self.address.split('@')[1]
-        self.passphrase = self.entry_passphrase_login.get()
-        if self.nym_server not in self.servers:
+        if nym.server not in self.servers:
             if tkMessageBox.askyesno('Server Not Found',
-                                     self.nym_server + "'s public key was not found in the keyring.\n"
+                                     nym.server + "'s public key was not found in the keyring.\n"
                                      'Would you like to add it right now?'):
                 self.build_manage_key_window()
             return
-        if self.address not in self.users:
+        nyms = self.retrieve_nyms()
+        result = filter(lambda n: n.address == nym.address, nyms)
+        if not result:
             if not tkMessageBox.askyesno('Nym Not Found',
                                          'Would you like to create a nym with the following address?\n\n'
-                                         + self.address):
+                                         + nym.address):
                 return
         else:
-            self.hsub = self.users[self.address]
-            self.fingerprint = self.retrieve_fingerprint(self.address)
-            if not self.fingerprint:
+            nym.fingerprint = result[0].fingerprint
+            nym.hsub = result[0].hsub
+            if not nym.fingerprint:
                 tkMessageBox.showerror('Fingerprint Not Found',
-                                       'Fingerprint for this user was not found in the keyring.')
+                                       'Fingerprint for this nym was not found in the keyring.')
                 return
-            db_name = self.directory_db + '/' + self.fingerprint + '.db'
+            db_name = self.directory_db + '/' + nym.fingerprint + '.db'
             try:
-                self.axolotl = Axolotl(self.fingerprint, dbname=db_name, dbpassphrase=self.passphrase)
+                self.axolotl = Axolotl(nym.fingerprint, dbname=db_name, dbpassphrase=nym.passphrase)
             except SystemExit:
                 tkMessageBox.showerror('Database Error', 'Error when accessing the database.\nCheck the password!')
                 return
+        self.nym = nym
         self.build_main_window()
 
-    def append_messages_to_list(self, user, read_messages, messages, messages_without_date):
+    def append_messages_to_list(self, nym, read_messages, messages, messages_without_date):
         if read_messages:
             path = self.directory_read_messages
         else:
@@ -392,7 +410,7 @@ class NymphemeralGUI():
         files = files_in_path(path)
         notify = True
         for file_name in files:
-            if re.match('message_' + user + '_.*', file_name):
+            if re.match('message_' + nym.address + '_.*', file_name):
                 file_path = path + '/' + file_name
                 data = ''
                 with open(file_path, 'r') as f:
@@ -401,7 +419,7 @@ class NymphemeralGUI():
                 if read_messages:
                     search_pgp_message(data)
                     if is_pgp_message(data):
-                        decrypted_data = self.decrypt_data(data, self.passphrase)
+                        decrypted_data = self.decrypt_data(data, nym.passphrase)
                         if decrypted_data:
                             data = decrypted_data
                     else:
@@ -410,7 +428,7 @@ class NymphemeralGUI():
                                                   'All plaintext saved messages will be encrypted right now.\n'
                                                   'It might take some time depending on the number of messages.')
                             notify = False
-                        encrypted_data = self.encrypt_data(data, user, self.fingerprint, self.passphrase)
+                        encrypted_data = self.encrypt_data(data, nym.address, nym.fingerprint, nym.passphrase)
                         if encrypted_data:
                             save_data(encrypted_data, file_path)
                             self.debug(file_path.split('/')[-1] + ' is now encrypted')
@@ -420,17 +438,17 @@ class NymphemeralGUI():
                 else:
                     messages_without_date.append(new_message)
 
-    def retrieve_messages_from_disk(self, user):
+    def retrieve_messages_from_disk(self, nym):
         messages = []
         messages_without_date = []
-        self.append_messages_to_list(user, False, messages, messages_without_date)
-        self.append_messages_to_list(user, True, messages, messages_without_date)
+        self.append_messages_to_list(nym, False, messages, messages_without_date)
+        self.append_messages_to_list(nym, True, messages, messages_without_date)
         messages = sorted(messages, key=lambda item: item.date, reverse=True)
         messages += messages_without_date
         return messages
 
-    def enable_tabs(self, user_exists):
-        if user_exists:
+    def enable_tabs(self, nym_exists):
+        if nym_exists:
             state = tk.NORMAL
         else:
             state = tk.DISABLED
@@ -562,10 +580,10 @@ class NymphemeralGUI():
         text_key.focus_set()
 
     def build_main_window(self):
-        if self.hsub:
-            user_exists = True
+        if self.nym.hsub:
+            nym_exists = True
         else:
-            user_exists = False
+            nym_exists = False
 
         # root window
         self.window_main = tk.Tk()
@@ -591,12 +609,12 @@ class NymphemeralGUI():
         self.tab_unread = tk.Frame(self.notebook_login)
         self.notebook_login.add(self.tab_unread, text='Unread Counter')
         self.build_unread_tab()
-        if not user_exists:
+        if not nym_exists:
             self.tab_create = tk.Frame(self.notebook_login)
             self.notebook_login.add(self.tab_create, text='Create Nym')
             self.build_create_tab()
         self.notebook_login.pack(fill=tk.BOTH, expand=True)
-        self.enable_tabs(user_exists)
+        self.enable_tabs(nym_exists)
 
         # footer
         frame_footer = tk.Frame(frame_tab)
@@ -606,15 +624,15 @@ class NymphemeralGUI():
         frame_left.pack(side=tk.LEFT)
         frame_address = tk.Frame(frame_left)
         frame_address.pack(fill=tk.X, expand=True)
-        label_address = tk.Label(frame_address, text=self.address)
+        label_address = tk.Label(frame_address, text=self.nym.address)
         label_address.pack(side=tk.LEFT)
         if self.send_choice.get() is 1:
             frame_chain = tk.Frame(frame_left)
             frame_chain.pack(fill=tk.X, expand=True)
             label_chain = tk.Label(frame_chain, text=self.chain)
             label_chain.pack(side=tk.LEFT)
-        button_change_user = tk.Button(frame_footer, text='Change User', command=self.change_user)
-        button_change_user.pack(side=tk.RIGHT)
+        button_change_nym = tk.Button(frame_footer, text='Change Nym', command=self.change_nym)
+        button_change_nym.pack(side=tk.RIGHT)
 
         # when the user closes self.window_main, closeAll() is called to close the login window as well
         self.window_main.protocol('WM_DELETE_WINDOW', self.close_all_windows)
@@ -628,7 +646,7 @@ class NymphemeralGUI():
 
         self.window_login.withdraw()
 
-        if user_exists:
+        if nym_exists:
             self.load_messages()
 
     def build_create_tab(self):
@@ -824,7 +842,6 @@ class NymphemeralGUI():
         if server:
             self.gpg.delete_keys(self.servers[server])
         self.gpg.import_keys(key)
-        self.keys = self.gpg.list_keys()
         self.servers = self.retrieve_servers()
         if self.list_servers:
             self.update_servers_list()
@@ -833,7 +850,6 @@ class NymphemeralGUI():
     def delete_key(self, server):
         if tkMessageBox.askyesno('Confirm', 'Are you sure you want to delete ' + server + "'s key?"):
             self.gpg.delete_keys(self.servers[server])
-            self.keys = self.gpg.list_keys()
             self.servers = self.retrieve_servers()
             self.update_servers_list()
 
@@ -869,7 +885,7 @@ class NymphemeralGUI():
         self.update_unread_counter()
 
     def load_messages(self):
-        self.messages = self.retrieve_messages_from_disk(self.address)
+        self.messages = self.retrieve_messages_from_disk(self.nym)
         self.current_message_index = None
         self.update_messages_list()
 
@@ -923,13 +939,13 @@ class NymphemeralGUI():
 
     def send_create(self):
         duration = self.text_duration_create.get()
-        passphrase = self.passphrase
+        passphrase = self.nym.passphrase
         name = self.text_name_create.get()
-        address = self.address
+        address = self.nym.address
         ephemeral = self.entry_ephemeral_create.get().strip()
         hsub = self.entry_hsub_create.get().strip()
         send_choice = self.send_choice.get()
-        recipient = 'config@' + self.nym_server
+        recipient = 'config@' + self.nym.server
 
         if not len(hsub):
             tkMessageBox.showerror('hSub Key Not Found', 'This client requires you to use an hSub key.')
@@ -941,20 +957,22 @@ class NymphemeralGUI():
                                             expire_date=duration, passphrase=passphrase,
                                             name_real=name, name_comment='', name_email=address)
         self.gpg.gen_key(input_data)
-        self.keys = self.gpg.list_keys()
         pubkey = self.gpg.export_keys(keyids=address)
         fingerprint = self.retrieve_fingerprint(address)
-        self.fingerprint = fingerprint
 
         data = 'ephemeral: ' + ephemeral + '\nhsub: ' + hsub + '\n' + pubkey
 
         self.generate_db(fingerprint, ephemeral, passphrase)
 
+        nym = Nym(address=address,
+                  passphrase=passphrase,
+                  fingerprint=fingerprint,
+                  hsub=hsub)
+
         if self.encrypt_and_send(data, recipient, fingerprint, passphrase, send_choice, self.text_create):
-            self.add_user(address, hsub)
-            self.hsub = hsub
-            db_name = self.directory_db + '/' + self.fingerprint + '.db'
-            self.axolotl = Axolotl(self.fingerprint, dbname=db_name, dbpassphrase=passphrase)
+            self.add_nym(nym)
+            db_name = self.directory_db + '/' + nym.fingerprint + '.db'
+            self.axolotl = Axolotl(nym.fingerprint, dbname=db_name, dbpassphrase=passphrase)
 
             self.enable_tabs(True)
             self.entry_ephemeral_create.config(state=tk.DISABLED)
@@ -964,13 +982,13 @@ class NymphemeralGUI():
             self.button_create.config(state=tk.DISABLED)
 
     def send_message(self):
-        passphrase = self.passphrase
-        fingerprint = self.fingerprint
+        passphrase = self.nym.passphrase
+        fingerprint = self.nym.fingerprint
         target_address = self.entry_target_send.get().lower()
         subject = self.entry_subject_send.get()
         send_choice = self.send_choice.get()
         content = self.text_send.get(1.0, tk.END)
-        recipient = 'send@' + self.nym_server
+        recipient = 'send@' + self.nym.server
         msg = 'To: ' + target_address + '\nSubject: ' + subject + '\n\n' + content
 
         self.axolotl.loadState(fingerprint, 'a')
@@ -986,12 +1004,12 @@ class NymphemeralGUI():
         self.encrypt_and_send(pgp_message, recipient, fingerprint, passphrase, send_choice, self.text_send)
 
     def send_config(self):
-        address = self.address
-        passphrase = self.passphrase
+        nym = Nym(address=self.nym.address,
+                  passphrase=self.nym.passphrase,
+                  fingerprint=self.nym.fingerprint)
         send_choice = self.send_choice.get()
-        fingerprint = self.fingerprint
-        db_file = self.directory_db + '/' + fingerprint + '.db'
-        recipient = 'config@' + self.nym_server
+        db_file = self.directory_db + '/' + nym.fingerprint + '.db'
+        recipient = 'config@' + nym.server
         reset_db = False
         reset_hsub = False
 
@@ -1014,33 +1032,33 @@ class NymphemeralGUI():
 
         data = ephemeral_line + hsub_line + name_line
         if data is not '':
-            if self.encrypt_and_send(data, recipient, fingerprint, passphrase, send_choice, self.text_config):
+            if self.encrypt_and_send(data, recipient, nym.fingerprint, nym.passphrase, send_choice, self.text_config):
                 if reset_db:
                     if os.path.exists(db_file):
                         os.unlink(db_file)
-                    self.generate_db(fingerprint, ephemeral, passphrase)
+                    self.generate_db(nym.fingerprint, ephemeral, nym.passphrase)
                 if reset_hsub:
-                    self.add_user(address, hsub)
+                    nym.hsub = hsub
+                    self.add_nym(nym)
 
     def send_delete(self):
-        address = self.address
+        address = self.nym.address
         if tkMessageBox.askyesno('Confirm', 'Are you sure you want to delete "' + address + '"?'):
-            passphrase = self.passphrase
+            passphrase = self.nym.passphrase
             send_choice = self.send_choice.get()
-            fingerprint = self.fingerprint
+            fingerprint = self.nym.fingerprint
             db_file = self.directory_db + '/' + fingerprint + '.db'
-            recipient = 'config@' + self.nym_server
+            recipient = 'config@' + self.nym.server
 
             data = 'delete: yes'
             if self.encrypt_and_send(data, recipient, fingerprint, passphrase, send_choice, self.text_config):
                 if os.path.exists(db_file):
                     os.unlink(db_file)
-                self.delete_user(address)
+                self.delete_nym(self.nym)
                 self.gpg.delete_keys(fingerprint, True)
                 self.gpg.delete_keys(fingerprint)
-                self.keys = self.gpg.list_keys()
                 if send_choice is not 3:
-                    self.change_user()
+                    self.change_nym()
 
     def encrypt_and_send(self, data, recipient, fingerprint, passphrase, send_choice, target_text):
         success = False
@@ -1088,8 +1106,8 @@ class NymphemeralGUI():
             if selected_message.is_unread:
                 self.button_save_del_decrypt.config(state=tk.DISABLED)
                 self.button_reply_decrypt.config(state=tk.DISABLED)
-                passphrase = self.passphrase
-                fingerprint = self.fingerprint
+                passphrase = self.nym.passphrase
+                fingerprint = self.nym.fingerprint
                 exp = re.compile('^[A-Za-z0-9+\/=]+\Z')
                 buf = selected_message.content.splitlines()
                 msg = ''
@@ -1141,7 +1159,7 @@ class NymphemeralGUI():
             msg = self.messages[self.current_message_index]
             new_identifier = self.directory_read_messages + '/' + msg.identifier.split('/')[-1]
             data = msg.processed_message.as_string()
-            result = self.encrypt_data(data, self.address, self.fingerprint, self.passphrase)
+            result = self.encrypt_data(data, self.nym.address, self.nym.fingerprint, self.nym.passphrase)
             if result:
                 data = result
             else:
