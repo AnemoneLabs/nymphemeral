@@ -160,6 +160,7 @@ class NymphemeralGUI():
         self.tab_decrypt = None
         self.tab_send = None
         self.tab_configure = None
+        self.tab_unread = None
         self.tab_create = None
 
         # decrypt tab
@@ -181,6 +182,9 @@ class NymphemeralGUI():
         self.entry_hsub_config = None
         self.entry_name_config = None
         self.text_config = None
+
+        # unread tab
+        self.list_unread = None
 
         # create tab
         self.entry_ephemeral_create = None
