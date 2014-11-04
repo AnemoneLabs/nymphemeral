@@ -399,8 +399,12 @@ class NymphemeralGUI():
                 return
             db_name = self.directory_db + '/' + nym.fingerprint + '.db'
             try:
+                # workaround to suppress prints by pyaxo
+                sys.stdout = open(os.devnull, 'w')
                 self.axolotl = Axolotl(nym.fingerprint, dbname=db_name, dbpassphrase=nym.passphrase)
+                sys.stdout = sys.__stdout__
             except SystemExit:
+                sys.stdout = sys.__stdout__
                 tkMessageBox.showerror('Database Error', 'Error when accessing the database.\nCheck the password!')
                 return
         self.nym = nym
@@ -1092,9 +1096,15 @@ class NymphemeralGUI():
         ciphertext = None
         try:
             self.axolotl.loadState(fingerprint, 'a')
+
+            # workaround to suppress prints by pyaxo
+            sys.stdout = open(os.devnull, 'w')
             ciphertext = self.axolotl.decrypt(a2b_base64(data)).strip()
+            sys.stdout = sys.__stdout__
+
             self.axolotl.saveState()
         except SystemExit:
+            sys.stdout = sys.__stdout__
             self.debug('Error while decrypting message')
         self.queue_pyaxo.put(ciphertext)
 
