@@ -22,11 +22,16 @@ class Message():
     def retrieve_attributes(self):
         try:
             m = self.processed_message
+            title = ''
+
+            if 'date' in m:
+                self.date = parser.parse(m.get('date'))
+                title += str(self.date)[:16] + ' '
 
             if 'from' in m:
                 sender = m.get('from')
                 self.sender = re.search('[^( |<)]+@[^( |>)]+', sender).group(0)
-                title = self.sender + ': '
+                title += self.sender + ': '
             else:
                 title = 'Unknown sender: '
 
@@ -35,9 +40,6 @@ class Message():
                 title += self.subject
             else:
                 title += '(no subject)'
-
-            if 'date' in m:
-                self.date = parser.parse(m.get('date'))
 
             # content types we print
             mtypes = ('text/plain', 'text/html', 'message/rfc822')
