@@ -49,6 +49,7 @@ import threading
 import Queue
 import time
 import ConfigParser
+import email
 from binascii import b2a_base64, a2b_base64
 
 import gnupg
@@ -995,9 +996,10 @@ class NymphemeralGUI():
         target_address = self.entry_target_send.get().lower()
         subject = self.entry_subject_send.get()
         send_choice = self.send_choice.get()
-        content = self.text_send.get(1.0, tk.END)
         recipient = 'send@' + self.nym.server
-        msg = 'To: ' + target_address + '\nSubject: ' + subject + '\n\n' + content
+        msg = email.message_from_string('To: ' + target_address +
+                                        '\nSubject: ' + subject +
+                                        '\n' + self.text_send.get(1.0, tk.END)).as_string().strip()
 
         self.axolotl.loadState(fingerprint, 'a')
         ciphertext = b2a_base64(self.axolotl.encrypt(msg)).strip()
