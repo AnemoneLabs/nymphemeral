@@ -373,11 +373,16 @@ class NymphemeralGUI():
         return servers
 
     def start_session(self, event=None):
-        nym = Nym(address=self.entry_address_login.get().lower(),
-                  passphrase=self.entry_passphrase_login.get())
-        if not re.match(r'[^@]+@[^@]+\.[^@]+', nym.address):
-            tkMessageBox.showerror('Invalid Email Address', 'Please verify the email address provided.')
+        address = self.entry_address_login.get().lower()
+        if not re.match(r'[^@]+@[^@]+\.[^@]+', address):
+            tkMessageBox.showerror('Invalid Email Address', 'Verify the email address provided.')
             return
+        passphrase = self.entry_passphrase_login.get()
+        if not len(passphrase):
+            tkMessageBox.showerror('Empty Passphrase', 'You must provide a passphrase.')
+            return
+        nym = Nym(address=address,
+                  passphrase=passphrase)
         if nym.server not in self.servers:
             if tkMessageBox.askyesno('Server Not Found',
                                      nym.server + "'s public key was not found in the keyring.\n"
@@ -406,7 +411,7 @@ class NymphemeralGUI():
                 sys.stdout = sys.__stdout__
             except SystemExit:
                 sys.stdout = sys.__stdout__
-                tkMessageBox.showerror('Database Error', 'Error when accessing the database.\nCheck the password!')
+                tkMessageBox.showerror('Database Error', 'Error when accessing the database.\nCheck the passphrase!')
                 return
         self.nym = nym
         self.build_main_window()
