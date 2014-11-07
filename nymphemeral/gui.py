@@ -218,28 +218,43 @@ class NymphemeralGUI():
 
     def load_configs(self):
         try:
-            if not os.path.exists(CONFIG_FILE):
-                cfg.add_section('main')
-                cfg.set('main', 'base_folder', NYMPHEMERAL_PATH)
-                cfg.set('main', 'db_folder', '%(base_folder)s/db')
-                cfg.set('main', 'messages_folder', '%(base_folder)s/messages')
-                cfg.set('main', 'read_folder', '%(messages_folder)s/read')
-                cfg.set('main', 'unread_folder', '%(messages_folder)s/unread')
-                cfg.set('main', 'hsub_file', '%(base_folder)s/hsubpass.txt')
-                cfg.set('main', 'debug_switch', 'False')
-                cfg.add_section('mixmaster')
-                cfg.set('mixmaster', 'base_folder', USER_PATH + '/Mix')
-                cfg.set('mixmaster', 'binary', '%(base_folder)s/mixmaster')
-                cfg.set('mixmaster', 'cfg', '%(base_folder)s/mix.cfg')
-                cfg.add_section('newsgroup')
-                cfg.set('newsgroup', 'base_folder', NYMPHEMERAL_PATH)
-                cfg.set('newsgroup', 'group', 'alt.anonymous.messages')
-                cfg.set('newsgroup', 'server', 'localhost')
-                cfg.set('newsgroup', 'port', '119')
-                cfg.set('newsgroup', 'newnews', '%(base_folder)s/.newnews')
+            # load default configs
+            cfg.add_section('main')
+            cfg.set('main', 'base_folder', NYMPHEMERAL_PATH)
+            cfg.set('main', 'db_folder', '%(base_folder)s/db')
+            cfg.set('main', 'messages_folder', '%(base_folder)s/messages')
+            cfg.set('main', 'read_folder', '%(messages_folder)s/read')
+            cfg.set('main', 'unread_folder', '%(messages_folder)s/unread')
+            cfg.set('main', 'hsub_file', '%(base_folder)s/hsubpass.txt')
+            cfg.set('main', 'debug_switch', 'False')
+            cfg.add_section('mixmaster')
+            cfg.set('mixmaster', 'base_folder', USER_PATH + '/Mix')
+            cfg.set('mixmaster', 'binary', '%(base_folder)s/mixmaster')
+            cfg.set('mixmaster', 'cfg', '%(base_folder)s/mix.cfg')
+            cfg.add_section('newsgroup')
+            cfg.set('newsgroup', 'base_folder', NYMPHEMERAL_PATH)
+            cfg.set('newsgroup', 'group', 'alt.anonymous.messages')
+            cfg.set('newsgroup', 'server', 'localhost')
+            cfg.set('newsgroup', 'port', '119')
+            cfg.set('newsgroup', 'newnews', '%(base_folder)s/.newnews')
+
+            # parse existing configs
+            if os.path.exists(CONFIG_FILE):
+                saved_cfg = ConfigParser.ConfigParser()
+                saved_cfg.read(CONFIG_FILE)
+                for section in saved_cfg.sections():
+                    try:
+                        for option in cfg.options(section):
+                            try:
+                                cfg.set(section, option, saved_cfg.get(section, option))
+                            except:
+                                pass
+                    except:
+                        pass
+            else:
                 create_directory(NYMPHEMERAL_PATH)
-                self.save_configs()
-            cfg.read(CONFIG_FILE)
+            self.save_configs()
+
             self.directory_base = cfg.get('main', 'base_folder')
             self.directory_db = cfg.get('main', 'db_folder')
             self.directory_read_messages = cfg.get('main', 'read_folder')
