@@ -50,6 +50,7 @@ import Queue
 import time
 import ConfigParser
 import email
+import itertools
 from binascii import b2a_base64, a2b_base64
 
 import gnupg
@@ -88,6 +89,22 @@ def is_pgp_message(data):
     return re_pgp.match(data)
 
 
+def create_dictionary(string):
+    return dict(t.split() for t in string.strip().split('\n'))
+
+
+def read_data(identifier):
+    try:
+        data = ''
+        with open(identifier, 'r') as f:
+            for line in f:
+                data += line
+        return data
+    except IOError:
+        print 'Error while reading ' + identifier
+    return None
+
+
 def save_data(data, identifier):
     try:
         with open(identifier, 'w') as f:
@@ -98,6 +115,21 @@ def save_data(data, identifier):
     return False
 
 
+def new_gpg(paths):
+    keyring = []
+    for r in list(itertools.product(paths, ['/pubring.gpg'])):
+        keyring.append(''.join(r))
+    secret_keyring = []
+    for r in list(itertools.product(paths, ['/secring.gpg'])):
+        secret_keyring.append(''.join(r))
+    binary = '/usr/bin/gpg'
+    gpg = gnupg.GPG(gnupghome=paths[0], gpgbinary=binary, keyring=keyring,
+                    secret_keyring=secret_keyring, options=['--personal-digest-preferences=sha256',
+                                                            '--s2k-digest-algo=sha256'])
+    gpg.encoding = 'latin-1'
+    return gpg
+
+
 class NymphemeralGUI():
     def __init__(self):
         self.is_debugging = None
@@ -105,13 +137,13 @@ class NymphemeralGUI():
         self.directory_db = None
         self.directory_read_messages = None
         self.directory_unread_messages = None
+        self.directory_gpg = None
         self.file_hsub = None
         self.file_mix_binary = None
         self.file_mix_cfg = None
         self.check_base_files()
 
-        self.gpg = None
-        self.setup_gpg()
+        self.gpg = new_gpg([self.directory_base, self.directory_gpg])
 
         self.aampy = aampy
         self.axolotl = None
@@ -129,6 +161,7 @@ class NymphemeralGUI():
         self.thread_decrypt = None
 
         self.nym = None
+        self.hsubs = {}
         self.chain = None
         self.send_choice = None
 
@@ -219,13 +252,16 @@ class NymphemeralGUI():
     def load_configs(self):
         try:
             # load default configs
+            cfg.add_section('gpg')
+            cfg.set('gpg', 'base_folder', USER_PATH + '/.gnupg')
             cfg.add_section('main')
             cfg.set('main', 'base_folder', NYMPHEMERAL_PATH)
             cfg.set('main', 'db_folder', '%(base_folder)s/db')
             cfg.set('main', 'messages_folder', '%(base_folder)s/messages')
             cfg.set('main', 'read_folder', '%(messages_folder)s/read')
             cfg.set('main', 'unread_folder', '%(messages_folder)s/unread')
-            cfg.set('main', 'hsub_file', '%(base_folder)s/hsubpass.txt')
+            cfg.set('main', 'hsub_file', '%(base_folder)s/hsubs.txt')
+            cfg.set('main', 'encrypted_hsub_file', '%(base_folder)s/encrypted_hsubs.txt')
             cfg.set('main', 'debug_switch', 'False')
             cfg.add_section('mixmaster')
             cfg.set('mixmaster', 'base_folder', USER_PATH + '/Mix')
@@ -259,7 +295,9 @@ class NymphemeralGUI():
             self.directory_db = cfg.get('main', 'db_folder')
             self.directory_read_messages = cfg.get('main', 'read_folder')
             self.directory_unread_messages = cfg.get('main', 'unread_folder')
+            self.directory_gpg = cfg.get('gpg', 'base_folder')
             self.file_hsub = cfg.get('main', 'hsub_file')
+            self.file_encrypted_hsub = cfg.get('main', 'encrypted_hsub_file')
             self.is_debugging = cfg.getboolean('main', 'debug_switch')
             self.file_mix_binary = cfg.get('mixmaster', 'binary')
             self.file_mix_cfg = cfg.get('mixmaster', 'cfg')
@@ -274,12 +312,6 @@ class NymphemeralGUI():
             shutil.copyfile(BASE_FILES_PATH + '/db/generic.db', self.directory_db + '/generic.db')
             create_directory(self.directory_read_messages)
             create_directory(self.directory_unread_messages)
-            if not os.path.exists(self.file_hsub):
-                self.debug(
-                    'Creating ' + self.file_hsub.split('/')[-1] + ' - aampy will download messages from last hour')
-                time_stamp = time.time() - 3600.0
-                with open(self.file_hsub, 'w') as f:
-                    f.write('time ' + str(time_stamp) + '\n')
         except IOError:
             print 'Error while creating the base files'
             raise
@@ -314,48 +346,105 @@ class NymphemeralGUI():
         self.window_login.focus_force()
         self.entry_address_login.focus_set()
 
+    def decrypt_hsubs_file(self):
+        if os.path.exists(self.file_encrypted_hsub):
+            encrypted_data = read_data(self.file_encrypted_hsub)
+            gpg = new_gpg([self.directory_base])
+            decrypted_data = gpg.decrypt(encrypted_data,
+                                         passphrase=self.nym.passphrase,
+                                         always_trust=True)
+            if decrypted_data.ok:
+                return str(decrypted_data)
+        else:
+            self.debug('Decryption of ' + self.file_encrypted_hsub + ' failed. It does not exist')
+        return None
+
     def retrieve_hsubs(self):
         hsubs = {}
+        encrypt_hsubs = False
         try:
-            hsubs = self.aampy.readDict(self.file_hsub)
+            if os.path.exists(self.file_hsub):
+                hsubs = create_dictionary(read_data(self.file_hsub))
+
+            if os.path.exists(self.file_encrypted_hsub):
+                decrypted_data = self.decrypt_hsubs_file()
+                if decrypted_data:
+                    decrypted_hsubs = create_dictionary(str(decrypted_data))
+                    try:
+                        if hsubs['time'] < decrypted_hsubs['time']:
+                            hsubs = dict(decrypted_hsubs.items() + hsubs.items())
+                        else:
+                            hsubs = dict(hsubs.items() + decrypted_hsubs.items())
+                        # If KeyError was not raised, then self.file_hsub probably has hsubs to be encrypted
+                        encrypt_hsubs = True
+                    except KeyError:
+                        # hsubs probably has no 'time' key and self.file_hsub does not exist or has no timestamp
+                        hsubs = decrypted_hsubs
+            else:
+                encrypt_hsubs = True
         except IOError:
             print 'Error while manipulating ' + self.file_hsub.split('/')[-1]
+        if 'time' not in hsubs:
+            self.debug('Timestamp not found, aampy will download messages from last hour')
+            hsubs['time'] = time.time() - 3600.0
+        if encrypt_hsubs:
+            self.save_hsubs(hsubs)
         return hsubs
 
-    def retrieve_nyms(self):
+    def save_hsubs(self, hsubs):
+        output_file = self.file_hsub
+        data = ''
+        for key, item in hsubs.iteritems():
+            data += key + ' ' + str(item) + '\n'
+        if self.nym.fingerprint and (not os.path.exists(self.file_encrypted_hsub) or self.decrypt_hsubs_file()):
+            gpg = new_gpg([self.directory_base])
+            nyms = self.retrieve_nyms(gpg)
+            recipients = []
+            for n in nyms:
+                recipients.append(n.address)
+            result = gpg.encrypt(data,
+                                 recipients=recipients,
+                                 sign=self.nym.fingerprint,
+                                 passphrase=self.nym.passphrase,
+                                 always_trust=True)
+            if result.ok:
+                output_file = self.file_encrypted_hsub
+                data = str(result)
+        if save_data(data, output_file):
+            if output_file == self.file_encrypted_hsub:
+                if os.path.exists(self.file_hsub):
+                    os.unlink(self.file_hsub)
+                self.debug('The hsubs were encrypted and saved to ' + self.file_encrypted_hsub)
+            return True
+        else:
+            return False
+
+    def retrieve_nyms(self, gpg):
         nyms = []
-        hsubs = self.retrieve_hsubs()
-        keys = self.gpg.list_keys()
+        keys = gpg.list_keys()
         for item in keys:
             if len(item['uids']) is 1:
                 search = re.search('(?<=<).*(?=>)', item['uids'][0])
                 if search:
                     address = search.group()
-                    hsub = None
-                    if address in hsubs:
-                        hsub = hsubs[address]
                     nym = Nym(address=address,
-                              fingerprint=item['fingerprint'],
-                              hsub=hsub)
+                              fingerprint=item['fingerprint'])
                     nyms.append(nym)
         return nyms
 
-    def add_nym(self, nym):
+    def add_hsub(self, nym):
         try:
-            hsubs = self.retrieve_hsubs()
-            hsubs[nym.address] = nym.hsub
-            self.aampy.writeDict(self.file_hsub, hsubs)
-            self.nym = nym
+            self.hsubs[nym.address] = nym.hsub
+            self.save_hsubs(self.hsubs)
             return True
         except IOError:
             print 'Error while manipulating ' + self.file_hsub.split('/')[-1]
         return False
 
-    def delete_nym(self, nym):
+    def delete_hsub(self, nym):
         try:
-            hsubs = self.retrieve_hsubs()
-            del hsubs[nym.address]
-            self.aampy.writeDict(self.file_hsub, hsubs)
+            del self.hsubs[nym.address]
+            self.save_hsubs(self.hsubs)
             return True
         except IOError:
             print 'Error while manipulating ' + self.file_hsub.split('/')[-1]
@@ -404,7 +493,7 @@ class NymphemeralGUI():
                                      'Would you like to add it right now?'):
                 self.build_manage_key_window()
             return
-        nyms = self.retrieve_nyms()
+        nyms = self.retrieve_nyms(self.gpg)
         result = filter(lambda n: n.address == nym.address, nyms)
         if not result:
             if not tkMessageBox.askyesno('Nym Not Found',
@@ -413,7 +502,6 @@ class NymphemeralGUI():
                 return
         else:
             nym.fingerprint = result[0].fingerprint
-            nym.hsub = result[0].hsub
             if not nym.fingerprint:
                 tkMessageBox.showerror('Fingerprint Not Found',
                                        'Fingerprint for this nym was not found in the keyring.')
@@ -429,6 +517,11 @@ class NymphemeralGUI():
                 tkMessageBox.showerror('Database Error', 'Error when accessing the database.\nCheck the passphrase!')
                 return
         self.nym = nym
+        self.hsubs = self.retrieve_hsubs()
+        try:
+            self.nym.hsub = self.hsubs[nym.address]
+        except KeyError:
+            pass
         self.build_main_window()
 
     def append_messages_to_list(self, nym, read_messages, messages, messages_without_date):
@@ -926,12 +1019,13 @@ class NymphemeralGUI():
     def wait_for_event(self):
         if self.aampy_is_done:
             if self.queue_ammpy.get():
+                self.save_hsubs(self.hsubs)
                 self.load_messages()
             else:
                 self.disable_decrypt_interface(False)
                 tkMessageBox.showerror('Socket Error', 'The news server cannot be found!')
         else:
-            self.id_after = self.window_main.after(1000, self.wait_for_event)
+            self.id_after = self.window_main.after(1000, lambda: self.wait_for_event())
 
     def disable_decrypt_interface(self, aampy_is_running):
         self.button_save_del_decrypt.config(state=tk.DISABLED)
@@ -954,7 +1048,8 @@ class NymphemeralGUI():
             self.event_aampy = threading.Event()
             self.thread_event = threading.Thread(target=self.wait_for_aampy)
             self.thread_event.daemon = True
-            self.thread_aampy = threading.Thread(target=self.aampy.aam, args=(self.event_aampy, self.queue_ammpy, cfg))
+            self.thread_aampy = threading.Thread(target=self.aampy.aam, args=(self.event_aampy, self.queue_ammpy, cfg,
+                                                                              self.hsubs))
             self.thread_aampy.daemon = True
             self.thread_event.start()
             self.thread_aampy.start()
@@ -999,9 +1094,10 @@ class NymphemeralGUI():
                   hsub=hsub)
 
         if self.encrypt_and_send(data, recipient, fingerprint, passphrase, send_choice, self.text_create):
-            self.add_nym(nym)
             db_name = self.directory_db + '/' + nym.fingerprint + '.db'
             self.axolotl = Axolotl(nym.fingerprint, dbname=db_name, dbpassphrase=passphrase)
+            self.nym = nym
+            self.add_hsub(nym)
 
             self.enable_tabs(True)
             self.entry_ephemeral_create.config(state=tk.DISABLED)
@@ -1069,7 +1165,7 @@ class NymphemeralGUI():
                     self.generate_db(nym.fingerprint, ephemeral, nym.passphrase)
                 if reset_hsub:
                     nym.hsub = hsub
-                    self.add_nym(nym)
+                    self.add_hsub(nym)
 
     def send_delete(self):
         address = self.nym.address
@@ -1084,7 +1180,7 @@ class NymphemeralGUI():
             if self.encrypt_and_send(data, recipient, fingerprint, passphrase, send_choice, self.text_config):
                 if os.path.exists(db_file):
                     os.unlink(db_file)
-                self.delete_nym(self.nym)
+                self.delete_hsub(self.nym)
                 self.gpg.delete_keys(fingerprint, True)
                 self.gpg.delete_keys(fingerprint)
                 if send_choice is not 3:

@@ -38,11 +38,10 @@ import sys
 import hsub
 
 
-def aam(event, queue, cfg):
+def aam(event, queue, cfg, hsubs):
     # load configs
     is_debugging = cfg.getboolean('main', 'debug_switch')
     directory_unread_messages = cfg.get('main', 'unread_folder')
-    file_hsub = cfg.get('main', 'hsub_file')
     group = cfg.get('newsgroup', 'group')
     newsserver = cfg.get('newsgroup', 'server')
     newsport = int(cfg.get('newsgroup', 'port'))
@@ -60,22 +59,16 @@ def aam(event, queue, cfg):
         queue.put(False)
         event.set()
         return
-
     try:
-        hsubpassphrases = readDict(file_hsub)
-        try:
-            timeStamp = float(hsubpassphrases['time'])
-            del hsubpassphrases['time']
-        except KeyError:
-            timeStamp = time.time() - 3600.0
-            if is_debugging:
-                print 'Reading messages from last hour (no timestamp in' + file_hsub.split('/')[-1] + ')'
-        curTime = time.time()
-        YYMMDD = time.strftime('%y%m%d', time.gmtime(timeStamp))
-        HHMMSS = time.strftime('%H%M%S', time.gmtime(timeStamp))
-    except IOError:
-        print file_hsub.split('/')[-1] + ' file not found - exiting!'
-        sys.exit(1)
+        timeStamp = float(hsubs['time'])
+        del hsubs['time']
+    except KeyError:
+        timeStamp = time.time() - 3600.0
+        if is_debugging:
+            print 'Reading messages from last hour (no timestamp given)'
+    curTime = time.time()
+    YYMMDD = time.strftime('%y%m%d', time.gmtime(timeStamp))
+    HHMMSS = time.strftime('%H%M%S', time.gmtime(timeStamp))
 
     # connect to server
     server.newnews(group, YYMMDD, HHMMSS, newnews)
@@ -97,7 +90,7 @@ def aam(event, queue, cfg):
             message = email.message_from_string(text)
             match = False
 
-            for nick, passphrase in hsubpassphrases.items():
+            for nick, passphrase in hsubs.items():
                 for label, item in message.items():
                     if label == 'Subject':
                         match = hsub.check(passphrase, item)
@@ -110,24 +103,11 @@ def aam(event, queue, cfg):
                                 f.write(message.as_string()+'\n')
                                 if is_debugging:
                                     print 'Encrypted message stored in ' + fileName
-
-    hsubpassphrases['time'] = curTime
-    writeDict(file_hsub, hsubpassphrases)
+    hsubs['time'] = curTime
     if is_debugging:
         print 'aampy is done'
     event.set()
 
-
-def readDict(file):
-    with open(file, 'r') as f:
-        d = dict(line.strip().split(' ', 1) for line in f)
-    return d
-
-
-def writeDict(file, d):
-    with open(file, 'w') as f:
-        for key, item in d.iteritems():
-            f.write(key + ' ' + str(item) + '\n')
 
 if __name__ == '__main__':
     aam()
