@@ -150,7 +150,7 @@ class NymphemeralGUI():
 
         # attributes to handle aampy using threads
         self.event_aampy = None
-        self.queue_ammpy = Queue.Queue()
+        self.queue_aampy = Queue.Queue()
         self.thread_event = None
         self.thread_aampy = None
         self.aampy_is_done = True
@@ -362,32 +362,28 @@ class NymphemeralGUI():
     def retrieve_hsubs(self):
         hsubs = {}
         encrypt_hsubs = False
-        try:
-            if os.path.exists(self.file_hsub):
-                hsubs = create_dictionary(read_data(self.file_hsub))
 
-            if os.path.exists(self.file_encrypted_hsub):
-                decrypted_data = self.decrypt_hsubs_file()
-                if decrypted_data:
-                    decrypted_hsubs = create_dictionary(str(decrypted_data))
+        if os.path.exists(self.file_hsub):
+            hsubs = create_dictionary(read_data(self.file_hsub))
+
+        if os.path.exists(self.file_encrypted_hsub):
+            decrypted_data = self.decrypt_hsubs_file()
+            if decrypted_data:
+                decrypted_hsubs = create_dictionary(str(decrypted_data))
+                if hsubs:
+                    encrypt_hsubs = True
                     try:
                         if hsubs['time'] < decrypted_hsubs['time']:
                             hsubs = dict(decrypted_hsubs.items() + hsubs.items())
                         else:
                             hsubs = dict(hsubs.items() + decrypted_hsubs.items())
-                        # If KeyError was not raised, then self.file_hsub probably has hsubs to be encrypted
-                        encrypt_hsubs = True
                     except KeyError:
-                        # hsubs probably has no 'time' key and self.file_hsub does not exist or has no timestamp
-                        hsubs = decrypted_hsubs
-            else:
-                encrypt_hsubs = True
-        except IOError:
-            print 'Error while manipulating ' + self.file_hsub.split('/')[-1]
-        if 'time' not in hsubs:
-            self.debug('Timestamp not found, aampy will download messages from last hour')
-            hsubs['time'] = time.time() - 3600.0
-        if encrypt_hsubs:
+                         hsubs = dict(hsubs.items() + decrypted_hsubs.items())
+                else:
+                    hsubs = decrypted_hsubs
+        else:
+            encrypt_hsubs = True
+        if hsubs and encrypt_hsubs:
             self.save_hsubs(hsubs)
         return hsubs
 
@@ -442,13 +438,20 @@ class NymphemeralGUI():
         return False
 
     def delete_hsub(self, nym):
-        try:
-            del self.hsubs[nym.address]
+        del self.hsubs[nym.address]
+        if not self.hsubs or len(self.hsubs) == 1 and 'time' in self.hsubs:
+            if self.decrypt_hsubs_file():
+                hsub_file = self.file_encrypted_hsub
+            else:
+                hsub_file = self.file_hsub
+            try:
+                os.unlink(hsub_file)
+            except IOError:
+                print 'Error while manipulating ' + hsub_file.split('/')[-1]
+                return False
+        else:
             self.save_hsubs(self.hsubs)
-            return True
-        except IOError:
-            print 'Error while manipulating ' + self.file_hsub.split('/')[-1]
-        return False
+        return True
 
     def retrieve_fingerprint(self, address):
         keys = self.gpg.list_keys()
@@ -1018,7 +1021,7 @@ class NymphemeralGUI():
 
     def wait_for_event(self):
         if self.aampy_is_done:
-            if self.queue_ammpy.get():
+            if self.queue_aampy.get():
                 self.save_hsubs(self.hsubs)
                 self.load_messages()
             else:
@@ -1048,7 +1051,7 @@ class NymphemeralGUI():
             self.event_aampy = threading.Event()
             self.thread_event = threading.Thread(target=self.wait_for_aampy)
             self.thread_event.daemon = True
-            self.thread_aampy = threading.Thread(target=self.aampy.aam, args=(self.event_aampy, self.queue_ammpy, cfg,
+            self.thread_aampy = threading.Thread(target=self.aampy.aam, args=(self.event_aampy, self.queue_aampy, cfg,
                                                                               self.hsubs))
             self.thread_aampy.daemon = True
             self.thread_event.start()

@@ -65,7 +65,7 @@ def aam(event, queue, cfg, hsubs):
     except KeyError:
         timeStamp = time.time() - 3600.0
         if is_debugging:
-            print 'Reading messages from last hour (no timestamp given)'
+            print 'Timestamp not found, aampy will download messages from last hour'
     curTime = time.time()
     YYMMDD = time.strftime('%y%m%d', time.gmtime(timeStamp))
     HHMMSS = time.strftime('%H%M%S', time.gmtime(timeStamp))
