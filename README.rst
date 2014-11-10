@@ -90,6 +90,10 @@ time, ``nymphemeral.cfg`` will be automatically created in the
 ``~/.config/nymphemeral`` directory and you can edit it per your liking. You
 can also read the `client instructions`_ to better understand how it works.
 
+**Tip:** If encryption is taking too long, your system probably does not have
+enough entropy. Using tools such as `haveged`_ or `rng-tools`_ may solve this
+issue.
+
 Bug Tracker
 -----------
 Please report any suggestions, feature requests, bug reports, or annoyances
@@ -104,6 +108,7 @@ for the original nymserv software.**
 .. _`client instructions`: https://felipedau.github.io/nymphemeral/usage/usage.html
 .. _`crooks`: https://github.com/crooks
 .. _`curve25519-donna`: https://github.com/agl/curve25519-donna
+.. _`haveged`: http://www.issihosts.com/haveged/
 .. _`issue tracker`: https://github.com/felipedau/nymphemeral/issues
 .. _`mixmaster instructions`: https://anemone.mooo.com/mixmaster.html
 .. _`mixmaster`: http://www.zen19351.zen.co.uk/mixmaster302
@@ -115,6 +120,7 @@ for the original nymserv software.**
 .. _`pyaxo`: https://github.com/rxcomm/pyaxo
 .. _`python-dateutil`: https://pypi.python.org/pypi/python-dateutil
 .. _`python-gnupg`: https://pypi.python.org/pypi/python-gnupg
+.. _`rng-tools`: https://www.gnu.org/software/hurd/user/tlecarrour/rng-tools.html
 .. _`rxcomm`: https://github.com/rxcomm
 .. _`setuptools`: https://pypi.python.org/pypi/setuptools
 .. _`socat`: http://www.dest-unreach.org/socat
