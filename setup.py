@@ -34,7 +34,7 @@ BASE_DIRECTORY = '/usr/share/nymphemeral'
 
 setup(
     name='nymphemeral',
-    version='1.1.1',
+    version='1.2.1',
     description='An ephemeral nymserver GUI client',
     url='https://github.com/felipedau/nymphemeral',
     author='Felipe Dau',
@@ -65,6 +65,7 @@ setup(
         'python-dateutil>=2.2',
     ],
     data_files=[
+        (BASE_DIRECTORY, ['CHANGELOG']),
         (BASE_DIRECTORY, ['COPYING']),
         (BASE_DIRECTORY, ['README.rst']),
         (BASE_DIRECTORY + '/db', glob('db/generic.db')),
