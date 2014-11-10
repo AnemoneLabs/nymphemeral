@@ -1358,8 +1358,13 @@ class NymphemeralGUI():
         for line in msg.content.splitlines():
             content += '> ' + line + '\n'
         self.text_send.delete(1.0, tk.END)
+        cursor_position = 1.0
+        message_id = msg.processed_message.get('Message-ID')
+        if message_id:
+            content = 'In-Reply-To: ' + message_id + '\n\n' + content
+            cursor_position = 3.0
         self.text_send.insert(tk.INSERT, content)
-        self.text_send.mark_set(tk.INSERT, 1.0)
+        self.text_send.mark_set(tk.INSERT, cursor_position)
         self.notebook_login.select(1)
         self.text_send.focus_set()
 
