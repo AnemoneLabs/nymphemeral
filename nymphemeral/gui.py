@@ -33,7 +33,7 @@ For more information, see https://github.com/felipedau/nymphemeral
 
 __author__ = 'Felipe Dau and David R. Andersen'
 __license__ = 'GPL'
-__version__ = '1.2.2'
+__version__ = '1.2.2.1'
 __status__ = 'Prototype'
 
 import Tkinter as tk
@@ -47,7 +47,6 @@ import shutil
 import tkMessageBox
 import threading
 import Queue
-import time
 import ConfigParser
 import email
 import itertools
@@ -68,6 +67,11 @@ BASE_FILES_PATH = '/usr/share/nymphemeral'
 USER_PATH = os.path.expanduser('~')
 NYMPHEMERAL_PATH = USER_PATH + '/.config/nymphemeral'
 CONFIG_FILE = NYMPHEMERAL_PATH + '/nymphemeral.cfg'
+OUTPUT_METHOD = {
+    'mixmaster': 1,
+    'sendmail': 2,
+    'manual': 3,
+}
 
 
 def files_in_path(path):
@@ -141,6 +145,7 @@ class NymphemeralGUI():
         self.file_hsub = None
         self.file_mix_binary = None
         self.file_mix_cfg = None
+        self.output_method = None
         self.check_base_files()
 
         self.gpg = new_gpg([self.directory_base, self.directory_gpg])
@@ -163,7 +168,7 @@ class NymphemeralGUI():
         self.nym = None
         self.hsubs = {}
         self.chain = None
-        self.send_choice = None
+        self.var_output_method = None
 
         self.messages = []
         self.current_message_index = None
@@ -245,6 +250,9 @@ class NymphemeralGUI():
         else:
             return None
 
+    def update_configs(self):
+        cfg.set('main', 'output_method', self.output_method)
+
     def save_configs(self):
         with open(CONFIG_FILE, 'w') as config_file:
             cfg.write(config_file)
@@ -263,6 +271,7 @@ class NymphemeralGUI():
             cfg.set('main', 'hsub_file', '%(base_folder)s/hsubs.txt')
             cfg.set('main', 'encrypted_hsub_file', '%(base_folder)s/encrypted_hsubs.txt')
             cfg.set('main', 'debug_switch', 'False')
+            cfg.set('main', 'output_method', 'manual')
             cfg.add_section('mixmaster')
             cfg.set('mixmaster', 'base_folder', USER_PATH + '/Mix')
             cfg.set('mixmaster', 'binary', '%(base_folder)s/mixmaster')
@@ -299,6 +308,7 @@ class NymphemeralGUI():
             self.file_hsub = cfg.get('main', 'hsub_file')
             self.file_encrypted_hsub = cfg.get('main', 'encrypted_hsub_file')
             self.is_debugging = cfg.getboolean('main', 'debug_switch')
+            self.output_method = cfg.get('main', 'output_method')
             self.file_mix_binary = cfg.get('mixmaster', 'binary')
             self.file_mix_cfg = cfg.get('mixmaster', 'cfg')
         except IOError:
@@ -479,6 +489,15 @@ class NymphemeralGUI():
                 servers[server] = item['fingerprint']
         return servers
 
+    def update_output_method(self):
+        if self.var_output_method != OUTPUT_METHOD[self.output_method]:
+            for key, i in OUTPUT_METHOD.iteritems():
+                if i == self.var_output_method.get():
+                    self.output_method = key
+                    break
+            self.update_configs()
+            self.save_configs()
+
     def start_session(self, event=None):
         address = self.entry_address_login.get().lower()
         if not re.match(r'[^@]+@[^@]+\.[^@]+', address):
@@ -525,6 +544,8 @@ class NymphemeralGUI():
             self.nym.hsub = self.hsubs[nym.address]
         except KeyError:
             pass
+        self.update_output_method()
+
         self.build_main_window()
 
     def append_messages_to_list(self, nym, read_messages, messages, messages_without_date):
@@ -611,8 +632,9 @@ class NymphemeralGUI():
         # output radio buttons
         frame_radio = tk.LabelFrame(frame_login, text='Output Method')
         frame_radio.grid(pady=(10, 0), ipadx=5, ipady=5, sticky='we')
-        self.send_choice = tk.IntVar()
-        radio_mix = tk.Radiobutton(frame_radio, text='Send via Mixmaster', variable=self.send_choice, value=1)
+        self.var_output_method = tk.IntVar()
+        radio_mix = tk.Radiobutton(frame_radio, text='Send via Mixmaster', variable=self.var_output_method,
+                                   value=OUTPUT_METHOD['mixmaster'])
         radio_mix.grid(pady=(5, 0), sticky='w')
         chain = self.retrieve_mix_chain()
         self.chain = chain
@@ -621,13 +643,14 @@ class NymphemeralGUI():
             chain = 'Error while manipulating mix.cfg'
         label_chain = tk.Label(frame_radio, text=chain)
         label_chain.grid(sticky='w', padx=(25, 0))
-        radio_email = tk.Radiobutton(frame_radio, text='Send via Email', variable=self.send_choice, value=2)
+        radio_email = tk.Radiobutton(frame_radio, text='Send via Email', variable=self.var_output_method,
+                                     value=OUTPUT_METHOD['sendmail'])
         radio_email.grid(sticky='w')
         radio_text = tk.Radiobutton(frame_radio, text='Display Output in Message Window',
-                                    variable=self.send_choice,
-                                    value=3)
+                                    variable=self.var_output_method,
+                                    value=OUTPUT_METHOD['manual'])
         radio_text.grid(sticky='w')
-        self.send_choice.set(3)
+        self.var_output_method.set(OUTPUT_METHOD[self.output_method])
 
         # start button
         button_start = tk.Button(frame_login, text='Start Session', command=self.start_session)
@@ -751,7 +774,7 @@ class NymphemeralGUI():
         frame_address.pack(fill=tk.X, expand=True)
         label_address = tk.Label(frame_address, text=self.nym.address)
         label_address.pack(side=tk.LEFT)
-        if self.send_choice.get() is 1:
+        if self.output_method is 'mixmaster':
             frame_chain = tk.Frame(frame_left)
             frame_chain.pack(fill=tk.X, expand=True)
             label_chain = tk.Label(frame_chain, text=self.chain)
@@ -1071,7 +1094,7 @@ class NymphemeralGUI():
         address = self.nym.address
         ephemeral = self.entry_ephemeral_create.get().strip()
         hsub = self.entry_hsub_create.get().strip()
-        send_choice = self.send_choice.get()
+        output_method = self.output_method
         recipient = 'config@' + self.nym.server
 
         if not len(hsub):
@@ -1096,7 +1119,7 @@ class NymphemeralGUI():
                   fingerprint=fingerprint,
                   hsub=hsub)
 
-        if self.encrypt_and_send(data, recipient, fingerprint, passphrase, send_choice, self.text_create):
+        if self.encrypt_and_send(data, recipient, fingerprint, passphrase, output_method, self.text_create):
             db_name = self.directory_db + '/' + nym.fingerprint + '.db'
             self.axolotl = Axolotl(nym.fingerprint, dbname=db_name, dbpassphrase=passphrase)
             self.nym = nym
@@ -1114,7 +1137,7 @@ class NymphemeralGUI():
         fingerprint = self.nym.fingerprint
         target_address = self.entry_target_send.get().lower()
         subject = self.entry_subject_send.get()
-        send_choice = self.send_choice.get()
+        output_method = self.output_method
         recipient = 'send@' + self.nym.server
         msg = email.message_from_string('To: ' + target_address +
                                         '\nSubject: ' + subject +
@@ -1130,13 +1153,13 @@ class NymphemeralGUI():
             pgp_message += line + '\n'
         pgp_message += '-----END PGP MESSAGE-----\n'
 
-        self.encrypt_and_send(pgp_message, recipient, fingerprint, passphrase, send_choice, self.text_send)
+        self.encrypt_and_send(pgp_message, recipient, fingerprint, passphrase, output_method, self.text_send)
 
     def send_config(self):
         nym = Nym(address=self.nym.address,
                   passphrase=self.nym.passphrase,
                   fingerprint=self.nym.fingerprint)
-        send_choice = self.send_choice.get()
+        output_method = self.output_method
         db_file = self.directory_db + '/' + nym.fingerprint + '.db'
         recipient = 'config@' + nym.server
         reset_db = False
@@ -1161,7 +1184,7 @@ class NymphemeralGUI():
 
         data = ephemeral_line + hsub_line + name_line
         if data is not '':
-            if self.encrypt_and_send(data, recipient, nym.fingerprint, nym.passphrase, send_choice, self.text_config):
+            if self.encrypt_and_send(data, recipient, nym.fingerprint, nym.passphrase, output_method, self.text_config):
                 if reset_db:
                     if os.path.exists(db_file):
                         os.unlink(db_file)
@@ -1174,33 +1197,33 @@ class NymphemeralGUI():
         address = self.nym.address
         if tkMessageBox.askyesno('Confirm', 'Are you sure you want to delete "' + address + '"?'):
             passphrase = self.nym.passphrase
-            send_choice = self.send_choice.get()
+            output_method = self.output_method
             fingerprint = self.nym.fingerprint
             db_file = self.directory_db + '/' + fingerprint + '.db'
             recipient = 'config@' + self.nym.server
 
             data = 'delete: yes'
-            if self.encrypt_and_send(data, recipient, fingerprint, passphrase, send_choice, self.text_config):
+            if self.encrypt_and_send(data, recipient, fingerprint, passphrase, output_method, self.text_config):
                 if os.path.exists(db_file):
                     os.unlink(db_file)
                 self.delete_hsub(self.nym)
                 self.gpg.delete_keys(fingerprint, True)
                 self.gpg.delete_keys(fingerprint)
-                if send_choice is not 3:
+                if output_method is not 'manual':
                     self.change_nym()
 
-    def encrypt_and_send(self, data, recipient, fingerprint, passphrase, send_choice, target_text):
+    def encrypt_and_send(self, data, recipient, fingerprint, passphrase, output_method, target_text):
         success = False
         ciphertext = self.encrypt_data(data, recipient, fingerprint, passphrase)
         if ciphertext:
             success = True
-            if send_choice == 3:
+            if output_method == 'manual':
                 info = 'Send the following message to ' + recipient
                 if self.copy_pgp_message(ciphertext):
                     info += '\nIt has been copied to the clipboard'
             else:
                 data = 'To: ' + recipient + '\nSubject: test\n\n' + ciphertext
-                if self.send_data(data, send_choice):
+                if self.send_data(data, output_method):
                     info = 'The following message was successfully sent'
                 else:
                     info = 'ERROR! The following message could not be sent'
@@ -1386,10 +1409,10 @@ class NymphemeralGUI():
                                                                      '--s2k-digest-algo=sha256'])
         self.gpg.encoding = 'latin-1'
 
-    def send_data(self, data, send_choice):
-        if send_choice == 1:
+    def send_data(self, data, output_method):
+        if output_method == 'mixmaster':
             p = subprocess.Popen([self.file_mix_binary, '-m'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        elif send_choice == 2:
+        elif output_method == 'sendmail':
             p = subprocess.Popen(['sendmail', '-t'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         else:
             self.debug('Invalid send choice')
