@@ -3,28 +3,23 @@
 
 Features
 --------
-- Created to be used with the `new nymserv`_, a Zax-style nymserver with
+- Created to be used with the `new nymserv`_, a Zax-style nym server with
   forward secrecy
 - Uses `python-gnupg`_ and `pyaxo`_ for encryption
 - Uses `aampy`_ to retrieve messages from `alt.anonymous.messages`_
 - Sends messages through `mixmaster`_, sendmail, or outputs the resulting
   ciphertexts to be sent manually
-- Manages the nymservers public keys
+- Manages the nym servers public keys
 
 Current Release
 ---------------
-The current version of nymphemeral is 1.2.2, a prototype, released 2014-11-11.
+The current version of nymphemeral is 1.2.3, a prototype, released 2015-02-15.
 
 Installation (on a Debian Wheezy/Ubuntu Trusty system)
 ------------------------------------------------------
 **Main Dependencies:**
 
-The simplest way to install nymphemeral is with `pip`_. For *pip* versions >=
-1.5::
-
-    sudo pip install --process-dependency-links nymphemeral
-
-and for *pip* versions 1.4.x and below::
+If you use `pip`_, install nymphemeral with::
 
     sudo pip install nymphemeral
 
@@ -35,14 +30,13 @@ If you do not use *pip*, first make sure that you have the following::
 
     sudo apt-get install python-dev python-tk
 
-nymphemeral also uses `curve25519-donna`_, `pyaxo`_, `python-dateutil`_ and
-`python-gnupg`_, and the easiest way to install those is using `setuptools`_.
-After making sure you have *setuptools*, go to `pyaxo`_ and install it as
-well. Finally, from nymphemeral's source folder, install with::
+nymphemeral also uses `pyaxo`_, `python-dateutil`_ and `python-gnupg`_, and
+the easiest way to install those is using `setuptools`_. After making sure you
+have *setuptools*, from nymphemeral's source folder, install with::
 
     sudo python setup.py install
 
-*python-dateutil* and *python-gnupg* will be installed automatically.
+The dependencies will be installed automatically.
 
 If you do not use *setuptools* as well, you will have to install each
 dependency and sub-dependencies manually.
@@ -84,7 +78,7 @@ To run nymphemeral, type the following at the command line::
     nymphemeral
 
 nymphemeral only works with the `new nymserv`_. Currently, `nym.now.im`_
-is the only nymserv running this code. The nymphemeral GUI is very
+is the only nym server running this code. The nymphemeral GUI is very
 friendly and should be straightforward. When the client is run for the first
 time, ``nymphemeral.cfg`` will be automatically created in the
 ``~/.config/nymphemeral`` directory and you can edit it per your liking. You
@@ -107,7 +101,6 @@ for the original nymserv software.**
 .. _`alt.anonymous.messages`: https://groups.google.com/forum/#!forum/alt.anonymous.messages
 .. _`client instructions`: https://felipedau.github.io/nymphemeral/usage/usage.html
 .. _`crooks`: https://github.com/crooks
-.. _`curve25519-donna`: https://github.com/agl/curve25519-donna
 .. _`haveged`: http://www.issihosts.com/haveged/
 .. _`issue tracker`: https://github.com/felipedau/nymphemeral/issues
 .. _`mixmaster instructions`: https://anemone.mooo.com/mixmaster.html
