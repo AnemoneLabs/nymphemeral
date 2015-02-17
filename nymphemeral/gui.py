@@ -299,7 +299,7 @@ class MainWindow(tk.Tk, object):
         self.notebook.add(self.tab_unread, text='Unread Counter')
 
         if creating_nym:
-            self.tab_create = tk.Frame(self.notebook)
+            self.tab_create = CreationTab(self.gui, self.notebook)
             self.tabs.append(self.tab_create)
             self.notebook.add(self.tab_create, text='Create Nym')
             self.set_creation_interface(True)
@@ -347,6 +347,88 @@ class MainWindow(tk.Tk, object):
             self.set_all_tabs_state(False, [self.tab_create])
         else:
             self.set_all_tabs_state(True)
+
+
+class CreationTab(tk.Frame, object):
+    def __init__(self, gui, parent):
+        super(CreationTab, self).__init__(parent)
+
+        self.gui = gui
+
+        frame_tab = tk.Frame(self)
+        frame_tab.grid(sticky='nswe', padx=15, pady=15)
+
+        # ephemeral
+        label_ephemeral = tk.Label(frame_tab, text='Ephemeral Key')
+        label_ephemeral.grid(sticky='w')
+        self.entry_ephemeral_create = tk.Entry(frame_tab)
+        self.entry_ephemeral_create.grid(sticky='we')
+
+        # hSub
+        label_hsub = tk.Label(frame_tab, text='hSub Passphrase')
+        label_hsub.grid(sticky=tk.W, pady=(10, 0))
+        self.entry_hsub_create = tk.Entry(frame_tab)
+        self.entry_hsub_create.grid(sticky='we')
+
+        # name
+        label_name = tk.Label(frame_tab, text='Name')
+        label_name.grid(sticky=tk.W, pady=(10, 0))
+        self.entry_name_create = tk.Entry(frame_tab)
+        self.entry_name_create.grid(sticky='we')
+
+        # duration
+        label_duration = tk.Label(frame_tab, text='Duration')
+        label_duration.grid(sticky=tk.W, pady=(10, 0))
+        self.entry_duration_create = tk.Entry(frame_tab)
+        self.entry_duration_create.grid(sticky='we')
+
+        # create button
+        self.button_create = tk.Button(frame_tab, text='Create Nym',
+                                       command=lambda: self.create(self.entry_ephemeral_create.get(),
+                                                                   self.entry_hsub_create.get(),
+                                                                   self.entry_name_create.get(),
+                                                                   self.entry_duration_create.get()))
+        self.button_create.grid(pady=(10, 0))
+
+        # message box
+        frame_text = tk.LabelFrame(frame_tab, text='Nym Creation Headers and Configuration')
+        frame_text.grid(sticky='we', pady=10)
+        self.text_create = tk.Text(frame_text, height=25)
+        self.text_create.grid(row=0, column=0)
+        scrollbar = tk.Scrollbar(frame_text, command=self.text_create.yview)
+        scrollbar.grid(row=0, column=1, sticky='ns')
+        self.text_create['yscrollcommand'] = scrollbar.set
+        self.text_create.insert(tk.INSERT,
+                                'Key generation may take a long time after you click the "Create Nym" button.'
+                                '\nBe prepared to wait...')
+
+    def set_interface(self, enabled):
+        if enabled:
+            state = tk.NORMAL
+        else:
+            state = tk.DISABLED
+        self.entry_ephemeral_create.config(state=state)
+        self.entry_hsub_create.config(state=state)
+        self.entry_name_create.config(state=state)
+        self.entry_duration_create.config(state=state)
+        self.button_create.config(state=state)
+
+    def create(self, ephemeral, hsub, name, duration):
+        try:
+            if not len(ephemeral):
+                raise InvalidEphemeralKeyError
+            if not len(hsub):
+                raise InvalidHsubError
+        except (InvalidHsubError, InvalidEphemeralKeyError) as e:
+            tkMessageBox.showerror(e.title, e.message)
+        else:
+            success, info, ciphertext = self.gui.client.send_create(ephemeral, hsub, name, duration)
+            self.text_create.delete(1.0, tk.END)
+            self.text_create.insert(tk.INSERT, info)
+            self.text_create.insert(tk.INSERT, ciphertext)
+            if success:
+                self.set_interface(False)
+                self.gui.window_main.set_creation_interface(False)
 
 
 if __name__ == '__main__':
