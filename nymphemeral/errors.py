@@ -28,6 +28,12 @@ class NymNotFoundError(NymphemeralError):
         self.message = '"' + nym + '" does not exist.'
 
 
+class NewsserverNotFoundError(NymphemeralError):
+    def __init__(self, server, port):
+        self.title = 'Socket Error'
+        self.message = 'The server running on ' + server + ':' + str(port) + ' could not be found.'
+
+
 class FingerprintNotFoundError(NymphemeralError):
     def __init__(self, nym):
         self.title = 'Fingerprint Not Found'
@@ -50,3 +56,9 @@ class InvalidEphemeralKeyError(NymphemeralError):
     def __init__(self, nym):
         self.title = 'Invalid Ephemeral Key'
         self.message = 'The ephemeral key provided (empty) is not valid.'
+
+
+class UndecipherableMessageError(NymphemeralError):
+    def __init__(self):
+        self.title = 'Undecipherable Message'
+        self.message = 'The message could not be deciphered.'

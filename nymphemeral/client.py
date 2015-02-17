@@ -153,6 +153,15 @@ class Client:
         self.nym = None
         self.hsubs = {}
 
+        # attributes to handle aampy (to retrieve new messages) using threads
+        self.aampy_is_done = True
+        self.event_aampy = None
+        self.queue_aampy = None
+        self.thread_aampy = None
+        self.thread_aampy_event = None
+
+        self.thread_decrypt = None
+
         self.chain = self.retrieve_mix_chain()
 
     def debug(self, info):
@@ -444,7 +453,6 @@ class Client:
     def send_create(self, ephemeral, hsub, name, duration):
         recipient = 'config@' + self.nym.server
         pubkey, fingerprint = generate_key(self.gpg, name, self.nym.address, self.nym.passphrase, duration)
-        print fingerprint, pubkey
         self.generate_db(fingerprint, ephemeral, self.nym.passphrase)
         data = 'ephemeral: ' + ephemeral + '\nhsub: ' + hsub + '\n' + pubkey
 
@@ -566,6 +574,103 @@ class Client:
                 except KeyError:
                     counter[nym.group()] = 1
         return counter
+
+    def start_aampy(self):
+        self.event_aampy = threading.Event()
+        self.thread_aampy_event = threading.Thread(target=self.wait_for_aampy)
+        self.thread_aampy_event.daemon = True
+        self.queue_aampy = Queue.Queue()
+        self.thread_aampy = threading.Thread(target=aampy.aam, args=(self.event_aampy, self.queue_aampy, self.hsubs, cfg))
+        self.thread_aampy.daemon = True
+
+        self.thread_aampy_event.start()
+        self.thread_aampy.start()
+
+    def stop_aampy(self):
+        self.event_aampy.set()
+
+    def wait_for_aampy(self):
+        try:
+            time = self.hsubs['time']
+        except KeyError:
+            time = 0
+        self.aampy_is_done = False
+        self.event_aampy.wait()
+        self.aampy_is_done = True
+        if self.hsubs and time != self.hsubs['time']:
+            self.save_hsubs(self.hsubs)
+
+    def decrypt_ephemeral_data(self, data, queue):
+        ciphertext = None
+        self.axolotl.loadState(self.nym.fingerprint, 'a')
+        # workaround to suppress prints by pyaxo
+        sys.stdout = open(os.devnull, 'w')
+        try:
+            ciphertext = self.axolotl.decrypt(a2b_base64(data)).strip()
+        except SystemExit:
+            sys.stdout = sys.__stdout__
+            self.debug('Error while decrypting message')
+        else:
+            sys.stdout = sys.__stdout__
+            self.axolotl.saveState()
+        queue.put(ciphertext)
+
+    def decrypt_ephemeral_message(self, msg):
+        exp = re.compile('^[A-Za-z0-9+\/=]+\Z')
+        buf = msg.content.splitlines()
+        data = ''
+        for item in buf:
+            if len(item.strip()) % 4 == 0 and exp.match(item) and len(
+                    item.strip()) <= 64 and not item.startswith(' '):
+                data += item
+        queue = Queue.Queue()
+        self.thread_decrypt = threading.Thread(target=self.decrypt_ephemeral_data, args=(data, queue))
+        self.thread_decrypt.start()
+        self.thread_decrypt.join()
+        ciphertext = queue.get()
+        self.delete_message_from_disk(msg)
+        if ciphertext:
+            self.debug('Ephemeral layer decrypted')
+            if is_pgp_message(ciphertext):
+                plaintext = decrypt_data(self.gpg, ciphertext, self.nym.passphrase)
+                if plaintext:
+                    self.debug('Asymmetric layer decrypted')
+                else:
+                    self.debug('Asymmetric layer not decrypted')
+                    plaintext = 'There is still an asymmetric layer that could not be decrypted:\n\n' + ciphertext
+            else:
+                plaintext = ciphertext
+            return message.Message(False, plaintext, msg.identifier)
+        else:
+            raise UndecipherableMessageError
+
+    def save_message_to_disk(self, msg):
+        try:
+            new_identifier = self.directory_read_messages + '/' + msg.identifier.split('/')[-1]
+            data = msg.processed_message.as_string()
+            ciphertext = encrypt_data(self.gpg, data, self.nym.address, self.nym.fingerprint, self.nym.passphrase)
+            if ciphertext:
+                data = ciphertext
+            else:
+                self.debug('Message encryption failed. Will be saved as plain text')
+            if save_data(data, new_identifier):
+                self.debug('Message saved to disk')
+                return new_identifier
+            else:
+                self.debug('Message could not be saved')
+        except IOError:
+            print 'Error while saving to disk' + ':', sys.exc_info()[0]
+        return None
+
+    def delete_message_from_disk(self, msg):
+        try:
+            if os.path.exists(msg.identifier):
+                os.unlink(msg.identifier)
+                self.debug('Message deleted from disk')
+            return True
+        except IOError:
+            print 'Error while deleting from disk' + ':', sys.exc_info()[0]
+        return False
 
     def generate_db(self, fingerprint, mkey, passphrase):
         mkey = hashlib.sha256(mkey).digest()

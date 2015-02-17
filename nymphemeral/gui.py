@@ -72,6 +72,8 @@ class Gui:
         self.window_main = MainWindow(self, creating_nym)
 
     def end_session(self):
+        if not self.client.aampy_is_done:
+            self.window_main.stop_retrieving_messages()
         self.client.end_session()
         self.window_main.destroy()
         self.window_login = LoginWindow(self)
@@ -142,9 +144,9 @@ class LoginWindow(tk.Tk, object):
 
     def start_session(self, address, passphrase, creating_nym=False):
         try:
+            nym = Nym(address, passphrase)
             if not len(passphrase):
                 raise InvalidPassphraseError
-            nym = Nym(address, passphrase)
             self.gui.client.start_session(nym, creating_nym)
         except (InvalidEmailAddressError, InvalidPassphraseError, FingerprintNotFoundError,
                 IncorrectPassphraseError) as e:
@@ -188,8 +190,8 @@ class ServersWindow(tk.Tk, object):
         # modify button
         self.button_modify_servers = tk.Button(frame_servers, text='Modify',
                                                command=lambda: KeyWindow(self.gui, self,
-                                                                               self.list_servers.get(
-                                                                                   self.list_servers.curselection())),
+                                                                         self.list_servers.get(
+                                                                             self.list_servers.curselection())),
                                                state=tk.DISABLED)
         self.button_modify_servers.grid(row=buttons_row, pady=(10, 0))
 
@@ -270,6 +272,7 @@ class MainWindow(tk.Tk, object):
 
         self.gui = gui
         self.tabs = []
+        self.id_after = None
 
         # root window
         self.title('nymphemeral')
@@ -282,7 +285,7 @@ class MainWindow(tk.Tk, object):
         self.notebook = ttk.Notebook(frame_tab)
         self.notebook.pack()
 
-        self.tab_inbox = tk.Frame(self.notebook)
+        self.tab_inbox = InboxTab(self.gui, self.notebook)
         self.tabs.append(self.tab_inbox)
         self.notebook.add(self.tab_inbox, text='Inbox')
 
@@ -347,6 +350,12 @@ class MainWindow(tk.Tk, object):
             self.set_all_tabs_state(False, [self.tab_create])
         else:
             self.set_all_tabs_state(True)
+
+    def stop_retrieving_messages(self):
+        if self.id_after:
+            self.after_cancel(self.id_after)
+            self.id_after = None
+        self.tab_inbox.stop_retrieving_messages()
 
 
 class CreationTab(tk.Frame, object):
@@ -429,6 +438,168 @@ class CreationTab(tk.Frame, object):
             if success:
                 self.set_interface(False)
                 self.gui.window_main.set_creation_interface(False)
+
+
+class InboxTab(tk.Frame, object):
+    def __init__(self, gui, parent):
+        super(InboxTab, self).__init__(parent)
+
+        self.gui = gui
+        self.messages = None
+        self.current_message_index = None
+
+        frame_tab = tk.Frame(self)
+        frame_tab.grid(sticky='nswe', padx=15, pady=15)
+
+        frame_retrieve = tk.Frame(frame_tab)
+        frame_retrieve.grid(sticky='w', pady=(0, 10))
+
+        # retrieve button
+        self.button_aampy_inbox = tk.Button(frame_retrieve, width=14, text='Retrieve Messages',
+                                              command=self.start_retrieving_messages)
+        self.button_aampy_inbox.grid(row=0, sticky='w')
+
+        # progress bar
+        self.progress_bar_inbox = ttk.Progressbar(frame_retrieve, mode='indeterminate', length=427)
+
+        # messages list box
+        frame_list = tk.LabelFrame(frame_tab, text='Messages')
+        frame_list.grid(sticky='we')
+        self.list_messages_inbox = tk.Listbox(frame_list, height=11, width=70)
+        self.list_messages_inbox.grid(row=0, column=0, sticky='we')
+        scrollbar_list = tk.Scrollbar(frame_list, command=self.list_messages_inbox.yview)
+        scrollbar_list.grid(row=0, column=1, sticky='nsew')
+        self.list_messages_inbox['yscrollcommand'] = scrollbar_list.set
+        self.list_messages_inbox.bind('<<ListboxSelect>>', self.select_message)
+
+        # content list box
+        frame_text = tk.LabelFrame(frame_tab, text='Content')
+        frame_text.grid(pady=10, sticky='we')
+        self.text_content_inbox = tk.Text(frame_text, height=22)
+        self.text_content_inbox.grid(row=0, column=0, sticky='we')
+        scrollbar_text = tk.Scrollbar(frame_text, command=self.text_content_inbox.yview)
+        scrollbar_text.grid(row=0, column=1, sticky='nsew')
+        self.text_content_inbox['yscrollcommand'] = scrollbar_text.set
+
+        buttons_row = frame_tab.grid_size()[1] + 1
+
+        # save/delete button
+        self.button_save_del_inbox = tk.Button(frame_tab, text='Save to Disk', command=self.save_and_update_interface)
+        self.button_save_del_inbox.grid(row=buttons_row, sticky='w', pady=(10, 0))
+
+        # reply button
+        self.button_reply_inbox = tk.Button(frame_tab, text='Reply Message', command=self.reply_message)
+        self.button_reply_inbox.grid(row=buttons_row, sticky='e', pady=(10, 0))
+
+        # notification label
+        self.label_save_del_inbox = tk.Label(frame_tab)
+        self.label_save_del_inbox.grid(row=buttons_row, pady=(10, 0))
+
+        self.load_messages()
+
+    def update_messages_list(self):
+        self.toggle_interface(False)
+        self.list_messages_inbox.delete(0, tk.END)
+        for m in self.messages:
+            self.list_messages_inbox.insert(tk.END, m.title)
+
+    def load_messages(self):
+        self.messages = self.gui.client.retrieve_messages_from_disk()
+        self.current_message_index = None
+        self.update_messages_list()
+
+    def start_retrieving_messages(self):
+        self.gui.client.start_aampy()
+        self.wait_for_retrieval()
+        self.toggle_interface(True)
+
+    def stop_retrieving_messages(self):
+        self.gui.client.stop_aampy()
+        self.toggle_interface(False)
+
+    def wait_for_retrieval(self):
+        if self.gui.client.aampy_is_done:
+            self.gui.window_main.id_after = None
+            if self.gui.client.queue_aampy.get()['server_found']:
+                self.load_messages()
+            else:
+                self.toggle_interface(False)
+                tkMessageBox.showerror('Socket Error', 'The news server cannot be found!')
+        else:
+            self.gui.window_main.id_after = self.gui.window_main.after(1000, lambda: self.wait_for_retrieval())
+
+    def toggle_interface(self, retrieving_messages):
+        self.button_save_del_inbox.config(state=tk.DISABLED)
+        self.button_reply_inbox.config(state=tk.DISABLED)
+        if retrieving_messages:
+            self.list_messages_inbox.config(state=tk.DISABLED)
+            self.text_content_inbox.config(state=tk.DISABLED)
+            self.progress_bar_inbox.grid(row=0, column=1, sticky='nswe', padx=(15, 0))
+            self.progress_bar_inbox.start(25)
+            self.button_aampy_inbox.config(text='Stop', command=self.stop_retrieving_messages)
+        else:
+            self.list_messages_inbox.config(state=tk.NORMAL)
+            self.text_content_inbox.config(state=tk.NORMAL)
+            self.progress_bar_inbox.stop()
+            self.progress_bar_inbox.grid_forget()
+            self.button_aampy_inbox.config(text='Retrieve Messages', command=self.start_retrieving_messages)
+
+    def select_message(self, event):
+        if len(self.messages) and self.gui.client.aampy_is_done:
+            index = int(event.widget.curselection()[0])
+            selected_message = self.messages[index]
+            self.current_message_index = index
+
+            self.text_content_inbox.delete(1.0, tk.END)
+
+            if selected_message.is_unread:
+                self.button_save_del_inbox.config(state=tk.DISABLED)
+                self.button_reply_inbox.config(state=tk.DISABLED)
+
+                try:
+                    self.messages[index] = self.gui.client.decrypt_ephemeral_message(selected_message)
+                except UndecipherableMessageError as e:
+                    tkMessageBox.showerror(e.title, e.message)
+                    self.messages.pop(index)
+                    self.current_message_index = None
+                    self.update_messages_list()
+                else:
+                    self.text_content_inbox.insert(tk.INSERT, self.messages[index].content)
+                    self.update_messages_list()
+                    self.toggle_save_del_button(True)
+                    self.button_save_del_inbox.config(state=tk.NORMAL)
+                    self.button_reply_inbox.config(state=tk.NORMAL)
+            else:
+                if os.path.exists(selected_message.identifier):
+                    self.toggle_save_del_button(False)
+                else:
+                    self.toggle_save_del_button(True)
+                self.text_content_inbox.insert(tk.INSERT, selected_message.content)
+                self.button_save_del_inbox.config(state=tk.NORMAL)
+                self.button_reply_inbox.config(state=tk.NORMAL)
+
+    def toggle_save_del_button(self, toggle_save):
+        if toggle_save:
+            self.button_save_del_inbox.config(text='Save to Disk', command=self.save_and_update_interface)
+        else:
+            self.button_save_del_inbox.config(text='Delete from Disk', command=self.delete_and_update_interface)
+
+    def save_and_update_interface(self):
+        if self.gui.client.save_message_to_disk(self.messages[self.current_message_index]):
+            self.toggle_save_del_button(False)
+            self.show_label_save_del('Message saved')
+
+    def delete_and_update_interface(self):
+        if self.gui.client.delete_message_from_disk(self.messages[self.current_message_index]):
+            self.toggle_save_del_button(True)
+            self.show_label_save_del('Message deleted')
+
+    def show_label_save_del(self, text):
+        self.label_save_del_inbox.config(text=text)
+        self.gui.window_main.after(3000, lambda: self.label_save_del_inbox.config(text=''))
+
+    def reply_message(self):
+        pass
 
 
 if __name__ == '__main__':

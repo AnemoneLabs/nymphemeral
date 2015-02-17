@@ -33,12 +33,11 @@ import time
 import email
 import socket
 import string
-import sys
 
 import hsub
 
 
-def aam(event, queue, cfg, hsubs):
+def aam(event, queue, hsubs, cfg):
     # load configs
     is_debugging = cfg.getboolean('main', 'debug_switch')
     directory_unread_messages = cfg.get('main', 'unread_folder')
@@ -47,25 +46,31 @@ def aam(event, queue, cfg, hsubs):
     newsport = int(cfg.get('newsgroup', 'port'))
     newnews = cfg.get('newsgroup', 'newnews')
 
+    result = {}
+    result['server_found'] = False
+
     if is_debugging:
         print 'aampy is running'
 
     try:
         server = nntplib.NNTP(newsserver, newsport)
-        queue.put(True)
     except socket.error:
         if is_debugging:
             print 'The news server cannot be found'
-        queue.put(False)
+        queue.put(result)
         event.set()
         return
+    else:
+        result['server_found'] = True
+        queue.put(result)
+
     try:
         timeStamp = float(hsubs['time'])
-        del hsubs['time']
     except KeyError:
         timeStamp = time.time() - 3600.0
         if is_debugging:
             print 'Timestamp not found, aampy will download messages from last hour'
+
     curTime = time.time()
     YYMMDD = time.strftime('%y%m%d', time.gmtime(timeStamp))
     HHMMSS = time.strftime('%H%M%S', time.gmtime(timeStamp))
@@ -107,7 +112,3 @@ def aam(event, queue, cfg, hsubs):
     if is_debugging:
         print 'aampy is done'
     event.set()
-
-
-if __name__ == '__main__':
-    aam()
