@@ -128,12 +128,18 @@ class LoginWindow(tk.Tk, object):
 
         entry_address_login.focus_set()
 
+    def get_output_method(self):
+        for key, i in OUTPUT_METHOD.iteritems():
+            if i == self.var_output_method.get():
+                return key
+
     def start_session(self, address, passphrase, creating_nym=False):
+        method = self.get_output_method()
         try:
             nym = Nym(address, passphrase)
             if not len(passphrase):
                 raise InvalidPassphraseError
-            self.gui.client.start_session(nym, creating_nym)
+            self.gui.client.start_session(nym, method, creating_nym)
         except (InvalidEmailAddressError, InvalidPassphraseError, FingerprintNotFoundError,
                 IncorrectPassphraseError) as e:
             tkMessageBox.showerror(e.title, e.message)

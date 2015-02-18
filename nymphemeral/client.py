@@ -301,7 +301,7 @@ class Client:
                     nyms.append(nym)
         return nyms
 
-    def start_session(self, nym, creating_nym=False):
+    def start_session(self, nym, output_method='manual', creating_nym=False):
         if nym.server not in self.retrieve_servers():
             raise NymservNotFoundError(nym.server)
         result = filter(lambda n: n.address == nym.address, self.retrieve_nyms())
@@ -325,11 +325,18 @@ class Client:
         self.hsubs = self.retrieve_hsubs()
         if not creating_nym:
             self.nym.hsub = self.hsubs[nym.address]
+        self.update_output_method(output_method)
 
     def end_session(self):
         self.axolotl = None
         self.nym = None
         self.hsubs = {}
+
+    def update_output_method(self, method):
+        if method != self.output_method:
+            self.output_method = method
+            self.update_configs()
+            self.save_configs()
 
     def decrypt_hsubs_file(self):
         if os.path.exists(self.file_encrypted_hsub):
