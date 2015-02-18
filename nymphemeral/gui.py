@@ -55,6 +55,7 @@ class Gui:
 
     def start_session(self, creating_nym):
         self.window_login.destroy()
+        self.window_login = None
         self.window_main = MainWindow(self, creating_nym)
 
     def end_session(self):
@@ -62,6 +63,7 @@ class Gui:
             self.window_main.stop_retrieving_messages()
         self.client.end_session()
         self.window_main.destroy()
+        self.window_main = None
         self.window_login = LoginWindow(self)
 
 
