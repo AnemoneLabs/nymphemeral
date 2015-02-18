@@ -275,7 +275,7 @@ class MainWindow(tk.Tk, object):
         self.tabs.append(self.tab_inbox)
         self.notebook.add(self.tab_inbox, text='Inbox')
 
-        self.tab_send = tk.Frame(self.notebook)
+        self.tab_send = SendTab(self.gui, self.notebook)
         self.tabs.append(self.tab_send)
         self.notebook.add(self.tab_send, text='Send Message')
 
@@ -448,7 +448,7 @@ class InboxTab(tk.Frame, object):
 
         # retrieve button
         self.button_aampy_inbox = tk.Button(frame_retrieve, width=14, text='Retrieve Messages',
-                                              command=self.start_retrieving_messages)
+                                            command=self.start_retrieving_messages)
         self.button_aampy_inbox.grid(row=0, sticky='w')
 
         # progress bar
@@ -596,6 +596,51 @@ class InboxTab(tk.Frame, object):
 
     def reply_message(self):
         pass
+
+
+class SendTab(tk.Frame, object):
+    def __init__(self, gui, parent):
+        super(SendTab, self).__init__(parent)
+
+        self.gui = gui
+
+        frame_tab = tk.Frame(self)
+        frame_tab.grid(sticky='nswe', padx=15, pady=15)
+
+        # target
+        label_target = tk.Label(frame_tab, text='Target Email Address')
+        label_target.grid(sticky=tk.W)
+        self.entry_target_send = tk.Entry(frame_tab)
+        self.entry_target_send.grid(sticky='we')
+
+        # subject
+        label_subject = tk.Label(frame_tab, text='Subject')
+        label_subject.grid(sticky=tk.W, pady=(10, 0))
+        self.entry_subject_send = tk.Entry(frame_tab)
+        self.entry_subject_send.grid(sticky='we')
+
+        # message box
+        frame_text = tk.LabelFrame(frame_tab, text='Message')
+        frame_text.grid(pady=10)
+        self.text_send = tk.Text(frame_text, height=32)
+        self.text_send.grid(row=0, column=0)
+        scrollbar = tk.Scrollbar(frame_text, command=self.text_send.yview)
+        scrollbar.grid(row=0, column=1, sticky='ns')
+        self.text_send['yscrollcommand'] = scrollbar.set
+
+        # send button
+        button_send = tk.Button(frame_tab, text='Send', command=self.send_message)
+        button_send.grid()
+
+    def send_message(self):
+        target_address = self.entry_target_send.get()
+        subject = self.entry_subject_send.get()
+        content = self.text_send.get(1.0, tk.END)
+
+        success, info, ciphertext = self.gui.client.send_message(target_address, subject, content)
+        self.text_send.delete(1.0, tk.END)
+        self.text_send.insert(tk.INSERT, info)
+        self.text_send.insert(tk.INSERT, ciphertext)
 
 
 class UnreadCounterTab(tk.Frame, object):

@@ -50,6 +50,7 @@ def search_pgp_message(data):
     re_pgp = re.compile('-----BEGIN PGP MESSAGE-----.*-----END PGP MESSAGE-----', flags=re.DOTALL)
     return re_pgp.search(data)
 
+
 def is_pgp_message(data):
     re_pgp = re.compile('-----BEGIN PGP MESSAGE-----.*-----END PGP MESSAGE-----$', flags=re.DOTALL)
     return re_pgp.match(data)
@@ -465,13 +466,13 @@ class Client:
             self.add_hsub(self.nym)
         return success, info, ciphertext
 
-    def send_message(self, nym, target_address, subject, content):
-        recipient = 'send@' + nym.server
+    def send_message(self, target_address, subject, content):
+        recipient = 'send@' + self.nym.server
         msg = email.message_from_string('To: ' + target_address +
                                         '\nSubject: ' + subject +
                                         '\n' + content).as_string().strip()
 
-        self.axolotl.loadState(nym.fingerprint, 'a')
+        self.axolotl.loadState(self.nym.fingerprint, 'a')
         ciphertext = b2a_base64(self.axolotl.encrypt(msg)).strip()
         self.axolotl.saveState()
 
@@ -481,7 +482,7 @@ class Client:
             pgp_message += line + '\n'
         pgp_message += '-----END PGP MESSAGE-----\n'
 
-        return self.encrypt_and_send(pgp_message, recipient, nym)
+        return self.encrypt_and_send(pgp_message, recipient, self.nym)
 
     def send_config(self, nym, ephemeral, hsub, name):
         db_file = self.directory_db + '/' + nym.fingerprint + '.db'
@@ -580,7 +581,8 @@ class Client:
         self.thread_aampy_event = threading.Thread(target=self.wait_for_aampy)
         self.thread_aampy_event.daemon = True
         self.queue_aampy = Queue.Queue()
-        self.thread_aampy = threading.Thread(target=aampy.aam, args=(self.event_aampy, self.queue_aampy, self.hsubs, cfg))
+        self.thread_aampy = threading.Thread(target=aampy.aam, args=(self.event_aampy, self.queue_aampy, self.hsubs,
+                                                                     cfg))
         self.thread_aampy.daemon = True
 
         self.thread_aampy_event.start()
