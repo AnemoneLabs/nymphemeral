@@ -343,6 +343,12 @@ class MainWindow(tk.Tk, object):
             self.id_after = None
         self.tab_inbox.stop_retrieving_messages()
 
+    def compose_message(self, msg):
+        self.tab_send.compose_message(msg)
+
+    def select_tab(self, tab):
+        self.notebook.select(tab)
+
     def update_unread_counter(self):
         try:
             self.tab_unread.update_unread_counter()
@@ -595,7 +601,7 @@ class InboxTab(tk.Frame, object):
         self.gui.window_main.after(3000, lambda: self.label_save_del_inbox.config(text=''))
 
     def reply_message(self):
-        pass
+        self.gui.window_main.compose_message(self.messages[self.current_message_index])
 
 
 class SendTab(tk.Frame, object):
@@ -631,6 +637,27 @@ class SendTab(tk.Frame, object):
         # send button
         button_send = tk.Button(frame_tab, text='Send', command=self.send_message)
         button_send.grid()
+
+    def compose_message(self, msg):
+        self.entry_target_send.delete(0, tk.END)
+        if msg.sender:
+            self.entry_target_send.insert(0, msg.sender.lower())
+        self.entry_subject_send.delete(0, tk.END)
+        if msg.subject:
+            self.entry_subject_send.insert(0, 'Re: ' + msg.subject)
+        content = '\n\n'
+        for line in msg.content.splitlines():
+            content += '> ' + line + '\n'
+        self.text_send.delete(1.0, tk.END)
+        cursor_position = 1.0
+        message_id = msg.processed_message.get('Message-ID')
+        if message_id:
+            content = 'In-Reply-To: ' + message_id + '\n\n' + content
+            cursor_position = 3.0
+        self.text_send.insert(tk.INSERT, content)
+        self.text_send.mark_set(tk.INSERT, cursor_position)
+        self.gui.window_main.select_tab(self)
+        self.text_send.focus_set()
 
     def send_message(self):
         target_address = self.entry_target_send.get()
