@@ -40,24 +40,10 @@ import Tkinter as tk
 import ttk
 import os
 import tkMessageBox
-import ConfigParser
 
-from client import Client
+from client import Client, OUTPUT_METHOD
 from errors import *
 from nym import Nym
-
-
-cfg = ConfigParser.ConfigParser()
-
-BASE_FILES_PATH = '/usr/share/nymphemeral'
-USER_PATH = os.path.expanduser('~')
-NYMPHEMERAL_PATH = USER_PATH + '/.config/nymphemeral'
-CONFIG_FILE = NYMPHEMERAL_PATH + '/nymphemeral.cfg'
-OUTPUT_METHOD = {
-    'mixmaster': 1,
-    'sendmail': 2,
-    'manual': 3,
-}
 
 
 class Gui:
