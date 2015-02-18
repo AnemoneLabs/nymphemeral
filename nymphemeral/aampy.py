@@ -70,6 +70,8 @@ def aam(event, queue, hsubs, cfg):
         timeStamp = time.time() - 3600.0
         if is_debugging:
             print 'Timestamp not found, aampy will download messages from last hour'
+    else:
+        del hsubs['time']
 
     curTime = time.time()
     YYMMDD = time.strftime('%y%m%d', time.gmtime(timeStamp))
@@ -83,6 +85,7 @@ def aam(event, queue, hsubs, cfg):
 
         for msg_id in ids:
             if event.is_set():
+                hsubs['time'] = timeStamp
                 if is_debugging:
                     print 'aampy was interrupted'
                 return
