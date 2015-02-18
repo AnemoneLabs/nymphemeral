@@ -297,7 +297,7 @@ class MainWindow(tk.Tk, object):
         self.tabs.append(self.tab_configure)
         self.notebook.add(self.tab_configure, text='Configure Nym')
 
-        self.tab_unread = tk.Frame(self.notebook)
+        self.tab_unread = UnreadCounterTab(self.gui, self.notebook)
         self.tabs.append(self.tab_unread)
         self.notebook.add(self.tab_unread, text='Unread Counter')
 
@@ -356,6 +356,12 @@ class MainWindow(tk.Tk, object):
             self.after_cancel(self.id_after)
             self.id_after = None
         self.tab_inbox.stop_retrieving_messages()
+
+    def update_unread_counter(self):
+        try:
+            self.tab_unread.update_unread_counter()
+        except AttributeError:
+            pass
 
 
 class CreationTab(tk.Frame, object):
@@ -502,6 +508,10 @@ class InboxTab(tk.Frame, object):
         self.list_messages_inbox.delete(0, tk.END)
         for m in self.messages:
             self.list_messages_inbox.insert(tk.END, m.title)
+        try:
+            self.gui.window_main.update_unread_counter()
+        except AttributeError:
+            pass
 
     def load_messages(self):
         self.messages = self.gui.client.retrieve_messages_from_disk()
@@ -601,6 +611,37 @@ class InboxTab(tk.Frame, object):
     def reply_message(self):
         pass
 
+
+class UnreadCounterTab(tk.Frame, object):
+    def __init__(self, gui, parent):
+        super(UnreadCounterTab, self).__init__(parent)
+
+        self.gui = gui
+
+        frame_tab = tk.Frame(self)
+        frame_tab.grid(sticky='nswe', padx=15, pady=15)
+
+        frame_retrieve = tk.Frame(frame_tab)
+        frame_retrieve.grid(sticky='w')
+
+        frame_list = tk.LabelFrame(frame_tab, text='Nyms With Unread Messages')
+        frame_list.grid(sticky='we')
+        self.list_unread = tk.Listbox(frame_list, height=39, width=70)
+        self.list_unread.grid(row=0, column=0, sticky='we')
+        scrollbar_list = tk.Scrollbar(frame_list, command=self.list_unread.yview)
+        scrollbar_list.grid(row=0, column=1, sticky='nsew')
+        self.list_unread['yscrollcommand'] = scrollbar_list.set
+
+        self.update_unread_counter()
+
+    def update_unread_counter(self):
+        counter = self.gui.client.count_unread_messages()
+        self.list_unread.delete(0, tk.END)
+        if counter:
+            for nym, count in counter.iteritems():
+                self.list_unread.insert(tk.END, nym + '(' + str(count) + ')')
+        else:
+            self.list_unread.insert(tk.END, 'No messages found')
 
 if __name__ == '__main__':
     Gui().window_login.mainloop()
