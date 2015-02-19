@@ -406,10 +406,10 @@ class CreationTab(tk.Frame, object):
 
         # create button
         self.button_create = tk.Button(frame_tab, text='Create Nym',
-                                       command=lambda: self.create(self.entry_ephemeral_create.get(),
-                                                                   self.entry_hsub_create.get(),
-                                                                   self.entry_name_create.get(),
-                                                                   self.entry_duration_create.get()))
+                                       command=lambda: self.create(self.entry_ephemeral_create.get().strip(),
+                                                                   self.entry_hsub_create.get().strip(),
+                                                                   self.entry_name_create.get().strip(),
+                                                                   self.entry_duration_create.get().strip()))
         self.button_create.grid(pady=(10, 0))
 
         # message box
@@ -646,7 +646,10 @@ class SendTab(tk.Frame, object):
         self.text_send['yscrollcommand'] = scrollbar.set
 
         # send button
-        button_send = tk.Button(frame_tab, text='Send', command=self.send_message)
+        button_send = tk.Button(frame_tab, text='Send',
+                                command=lambda: self.send_message(self.entry_target_send.get().strip(),
+                                                                  self.entry_subject_send.get().strip(),
+                                                                  self.text_send.get(1.0, tk.END).strip()))
         button_send.grid()
 
     def compose_message(self, msg):
@@ -669,11 +672,7 @@ class SendTab(tk.Frame, object):
         self.gui.window_main.select_tab(self)
         self.text_send.focus_set()
 
-    def send_message(self):
-        target_address = self.entry_target_send.get()
-        subject = self.entry_subject_send.get()
-        content = self.text_send.get(1.0, tk.END)
-
+    def send_message(self, target_address, subject, content):
         success, info, ciphertext = self.gui.client.send_message(target_address, subject, content)
         write_on_text(self.text_send, [info, ciphertext])
 
@@ -749,6 +748,7 @@ class ConfigTab(tk.Frame, object):
             write_on_text(self.text_config, [info, ciphertext])
             if success:
                 self.set_deleted_interface()
+
 
 class UnreadCounterTab(tk.Frame, object):
     def __init__(self, gui, parent):
