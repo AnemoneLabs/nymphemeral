@@ -287,7 +287,7 @@ class MainWindow(tk.Tk, object):
         self.tabs.append(self.tab_send)
         self.notebook.add(self.tab_send, text='Send Message')
 
-        self.tab_configure = tk.Frame(self.notebook)
+        self.tab_configure = ConfigTab(self.gui, self.notebook)
         self.tabs.append(self.tab_configure)
         self.notebook.add(self.tab_configure, text='Configure Nym')
 
@@ -677,6 +677,82 @@ class SendTab(tk.Frame, object):
         self.text_send.insert(tk.INSERT, info)
         self.text_send.insert(tk.INSERT, ciphertext)
 
+
+class ConfigTab(tk.Frame, object):
+    def __init__(self, gui, parent):
+        super(ConfigTab, self).__init__(parent)
+
+        self.gui = gui
+
+        frame_tab = tk.Frame(self)
+        frame_tab.grid(sticky='nswe', padx=15, pady=15)
+
+        # ephemeral
+        label_ephemeral = tk.Label(frame_tab, text='Ephemeral Key')
+        label_ephemeral.grid(sticky='w')
+        self.entry_ephemeral_config = tk.Entry(frame_tab)
+        self.entry_ephemeral_config.grid(sticky='we')
+
+        # hSub
+        label_hsub = tk.Label(frame_tab, text='hSub Key')
+        label_hsub.grid(sticky=tk.W, pady=(10, 0))
+        self.entry_hsub_config = tk.Entry(frame_tab)
+        self.entry_hsub_config.grid(sticky='we')
+
+        # name
+        label_name = tk.Label(frame_tab, text='Name')
+        label_name.grid(sticky=tk.W, pady=(10, 0))
+        self.entry_name_config = tk.Entry(frame_tab)
+        self.entry_name_config.grid(sticky='we')
+
+        buttons_row = frame_tab.grid_size()[1] + 1
+
+        # config button
+        self.button_config = tk.Button(frame_tab, text='Configure',
+                                       command=lambda: self.send_config(self.entry_ephemeral_config.get().strip(),
+                                                                        self.entry_hsub_config.get().strip(),
+                                                                        self.entry_name_config.get().strip()))
+        self.button_config.grid(row=buttons_row, sticky='w', pady=(10, 0))
+
+        # delete button
+        self.button_delete_config = tk.Button(frame_tab, text='Delete Nym', command=self.send_delete)
+        self.button_delete_config.grid(row=buttons_row, sticky='e', pady=(10, 0))
+
+        # message box
+        frame_text = tk.LabelFrame(frame_tab, text='Nym Configuration Headers')
+        frame_text.grid(sticky='we', pady=(10, 0))
+        self.text_config = tk.Text(frame_text, height=29)
+        self.text_config.grid(row=0, column=0)
+        scrollbar = tk.Scrollbar(frame_text, command=self.text_config.yview)
+        scrollbar.grid(row=0, column=1, sticky='ns')
+        self.text_config['yscrollcommand'] = scrollbar.set
+
+    def set_deleted_interface(self):
+        self.gui.window_main.set_all_tabs_state(False, [self])
+        self.entry_ephemeral_config.config(state=tk.DISABLED)
+        self.entry_hsub_config.config(state=tk.DISABLED)
+        self.entry_name_config.config(state=tk.DISABLED)
+        self.button_config.config(state=tk.DISABLED)
+        self.button_delete_config.config(state=tk.DISABLED)
+
+    def send_config(self, ephemeral, hsub, name):
+        if ephemeral or hsub or name:
+            if tkMessageBox.askyesno('Confirm', 'Are you sure you want to configure the nym?'):
+                success, info, ciphertext = self.gui.client.send_config(ephemeral, hsub, name)
+                self.text_config.delete(1.0, tk.END)
+                self.text_config.insert(tk.INSERT, info)
+                self.text_config.insert(tk.INSERT, ciphertext)
+        else:
+            tkMessageBox.showinfo('Input Error', 'No changes provided')
+
+    def send_delete(self):
+        if tkMessageBox.askyesno('Confirm', 'Are you sure you want to delete the nym?'):
+            success, info, ciphertext = self.gui.client.send_delete()
+            self.text_config.delete(1.0, tk.END)
+            self.text_config.insert(tk.INSERT, info)
+            self.text_config.insert(tk.INSERT, ciphertext)
+            if success:
+                self.set_deleted_interface()
 
 class UnreadCounterTab(tk.Frame, object):
     def __init__(self, gui, parent):

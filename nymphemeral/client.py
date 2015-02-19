@@ -491,52 +491,48 @@ class Client:
 
         return self.encrypt_and_send(pgp_message, recipient, self.nym)
 
-    def send_config(self, nym, ephemeral, hsub, name):
-        db_file = self.directory_db + '/' + nym.fingerprint + '.db'
-        recipient = 'config@' + nym.server
-        reset_db = False
-        reset_hsub = False
+    def send_config(self, ephemeral='', hsub='', name=''):
+        db_file = self.directory_db + '/' + self.nym.fingerprint + '.db'
+        recipient = 'config@' + self.nym.server
         ephemeral_line = ''
         hsub_line = ''
         name_line = ''
 
-        if ephemeral is not '':
-            ephemeral_line = 'ephemeral: ' + ephemeral + '\n'
-            reset_db = True
-        if hsub is not '':
-            hsub_line = 'hsub: ' + hsub + '\n'
-            reset_hsub = True
-        if name is not '':
-            name_line = 'name: ' + name + '\n'
+        if ephemeral:
+            ephemeral_line = 'ephemeral: ' + str(ephemeral) + '\n'
+        if hsub:
+            hsub_line = 'hsub: ' + str(hsub) + '\n'
+        if name:
+            name_line = 'name: ' + str(name) + '\n'
 
-        success, info, ciphertext = None
+        success = info = ciphertext = None
         data = ephemeral_line + hsub_line + name_line
         if data is not '':
-            success, info, ciphertext = self.encrypt_and_send(data, recipient, nym)
+            success, info, ciphertext = self.encrypt_and_send(data, recipient, self.nym)
             if success:
-                if reset_db:
+                if ephemeral:
                     if os.path.exists(db_file):
                         os.unlink(db_file)
-                    self.generate_db(nym.fingerprint, ephemeral, nym.passphrase)
-                if reset_hsub:
-                    nym.hsub = hsub
-                    self.add_hsub(nym)
+                    self.generate_db(self.nym.fingerprint, ephemeral, self.nym.passphrase)
+                if hsub:
+                    self.nym.hsub = hsub
+                    self.add_hsub(self.nym)
         return success, info, ciphertext
 
-    def send_delete(self, nym):
+    def send_delete(self):
         recipient = 'config@' + self.nym.server
-        db_file = self.directory_db + '/' + nym.fingerprint + '.db'
+        db_file = self.directory_db + '/' + self.nym.fingerprint + '.db'
 
         data = 'delete: yes'
-        success, info, ciphertext = self.encrypt_and_send(data, recipient, nym)
+        success, info, ciphertext = self.encrypt_and_send(data, recipient, self.nym)
         if success:
             if os.path.exists(db_file):
                 os.unlink(db_file)
-            self.delete_hsub(nym.hsub)
+            self.delete_hsub(self.nym)
             # delete secret key
-            self.gpg.delete_keys(nym.fingerprint, True)
+            self.gpg.delete_keys(self.nym.fingerprint, True)
             # delete public key
-            self.gpg.delete_keys(nym.fingerprint)
+            self.gpg.delete_keys(self.nym.fingerprint)
         return success, info, ciphertext
 
     def encrypt_and_send(self, data, recipient, nym):
