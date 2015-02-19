@@ -46,6 +46,13 @@ from errors import *
 from nym import Nym
 
 
+def write_on_text(text, content, clear=True):
+    if clear:
+        text.delete(1.0, tk.END)
+    for c in content:
+        text.insert(tk.INSERT, c)
+
+
 class Gui:
     def __init__(self):
         self.client = Client()
@@ -438,9 +445,7 @@ class CreationTab(tk.Frame, object):
             tkMessageBox.showerror(e.title, e.message)
         else:
             success, info, ciphertext = self.gui.client.send_create(ephemeral, hsub, name, duration)
-            self.text_create.delete(1.0, tk.END)
-            self.text_create.insert(tk.INSERT, info)
-            self.text_create.insert(tk.INSERT, ciphertext)
+            write_on_text(self.text_create, [info, ciphertext])
             if success:
                 self.set_interface(False)
                 self.gui.window_main.set_creation_interface(False)
@@ -560,8 +565,6 @@ class InboxTab(tk.Frame, object):
             selected_message = self.messages[index]
             self.current_message_index = index
 
-            self.text_content_inbox.delete(1.0, tk.END)
-
             if selected_message.is_unread:
                 self.button_save_del_inbox.config(state=tk.DISABLED)
                 self.button_reply_inbox.config(state=tk.DISABLED)
@@ -574,7 +577,7 @@ class InboxTab(tk.Frame, object):
                     self.current_message_index = None
                     self.update_messages_list()
                 else:
-                    self.text_content_inbox.insert(tk.INSERT, self.messages[index].content)
+                    write_on_text(self.text_content_inbox, [self.messages[index].content])
                     self.update_messages_list()
                     self.toggle_save_del_button(True)
                     self.button_save_del_inbox.config(state=tk.NORMAL)
@@ -584,7 +587,7 @@ class InboxTab(tk.Frame, object):
                     self.toggle_save_del_button(False)
                 else:
                     self.toggle_save_del_button(True)
-                self.text_content_inbox.insert(tk.INSERT, selected_message.content)
+                write_on_text(self.text_content_inbox, [selected_message.content])
                 self.button_save_del_inbox.config(state=tk.NORMAL)
                 self.button_reply_inbox.config(state=tk.NORMAL)
 
@@ -656,13 +659,12 @@ class SendTab(tk.Frame, object):
         content = '\n\n'
         for line in msg.content.splitlines():
             content += '> ' + line + '\n'
-        self.text_send.delete(1.0, tk.END)
         cursor_position = 1.0
         message_id = msg.processed_message.get('Message-ID')
         if message_id:
             content = 'In-Reply-To: ' + message_id + '\n\n' + content
             cursor_position = 3.0
-        self.text_send.insert(tk.INSERT, content)
+        write_on_text(self.text_send, [content])
         self.text_send.mark_set(tk.INSERT, cursor_position)
         self.gui.window_main.select_tab(self)
         self.text_send.focus_set()
@@ -673,9 +675,7 @@ class SendTab(tk.Frame, object):
         content = self.text_send.get(1.0, tk.END)
 
         success, info, ciphertext = self.gui.client.send_message(target_address, subject, content)
-        self.text_send.delete(1.0, tk.END)
-        self.text_send.insert(tk.INSERT, info)
-        self.text_send.insert(tk.INSERT, ciphertext)
+        write_on_text(self.text_send, [info, ciphertext])
 
 
 class ConfigTab(tk.Frame, object):
@@ -739,18 +739,14 @@ class ConfigTab(tk.Frame, object):
         if ephemeral or hsub or name:
             if tkMessageBox.askyesno('Confirm', 'Are you sure you want to configure the nym?'):
                 success, info, ciphertext = self.gui.client.send_config(ephemeral, hsub, name)
-                self.text_config.delete(1.0, tk.END)
-                self.text_config.insert(tk.INSERT, info)
-                self.text_config.insert(tk.INSERT, ciphertext)
+                write_on_text(self.text_config, [info, ciphertext])
         else:
             tkMessageBox.showinfo('Input Error', 'No changes provided')
 
     def send_delete(self):
         if tkMessageBox.askyesno('Confirm', 'Are you sure you want to delete the nym?'):
             success, info, ciphertext = self.gui.client.send_delete()
-            self.text_config.delete(1.0, tk.END)
-            self.text_config.insert(tk.INSERT, info)
-            self.text_config.insert(tk.INSERT, ciphertext)
+            write_on_text(self.text_config, [info, ciphertext])
             if success:
                 self.set_deleted_interface()
 
