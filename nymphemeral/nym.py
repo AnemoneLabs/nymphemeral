@@ -2,6 +2,7 @@ import re
 
 from errors import *
 
+
 class Nym():
     def __init__(self, address, passphrase=None, fingerprint=None, hsub=None):
         if not re.match(r'[^@]+@[^@]+\.[^@]+', address):

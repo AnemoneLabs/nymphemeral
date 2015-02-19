@@ -10,15 +10,17 @@ import ConfigParser
 import email
 import itertools
 from binascii import b2a_base64, a2b_base64
+import Tkinter
 
 import gnupg
 from passlib.utils.pbkdf2 import pbkdf2
-from pyaxo import Axolotl
 
+from pyaxo import Axolotl
 import aampy
 import message
 from errors import *
 from nym import Nym
+
 
 cfg = ConfigParser.ConfigParser()
 
@@ -131,6 +133,14 @@ def decrypt_data(gpg, data, passphrase):
         return str(result)
     else:
         return None
+
+
+def copy_to_clipboard(data):
+    t = Tkinter.Tk()
+    t.withdraw()
+    t.clipboard_clear()
+    t.clipboard_append(data)
+    t.destroy()
 
 
 class Client:
@@ -541,6 +551,8 @@ class Client:
             success = True
             if self.output_method == 'manual':
                 info = 'Send the following message to ' + recipient
+                copy_to_clipboard(ciphertext)
+                info += '\nIt has been copied to the clipboard'
             else:
                 data = 'To: ' + recipient + '\nSubject: test\n\n' + ciphertext
                 if self.send_data(data):
