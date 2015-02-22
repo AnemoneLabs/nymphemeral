@@ -143,6 +143,49 @@ def copy_to_clipboard(data):
     t.destroy()
 
 
+def generate_db(directory, fingerprint, mkey, passphrase):
+    mkey = hashlib.sha256(mkey).digest()
+    dbname = directory + '/generic.db'
+    a = Axolotl('b', dbname, None)
+    a.loadState('b', 'a')
+    a.dbname = directory + '/' + fingerprint + '.db'
+    a.dbpassphrase = passphrase
+    if a.mode:  # alice mode
+        RK = pbkdf2(mkey, b'\x00', 10, prf='hmac-sha256')
+        HKs = pbkdf2(mkey, b'\x01', 10, prf='hmac-sha256')
+        HKr = pbkdf2(mkey, b'\x02', 10, prf='hmac-sha256')
+        NHKs = pbkdf2(mkey, b'\x03', 10, prf='hmac-sha256')
+        NHKr = pbkdf2(mkey, b'\x04', 10, prf='hmac-sha256')
+        CKs = pbkdf2(mkey, b'\x05', 10, prf='hmac-sha256')
+        CKr = pbkdf2(mkey, b'\x06', 10, prf='hmac-sha256')
+        CONVid = pbkdf2(mkey, b'\x07', 10, prf='hmac-sha256')
+    else:  # bob mode
+        RK = pbkdf2(mkey, b'\x00', 10, prf='hmac-sha256')
+        HKs = pbkdf2(mkey, b'\x02', 10, prf='hmac-sha256')
+        HKr = pbkdf2(mkey, b'\x01', 10, prf='hmac-sha256')
+        NHKs = pbkdf2(mkey, b'\x04', 10, prf='hmac-sha256')
+        NHKr = pbkdf2(mkey, b'\x03', 10, prf='hmac-sha256')
+        CKs = pbkdf2(mkey, b'\x06', 10, prf='hmac-sha256')
+        CKr = pbkdf2(mkey, b'\x05', 10, prf='hmac-sha256')
+        CONVid = pbkdf2(mkey, b'\x07', 10, prf='hmac-sha256')
+
+    a.state['RK'] = RK
+    a.state['HKs'] = HKs
+    a.state['HKr'] = HKr
+    a.state['NHKs'] = NHKs
+    a.state['NHKr'] = NHKr
+    a.state['CKs'] = CKs
+    a.state['CKr'] = CKr
+    a.state['CONVid'] = CONVid
+    a.state['name'] = fingerprint
+    a.state['other_name'] = 'a'
+
+    with a.db:
+        cur = a.db.cursor()
+        cur.execute('DELETE FROM conversations WHERE my_identity = "b"')
+        a.saveState()
+
+
 class Client:
     def __init__(self):
         self.directory_base = None
@@ -471,7 +514,7 @@ class Client:
     def send_create(self, ephemeral, hsub, name, duration):
         recipient = 'config@' + self.nym.server
         pubkey, fingerprint = generate_key(self.gpg, name, self.nym.address, self.nym.passphrase, duration)
-        self.generate_db(fingerprint, ephemeral, self.nym.passphrase)
+        generate_db(fingerprint, ephemeral, self.nym.passphrase)
         data = 'ephemeral: ' + ephemeral + '\nhsub: ' + hsub + '\n' + pubkey
 
         self.nym.fingerprint = fingerprint
@@ -523,7 +566,7 @@ class Client:
                 if ephemeral:
                     if os.path.exists(db_file):
                         os.unlink(db_file)
-                    self.generate_db(self.nym.fingerprint, ephemeral, self.nym.passphrase)
+                    generate_db(self.nym.fingerprint, ephemeral, self.nym.passphrase)
                 if hsub:
                     self.nym.hsub = hsub
                     self.add_hsub(self.nym)
@@ -688,45 +731,3 @@ class Client:
         except IOError:
             print 'Error while deleting from disk' + ':', sys.exc_info()[0]
         return False
-
-    def generate_db(self, fingerprint, mkey, passphrase):
-        mkey = hashlib.sha256(mkey).digest()
-        dbname = self.directory_db + '/generic.db'
-        a = Axolotl('b', dbname, None)
-        a.loadState('b', 'a')
-        a.dbname = self.directory_db + '/' + fingerprint + '.db'
-        a.dbpassphrase = passphrase
-        if a.mode:  # alice mode
-            RK = pbkdf2(mkey, b'\x00', 10, prf='hmac-sha256')
-            HKs = pbkdf2(mkey, b'\x01', 10, prf='hmac-sha256')
-            HKr = pbkdf2(mkey, b'\x02', 10, prf='hmac-sha256')
-            NHKs = pbkdf2(mkey, b'\x03', 10, prf='hmac-sha256')
-            NHKr = pbkdf2(mkey, b'\x04', 10, prf='hmac-sha256')
-            CKs = pbkdf2(mkey, b'\x05', 10, prf='hmac-sha256')
-            CKr = pbkdf2(mkey, b'\x06', 10, prf='hmac-sha256')
-            CONVid = pbkdf2(mkey, b'\x07', 10, prf='hmac-sha256')
-        else:  # bob mode
-            RK = pbkdf2(mkey, b'\x00', 10, prf='hmac-sha256')
-            HKs = pbkdf2(mkey, b'\x02', 10, prf='hmac-sha256')
-            HKr = pbkdf2(mkey, b'\x01', 10, prf='hmac-sha256')
-            NHKs = pbkdf2(mkey, b'\x04', 10, prf='hmac-sha256')
-            NHKr = pbkdf2(mkey, b'\x03', 10, prf='hmac-sha256')
-            CKs = pbkdf2(mkey, b'\x06', 10, prf='hmac-sha256')
-            CKr = pbkdf2(mkey, b'\x05', 10, prf='hmac-sha256')
-            CONVid = pbkdf2(mkey, b'\x07', 10, prf='hmac-sha256')
-
-        a.state['RK'] = RK
-        a.state['HKs'] = HKs
-        a.state['HKr'] = HKr
-        a.state['NHKs'] = NHKs
-        a.state['NHKr'] = NHKr
-        a.state['CKs'] = CKs
-        a.state['CKr'] = CKr
-        a.state['CONVid'] = CONVid
-        a.state['name'] = fingerprint
-        a.state['other_name'] = 'a'
-
-        with a.db:
-            cur = a.db.cursor()
-            cur.execute('DELETE FROM conversations WHERE my_identity = "b"')
-            a.saveState()
