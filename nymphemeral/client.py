@@ -514,7 +514,7 @@ class Client:
     def send_create(self, ephemeral, hsub, name, duration):
         recipient = 'config@' + self.nym.server
         pubkey, fingerprint = generate_key(self.gpg, name, self.nym.address, self.nym.passphrase, duration)
-        generate_db(fingerprint, ephemeral, self.nym.passphrase)
+        generate_db(self.directory_db, fingerprint, ephemeral, self.nym.passphrase)
         data = 'ephemeral: ' + ephemeral + '\nhsub: ' + hsub + '\n' + pubkey
 
         self.nym.fingerprint = fingerprint
@@ -566,7 +566,7 @@ class Client:
                 if ephemeral:
                     if os.path.exists(db_file):
                         os.unlink(db_file)
-                    generate_db(self.nym.fingerprint, ephemeral, self.nym.passphrase)
+                    generate_db(self.directory_db, self.nym.fingerprint, ephemeral, self.nym.passphrase)
                 if hsub:
                     self.nym.hsub = hsub
                     self.add_hsub(self.nym)
