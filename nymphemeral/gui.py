@@ -57,13 +57,13 @@ class Gui:
     def __init__(self):
         self.client = Client()
 
-        self.window_login = LoginWindow(self)
+        self.window_login = LoginWindow(self, self.client)
         self.window_main = None
 
     def start_session(self, creating_nym):
         self.window_login.destroy()
         self.window_login = None
-        self.window_main = MainWindow(self, creating_nym)
+        self.window_main = MainWindow(self, self.client, creating_nym)
 
     def end_session(self):
         if not self.client.aampy_is_done:
@@ -71,14 +71,15 @@ class Gui:
         self.client.end_session()
         self.window_main.destroy()
         self.window_main = None
-        self.window_login = LoginWindow(self)
+        self.window_login = LoginWindow(self, self.client)
 
 
 class LoginWindow(tk.Tk, object):
-    def __init__(self, gui):
+    def __init__(self, gui, client):
         super(LoginWindow, self).__init__()
 
         self.gui = gui
+        self.client = client
         self.var_output_method = None
 
         self.title('nymphemeral')
@@ -102,7 +103,8 @@ class LoginWindow(tk.Tk, object):
         entry_passphrase_login.grid(sticky='we')
 
         # servers
-        button_servers = tk.Button(frame_login, text='Manage Servers', command=lambda: ServersWindow(self.gui))
+        button_servers = tk.Button(frame_login, text='Manage Servers', command=lambda: ServersWindow(self.gui,
+                                                                                                     self.client))
         button_servers.grid(pady=(5, 0))
 
         # output radio buttons
@@ -112,7 +114,7 @@ class LoginWindow(tk.Tk, object):
         radio_mix = tk.Radiobutton(frame_radio, text='Send via Mixmaster', variable=self.var_output_method,
                                    value=OUTPUT_METHOD['mixmaster'])
         radio_mix.grid(pady=(5, 0), sticky='w')
-        chain = self.gui.client.chain
+        chain = self.client.chain
         if not chain:
             radio_mix.config(state=tk.DISABLED)
             chain = 'Error while manipulating mix.cfg'
@@ -125,7 +127,7 @@ class LoginWindow(tk.Tk, object):
                                     variable=self.var_output_method,
                                     value=OUTPUT_METHOD['manual'])
         radio_text.grid(sticky='w')
-        self.var_output_method.set(OUTPUT_METHOD[self.gui.client.output_method])
+        self.var_output_method.set(OUTPUT_METHOD[self.client.output_method])
 
         # start button
         button_start = tk.Button(frame_login, text='Start Session',
@@ -148,13 +150,13 @@ class LoginWindow(tk.Tk, object):
             nym = Nym(address, passphrase)
             if not len(passphrase):
                 raise InvalidPassphraseError
-            self.gui.client.start_session(nym, method, creating_nym)
+            self.client.start_session(nym, method, creating_nym)
         except (InvalidEmailAddressError, InvalidPassphraseError, FingerprintNotFoundError,
                 IncorrectPassphraseError) as e:
             tkMessageBox.showerror(e.title, e.message)
         except NymservNotFoundError as e:
             if tkMessageBox.askyesno(e.title, e.message + '\nWould you like to import it?'):
-                KeyWindow(self.gui)
+                KeyWindow(self.gui, self.client)
         except NymNotFoundError as e:
             if tkMessageBox.askyesno(e.title, e.message + '\nWould you like to create it?'):
                 self.start_session(address, passphrase, True)
@@ -163,10 +165,11 @@ class LoginWindow(tk.Tk, object):
 
 
 class ServersWindow(tk.Tk, object):
-    def __init__(self, gui):
+    def __init__(self, gui, client):
         super(ServersWindow, self).__init__()
 
         self.gui = gui
+        self.client = client
 
         self.title('Nym Servers')
         frame_servers = tk.Frame(self)
@@ -185,12 +188,13 @@ class ServersWindow(tk.Tk, object):
         buttons_row = frame_servers.grid_size()[1] + 1
 
         # new button
-        button_new_servers = tk.Button(frame_servers, text='New', command=lambda: KeyWindow(self.gui, self))
+        button_new_servers = tk.Button(frame_servers, text='New', command=lambda: KeyWindow(self.gui, self.client,
+                                                                                            self))
         button_new_servers.grid(row=buttons_row, sticky='w', pady=(10, 0))
 
         # modify button
         self.button_modify_servers = tk.Button(frame_servers, text='Modify',
-                                               command=lambda: KeyWindow(self.gui, self,
+                                               command=lambda: KeyWindow(self.gui, self.client, self,
                                                                          self.list_servers.get(
                                                                              self.list_servers.curselection())),
                                                state=tk.DISABLED)
@@ -215,21 +219,22 @@ class ServersWindow(tk.Tk, object):
 
     def update_servers_list(self):
         self.list_servers.delete(0, tk.END)
-        for s in self.gui.client.retrieve_servers().keys():
+        for s in self.client.retrieve_servers().keys():
             self.list_servers.insert(tk.END, s)
         self.toggle_servers_interface()
 
     def delete_key(self, server):
         if tkMessageBox.askyesno('Confirm', 'Are you sure you want to delete ' + server + "'s key?"):
-            self.gui.client.delete_key(server)
+            self.client.delete_key(server)
             self.update_servers_list()
 
 
 class KeyWindow(tk.Tk, object):
-    def __init__(self, gui, parent=None, server=None):
+    def __init__(self, gui, client, parent=None, server=None):
         super(KeyWindow, self).__init__()
 
         self.gui = gui
+        self.client = client
         self.parent = parent
 
         self.title('Public Key Manager')
@@ -241,7 +246,7 @@ class KeyWindow(tk.Tk, object):
         key = ''
         if server:
             frame_list = tk.LabelFrame(frame_key, text=server + "'s Public Key")
-            key = gui.client.gpg.export_keys(gui.client.retrieve_servers()[server])
+            key = self.client.gpg.export_keys(self.client.retrieve_servers()[server])
         else:
             frame_list = tk.LabelFrame(frame_key, text='New Server Public Key')
         frame_list.grid(sticky='we')
@@ -261,19 +266,25 @@ class KeyWindow(tk.Tk, object):
         text_key.focus_set()
 
     def save_key(self, key, server):
-        self.gui.client.save_key(key, server)
+        self.client.save_key(key, server)
         if self.parent:
             self.parent.update_servers_list()
         self.destroy()
 
 
 class MainWindow(tk.Tk, object):
-    def __init__(self, gui, creating_nym=False):
+    def __init__(self, gui, client, creating_nym=False):
         super(MainWindow, self).__init__()
 
         self.gui = gui
-        self.tabs = []
+        self.client = client
         self.id_after = None
+        self.tabs = []
+        self.tab_inbox = None
+        self.tab_send = None
+        self.tab_configure = None
+        self.tab_unread = None
+        self.tab_create = None
 
         # root window
         self.title('nymphemeral')
@@ -286,27 +297,29 @@ class MainWindow(tk.Tk, object):
         self.notebook = ttk.Notebook(frame_tab)
         self.notebook.pack()
 
-        self.tab_inbox = InboxTab(self.gui, self.notebook)
-        self.tabs.append(self.tab_inbox)
-        self.notebook.add(self.tab_inbox, text='Inbox')
-
-        self.tab_send = SendTab(self.gui, self.notebook)
+        self.tab_send = SendTab(self.gui, self.client, self.notebook)
         self.tabs.append(self.tab_send)
-        self.notebook.add(self.tab_send, text='Send Message')
 
-        self.tab_configure = ConfigTab(self.gui, self.notebook)
+        self.tab_configure = ConfigTab(self.gui, self.client, self.notebook)
         self.tabs.append(self.tab_configure)
-        self.notebook.add(self.tab_configure, text='Configure Nym')
 
-        self.tab_unread = UnreadCounterTab(self.gui, self.notebook)
+        self.tab_unread = UnreadCounterTab(self.gui, self.client, self.notebook)
         self.tabs.append(self.tab_unread)
+
+        self.tab_inbox = InboxTab(self.gui, self.client, self.tab_send, self.tab_unread, self.notebook)
+        self.tabs.append(self.tab_inbox)
+
+        self.notebook.add(self.tab_inbox, text='Inbox')
+        self.notebook.add(self.tab_send, text='Send Message')
+        self.notebook.add(self.tab_configure, text='Configure Nym')
         self.notebook.add(self.tab_unread, text='Unread Counter')
 
         if creating_nym:
-            self.tab_create = CreationTab(self.gui, self.notebook)
+            self.tab_create = CreationTab(self.gui, self.client, self.notebook)
             self.tabs.append(self.tab_create)
             self.notebook.add(self.tab_create, text='Create Nym')
             self.set_creation_interface(True)
+
 
         self.notebook.pack(fill=tk.BOTH, expand=True)
 
@@ -318,12 +331,12 @@ class MainWindow(tk.Tk, object):
         frame_left.pack(side=tk.LEFT)
         frame_address = tk.Frame(frame_left)
         frame_address.pack(fill=tk.X, expand=True)
-        label_address = tk.Label(frame_address, text=self.gui.client.nym.address)
+        label_address = tk.Label(frame_address, text=self.client.nym.address)
         label_address.pack(side=tk.LEFT)
-        if self.gui.client.output_method is 'mixmaster':
+        if self.client.output_method is 'mixmaster':
             frame_chain = tk.Frame(frame_left)
             frame_chain.pack(fill=tk.X, expand=True)
-            label_chain = tk.Label(frame_chain, text=self.gui.client.chain)
+            label_chain = tk.Label(frame_chain, text=self.client.chain)
             label_chain.pack(side=tk.LEFT)
         button_change_nym = tk.Button(frame_footer, text='Change Nym', command=self.gui.end_session)
         button_change_nym.pack(side=tk.RIGHT)
@@ -358,24 +371,16 @@ class MainWindow(tk.Tk, object):
             self.id_after = None
         self.tab_inbox.stop_retrieving_messages()
 
-    def compose_message(self, msg):
-        self.tab_send.compose_message(msg)
-
     def select_tab(self, tab):
         self.notebook.select(tab)
 
-    def update_unread_counter(self):
-        try:
-            self.tab_unread.update_unread_counter()
-        except AttributeError:
-            pass
-
 
 class CreationTab(tk.Frame, object):
-    def __init__(self, gui, parent):
+    def __init__(self, gui, client, parent):
         super(CreationTab, self).__init__(parent)
 
         self.gui = gui
+        self.client = client
 
         frame_tab = tk.Frame(self)
         frame_tab.grid(sticky='nswe', padx=15, pady=15)
@@ -444,7 +449,7 @@ class CreationTab(tk.Frame, object):
         except (InvalidHsubError, InvalidEphemeralKeyError) as e:
             tkMessageBox.showerror(e.title, e.message)
         else:
-            success, info, ciphertext = self.gui.client.send_create(ephemeral, hsub, name, duration)
+            success, info, ciphertext = self.client.send_create(ephemeral, hsub, name, duration)
             write_on_text(self.text_create, [info, ciphertext])
             if success:
                 self.set_interface(False)
@@ -452,10 +457,13 @@ class CreationTab(tk.Frame, object):
 
 
 class InboxTab(tk.Frame, object):
-    def __init__(self, gui, parent):
+    def __init__(self, gui, client, tab_send, tab_unread, parent):
         super(InboxTab, self).__init__(parent)
 
         self.gui = gui
+        self.client = client
+        self.tab_send = tab_send
+        self.tab_unread = tab_unread
         self.messages = None
         self.current_message_index = None
 
@@ -514,28 +522,28 @@ class InboxTab(tk.Frame, object):
         for m in self.messages:
             self.list_messages_inbox.insert(tk.END, m.title)
         try:
-            self.gui.window_main.update_unread_counter()
+            self.tab_unread.update_unread_counter()
         except AttributeError:
             pass
 
     def load_messages(self):
-        self.messages = self.gui.client.retrieve_messages_from_disk()
+        self.messages = self.client.retrieve_messages_from_disk()
         self.current_message_index = None
         self.update_messages_list()
 
     def start_retrieving_messages(self):
-        self.gui.client.start_aampy()
+        self.client.start_aampy()
         self.wait_for_retrieval()
         self.toggle_interface(True)
 
     def stop_retrieving_messages(self):
-        self.gui.client.stop_aampy()
+        self.client.stop_aampy()
         self.toggle_interface(False)
 
     def wait_for_retrieval(self):
-        if self.gui.client.aampy_is_done:
+        if self.client.aampy_is_done:
             self.gui.window_main.id_after = None
-            if self.gui.client.queue_aampy.get()['server_found']:
+            if self.client.queue_aampy.get()['server_found']:
                 self.load_messages()
             else:
                 self.toggle_interface(False)
@@ -560,7 +568,7 @@ class InboxTab(tk.Frame, object):
             self.button_aampy_inbox.config(text='Retrieve Messages', command=self.start_retrieving_messages)
 
     def select_message(self, event):
-        if len(self.messages) and self.gui.client.aampy_is_done:
+        if len(self.messages) and self.client.aampy_is_done:
             index = int(event.widget.curselection()[0])
             selected_message = self.messages[index]
             self.current_message_index = index
@@ -570,7 +578,7 @@ class InboxTab(tk.Frame, object):
                 self.button_reply_inbox.config(state=tk.DISABLED)
 
                 try:
-                    self.messages[index] = self.gui.client.decrypt_ephemeral_message(selected_message)
+                    self.messages[index] = self.client.decrypt_ephemeral_message(selected_message)
                 except UndecipherableMessageError as e:
                     tkMessageBox.showerror(e.title, e.message)
                     self.messages.pop(index)
@@ -598,12 +606,12 @@ class InboxTab(tk.Frame, object):
             self.button_save_del_inbox.config(text='Delete from Disk', command=self.delete_and_update_interface)
 
     def save_and_update_interface(self):
-        if self.gui.client.save_message_to_disk(self.messages[self.current_message_index]):
+        if self.client.save_message_to_disk(self.messages[self.current_message_index]):
             self.toggle_save_del_button(False)
             self.show_label_save_del('Message saved')
 
     def delete_and_update_interface(self):
-        if self.gui.client.delete_message_from_disk(self.messages[self.current_message_index]):
+        if self.client.delete_message_from_disk(self.messages[self.current_message_index]):
             self.toggle_save_del_button(True)
             self.show_label_save_del('Message deleted')
 
@@ -612,14 +620,15 @@ class InboxTab(tk.Frame, object):
         self.gui.window_main.after(3000, lambda: self.label_save_del_inbox.config(text=''))
 
     def reply_message(self):
-        self.gui.window_main.compose_message(self.messages[self.current_message_index])
+        self.tab_send.compose_message(self.messages[self.current_message_index])
 
 
 class SendTab(tk.Frame, object):
-    def __init__(self, gui, parent):
+    def __init__(self, gui, client, parent):
         super(SendTab, self).__init__(parent)
 
         self.gui = gui
+        self.client = client
 
         frame_tab = tk.Frame(self)
         frame_tab.grid(sticky='nswe', padx=15, pady=15)
@@ -673,15 +682,16 @@ class SendTab(tk.Frame, object):
         self.text_send.focus_set()
 
     def send_message(self, target_address, subject, content):
-        success, info, ciphertext = self.gui.client.send_message(target_address, subject, content)
+        success, info, ciphertext = self.client.send_message(target_address, subject, content)
         write_on_text(self.text_send, [info, ciphertext])
 
 
 class ConfigTab(tk.Frame, object):
-    def __init__(self, gui, parent):
+    def __init__(self, gui, client, parent):
         super(ConfigTab, self).__init__(parent)
 
         self.gui = gui
+        self.client = client
 
         frame_tab = tk.Frame(self)
         frame_tab.grid(sticky='nswe', padx=15, pady=15)
@@ -737,24 +747,25 @@ class ConfigTab(tk.Frame, object):
     def send_config(self, ephemeral, hsub, name):
         if ephemeral or hsub or name:
             if tkMessageBox.askyesno('Confirm', 'Are you sure you want to configure the nym?'):
-                success, info, ciphertext = self.gui.client.send_config(ephemeral, hsub, name)
+                success, info, ciphertext = self.client.send_config(ephemeral, hsub, name)
                 write_on_text(self.text_config, [info, ciphertext])
         else:
             tkMessageBox.showinfo('Input Error', 'No changes provided')
 
     def send_delete(self):
         if tkMessageBox.askyesno('Confirm', 'Are you sure you want to delete the nym?'):
-            success, info, ciphertext = self.gui.client.send_delete()
+            success, info, ciphertext = self.client.send_delete()
             write_on_text(self.text_config, [info, ciphertext])
             if success:
                 self.set_deleted_interface()
 
 
 class UnreadCounterTab(tk.Frame, object):
-    def __init__(self, gui, parent):
+    def __init__(self, gui, client, parent):
         super(UnreadCounterTab, self).__init__(parent)
 
         self.gui = gui
+        self.client = client
 
         frame_tab = tk.Frame(self)
         frame_tab.grid(sticky='nswe', padx=15, pady=15)
@@ -773,7 +784,7 @@ class UnreadCounterTab(tk.Frame, object):
         self.update_unread_counter()
 
     def update_unread_counter(self):
-        counter = self.gui.client.count_unread_messages()
+        counter = self.client.count_unread_messages()
         self.list_unread.delete(0, tk.END)
         if counter:
             for nym, count in counter.iteritems():
