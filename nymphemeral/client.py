@@ -345,7 +345,7 @@ class Client:
         nyms = []
         keys = self.gpg.list_keys()
         for item in keys:
-            if len(item['uids']) is 1:
+            if len(item['uids']) == 1:
                 search = re.search('(?<=<).*(?=>)', item['uids'][0])
                 if search:
                     address = search.group()
@@ -560,7 +560,7 @@ class Client:
 
         success = info = ciphertext = None
         data = ephemeral_line + hsub_line + name_line
-        if data is not '':
+        if data != '':
             success, info, ciphertext = self.encrypt_and_send(data, recipient, self.nym)
             if success:
                 if ephemeral:
