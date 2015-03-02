@@ -18,7 +18,7 @@ from passlib.utils.pbkdf2 import pbkdf2
 from pyaxo import Axolotl
 import aampy
 import message
-from errors import *
+import errors
 from nym import Nym
 
 
@@ -356,15 +356,15 @@ class Client:
 
     def start_session(self, nym, output_method='manual', creating_nym=False):
         if nym.server not in self.retrieve_servers():
-            raise NymservNotFoundError(nym.server)
+            raise errors.NymservNotFoundError(nym.server)
         result = filter(lambda n: n.address == nym.address, self.retrieve_nyms())
         if not result:
             if not creating_nym:
-                raise NymNotFoundError(nym.address)
+                raise errors.NymNotFoundError(nym.address)
         else:
             nym.fingerprint = result[0].fingerprint
             if not nym.fingerprint:
-                raise FingerprintNotFoundError(nym.address)
+                raise errors.FingerprintNotFoundError(nym.address)
             db_name = self.directory_db + '/' + nym.fingerprint + '.db'
             try:
                 # workaround to suppress prints by pyaxo
@@ -373,7 +373,7 @@ class Client:
                 sys.stdout = sys.__stdout__
             except SystemExit:
                 sys.stdout = sys.__stdout__
-                raise IncorrectPassphraseError
+                raise errors.IncorrectPassphraseError()
         self.nym = nym
         self.hsubs = self.retrieve_hsubs()
         if not creating_nym:
@@ -606,7 +606,7 @@ class Client:
             info += '\n\n'
             return success, info, ciphertext
         else:
-            raise IncorrectPassphraseError
+            raise errors.IncorrectPassphraseError()
 
     def send_data(self, data):
         if self.output_method == 'mixmaster':
@@ -702,7 +702,7 @@ class Client:
                 plaintext = ciphertext
             return message.Message(False, plaintext, msg.identifier)
         else:
-            raise UndecipherableMessageError
+            raise errors.UndecipherableMessageError()
 
     def save_message_to_disk(self, msg):
         try:

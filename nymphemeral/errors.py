@@ -47,13 +47,13 @@ class IncorrectPassphraseError(NymphemeralError):
 
 
 class InvalidHsubError(NymphemeralError):
-    def __init__(self, nym):
+    def __init__(self):
         self.title = 'Invalid hSub Passphrase'
         self.message = 'The hSub passphrase provided (empty) is not valid.'
 
 
 class InvalidEphemeralKeyError(NymphemeralError):
-    def __init__(self, nym):
+    def __init__(self):
         self.title = 'Invalid Ephemeral Key'
         self.message = 'The ephemeral key provided (empty) is not valid.'
 

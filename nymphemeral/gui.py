@@ -42,7 +42,7 @@ import os
 import tkMessageBox
 
 from client import Client, OUTPUT_METHOD
-from errors import *
+import errors
 from nym import Nym
 
 
@@ -149,15 +149,15 @@ class LoginWindow(tk.Tk, object):
         try:
             nym = Nym(address, passphrase)
             if not len(passphrase):
-                raise InvalidPassphraseError
+                raise errors.InvalidPassphraseError()
             self.client.start_session(nym, method, creating_nym)
-        except (InvalidEmailAddressError, InvalidPassphraseError, FingerprintNotFoundError,
-                IncorrectPassphraseError) as e:
+        except (errors.InvalidEmailAddressError, errors.InvalidPassphraseError, errors.FingerprintNotFoundError,
+                errors.IncorrectPassphraseError) as e:
             tkMessageBox.showerror(e.title, e.message)
-        except NymservNotFoundError as e:
+        except errors.NymservNotFoundError as e:
             if tkMessageBox.askyesno(e.title, e.message + '\nWould you like to import it?'):
                 KeyWindow(self.gui, self.client)
-        except NymNotFoundError as e:
+        except errors.NymNotFoundError as e:
             if tkMessageBox.askyesno(e.title, e.message + '\nWould you like to create it?'):
                 self.start_session(address, passphrase, True)
         else:
@@ -443,10 +443,10 @@ class CreationTab(tk.Frame, object):
     def create(self, ephemeral, hsub, name, duration):
         try:
             if not len(ephemeral):
-                raise InvalidEphemeralKeyError
+                raise errors.InvalidEphemeralKeyError()
             if not len(hsub):
-                raise InvalidHsubError
-        except (InvalidHsubError, InvalidEphemeralKeyError) as e:
+                raise errors.InvalidHsubError()
+        except (errors.InvalidHsubError, errors.InvalidEphemeralKeyError) as e:
             tkMessageBox.showerror(e.title, e.message)
         else:
             success, info, ciphertext = self.client.send_create(ephemeral, hsub, name, duration)
@@ -579,7 +579,7 @@ class InboxTab(tk.Frame, object):
 
                 try:
                     self.messages[index] = self.client.decrypt_ephemeral_message(selected_message)
-                except UndecipherableMessageError as e:
+                except errors.UndecipherableMessageError as e:
                     tkMessageBox.showerror(e.title, e.message)
                     self.messages.pop(index)
                     self.current_message_index = None
