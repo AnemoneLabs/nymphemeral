@@ -1,6 +1,18 @@
-# nymphemeral's changelog
+# nymphemeral changelog
 
-New on version 1.2.1:
+## nymphemeral 1.2.3, released 2015-02-14
+
+- Remove dependency links processing from `pip install` ([#0d18709])
+
+[#0d18709]: https://github.com/felipedau/nymphemeral/commit/0d1870964138b9607de7730c33750fb38099f0e3
+
+## nymphemeral 1.2.2, released 2014-11-14
+
+- Remember the output method being used ([#b5e6f90])
+
+[#b5e6f90]: https://github.com/felipedau/nymphemeral/commit/b5e6f9052c618e96c293fdc6196277dd0eff2412
+
+## nymphemeral 1.2.1, release 2014-11-10
 
 - Append date to the title of the messages in the 'inbox' ([#77f0fe2])
 - Encrypt hSub passphrases ([#4a93903], [#963098e])
