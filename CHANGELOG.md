@@ -1,4 +1,4 @@
-### nymphemeral 1.3.0, released 2015-03-03
+### nymphemeral 1.3.1, released 2015-03-03
 
 - Create client module ([#5f1ce14])
 - Modify the GUI to be a layer between the user and the client ([#5cd3fe1], [#3d093ff],
