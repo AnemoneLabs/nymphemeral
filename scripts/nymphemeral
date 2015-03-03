@@ -2,8 +2,7 @@
 """
     This script is used to start the GUI
 """
-from nymphemeral.gui import NymphemeralGUI
+from nymphemeral.gui import Gui
 
 if __name__ == '__main__':
-    win = NymphemeralGUI()
-    win.window_login.mainloop()
+    Gui().window_login.mainloop()
