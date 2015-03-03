@@ -13,7 +13,7 @@ Features
 
 Current Release
 ---------------
-The current version of nymphemeral is 1.2.3, a prototype, released 2015-02-15.
+The current version of nymphemeral is 1.3.0, a prototype, released 2015-03-03.
 
 Installation (on a Debian Wheezy/Ubuntu Trusty system)
 ------------------------------------------------------
@@ -95,7 +95,8 @@ to the GitHub `issue tracker`_.
 
 **Thanks to** `rxcomm`_ **for the new nymserv, nym.now.im, pyaxo, aampy and
 for assisting on the development of this client. Thanks to** `crooks`_ **(Zax)
-for the original nymserv software.**
+for the original nymserv software. Thanks to** `tych0`_ **for assisting on
+fixes and improvements.**
 
 .. _`aampy`: https://github.com/rxcomm/aampy
 .. _`alt.anonymous.messages`: https://groups.google.com/forum/#!forum/alt.anonymous.messages
@@ -119,3 +120,4 @@ for the original nymserv software.**
 .. _`socat`: http://www.dest-unreach.org/socat
 .. _`stunnel`: https://www.stunnel.org
 .. _`tor`: https://www.torproject.org
+.. _`tych0`: https://github.com/tych0
