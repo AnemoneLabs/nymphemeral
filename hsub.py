@@ -27,7 +27,7 @@ def hash(text, iv = None, hsublen = HSUBLEN):
     # Generate a 64bit random IV if none is provided.
     if iv is None: iv = cryptorandom()
     # Concatenate our IV with a SHA256 hash of text + IV.
-    hsub = iv + sha256(iv + text).digest()
+    hsub = iv + sha256(iv + str(text)).digest()
     return hsub.encode('hex')[:hsublen]
 
 def check(text, hsub):
