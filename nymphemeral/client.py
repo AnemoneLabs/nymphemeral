@@ -214,8 +214,6 @@ class Client:
         self.thread_aampy = None
         self.thread_aampy_event = None
 
-        self.thread_decrypt = None
-
         self.chain = self.retrieve_mix_chain()
 
     def debug(self, info):
@@ -660,7 +658,7 @@ class Client:
         if self.hsubs and time != self.hsubs['time']:
             self.save_hsubs(self.hsubs)
 
-    def decrypt_ephemeral_data(self, data, queue):
+    def decrypt_ephemeral_data(self, data):
         ciphertext = None
         self.axolotl.loadState(self.nym.fingerprint, 'a')
         # workaround to suppress prints by pyaxo
@@ -673,7 +671,7 @@ class Client:
         else:
             sys.stdout = sys.__stdout__
             self.axolotl.saveState()
-        queue.put(ciphertext)
+        return ciphertext
 
     def decrypt_ephemeral_message(self, msg):
         exp = re.compile('^[A-Za-z0-9+\/=]+\Z')
@@ -683,11 +681,7 @@ class Client:
             if len(item.strip()) % 4 == 0 and exp.match(item) and len(
                     item.strip()) <= 64 and not item.startswith(' '):
                 data += item
-        queue = Queue.Queue()
-        self.thread_decrypt = threading.Thread(target=self.decrypt_ephemeral_data, args=(data, queue))
-        self.thread_decrypt.start()
-        self.thread_decrypt.join()
-        ciphertext = queue.get()
+        ciphertext = self.decrypt_ephemeral_data(data)
         self.delete_message_from_disk(msg)
         if ciphertext:
             self.debug('Ephemeral layer decrypted')
