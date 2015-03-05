@@ -48,14 +48,29 @@ def create_dictionary(string):
     return dict(t.split() for t in string.strip().split('\n'))
 
 
+def search_block(data, beginning, end):
+    """
+    Returns the first block found in the format:
+        beginning
+        <content>
+        end
+    """
+
+    msg = ''
+    for line in data.split('\n'):
+        if msg:
+            msg += line + '\n'
+            if line == end:
+                return msg
+        elif line == beginning:
+            msg = line + '\n'
+    return None
+
+
 def search_pgp_message(data):
-    re_pgp = re.compile('-----BEGIN PGP MESSAGE-----.*-----END PGP MESSAGE-----', flags=re.DOTALL)
-    return re_pgp.search(data)
+    """Returns the first PGP message found"""
 
-
-def is_pgp_message(data):
-    re_pgp = re.compile('-----BEGIN PGP MESSAGE-----.*-----END PGP MESSAGE-----$', flags=re.DOTALL)
-    return re_pgp.match(data)
+    return search_block(data, '-----BEGIN PGP MESSAGE-----', '-----END PGP MESSAGE-----')
 
 
 def read_data(identifier):
@@ -484,11 +499,10 @@ class Client:
                 file_path = path + '/' + file_name
                 data = read_data(file_path)
                 if read_messages:
-                    if is_pgp_message(data):
-                        decrypted_data = decrypt_data(self.gpg, data, self.nym.passphrase)
-                        if decrypted_data:
-                            data = decrypted_data
-                    else:
+                    decrypted_data = decrypt_data(self.gpg, data, self.nym.passphrase)
+                    if decrypted_data:
+                        data = decrypted_data
+                    elif not search_pgp_message(data):
                         encrypted_data = encrypt_data(self.gpg, data, self.nym.address, self.nym.fingerprint,
                                                       self.nym.passphrase)
                         if encrypted_data:
@@ -685,15 +699,14 @@ class Client:
         self.delete_message_from_disk(msg)
         if ciphertext:
             self.debug('Ephemeral layer decrypted')
-            if is_pgp_message(ciphertext):
-                plaintext = decrypt_data(self.gpg, ciphertext, self.nym.passphrase)
-                if plaintext:
-                    self.debug('Asymmetric layer decrypted')
-                else:
-                    self.debug('Asymmetric layer not decrypted')
-                    plaintext = 'There is still an asymmetric layer that could not be decrypted:\n\n' + ciphertext
+            plaintext = decrypt_data(self.gpg, ciphertext, self.nym.passphrase)
+            if plaintext:
+                self.debug('Asymmetric layer decrypted')
             else:
                 plaintext = ciphertext
+                if search_pgp_message(ciphertext):
+                    self.debug('Asymmetric layer not decrypted')
+                    plaintext = 'The asymmetric layer encrypted by the server could not be decrypted:\n\n' + ciphertext
             return message.Message(False, plaintext, msg.identifier)
         else:
             raise errors.UndecipherableMessageError()
