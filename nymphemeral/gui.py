@@ -654,17 +654,38 @@ class SendTab(tk.Frame, object):
         # message box
         frame_text = tk.LabelFrame(frame_tab, text='Message')
         frame_text.grid(pady=10)
-        self.text_send = tk.Text(frame_text, height=32)
+        self.text_send = tk.Text(frame_text, height=28)
         self.text_send.grid(row=0, column=0)
         scrollbar = tk.Scrollbar(frame_text, command=self.text_send.yview)
         scrollbar.grid(row=0, column=1, sticky='ns')
         self.text_send['yscrollcommand'] = scrollbar.set
 
+        # end-to-end
+        frame_e2ee = tk.LabelFrame(frame_tab, text='End-to-End Encryption')
+        frame_e2ee.grid(sticky='we', ipady=5, pady=(0, 10))
+
+        # e2ee sender
+        label_e2ee_sender = tk.Label(frame_e2ee, text='Sender')
+        label_e2ee_sender.grid(row=0, sticky=tk.W, padx=12)
+        self.entry_e2ee_sender_send = tk.Entry(frame_e2ee, width=33)
+        self.entry_e2ee_sender_send.grid(row=1, sticky='w', padx=(12, 284))
+
+        label_tip = tk.Label(frame_e2ee, text='(UIDs or Fingerprints)')
+        label_tip.grid(row=0)
+
+        # e2ee target
+        label_e2ee_target = tk.Label(frame_e2ee, text='Target')
+        label_e2ee_target.grid(row=0, sticky=tk.E)
+        self.entry_e2ee_target_send = tk.Entry(frame_e2ee, width=33)
+        self.entry_e2ee_target_send.grid(row=1, sticky='e')
+
         # send button
         button_send = tk.Button(frame_tab, text='Send',
                                 command=lambda: self.send_message(self.entry_target_send.get().strip(),
                                                                   self.entry_subject_send.get().strip(),
-                                                                  self.text_send.get(1.0, tk.END).strip()))
+                                                                  self.text_send.get(1.0, tk.END).strip(),
+                                                                  self.entry_e2ee_target_send.get().strip(),
+                                                                  self.entry_e2ee_sender_send.get().strip()))
         button_send.grid()
 
     def compose_message(self, msg):
@@ -687,9 +708,19 @@ class SendTab(tk.Frame, object):
         self.gui.window_main.select_tab(self)
         self.text_send.focus_set()
 
-    def send_message(self, target_address, subject, content):
-        success, info, ciphertext = self.client.send_message(target_address, subject, content)
-        write_on_text(self.text_send, [info, ciphertext])
+    def send_message(self, target_address, subject, content, e2ee_target='', e2ee_sender=''):
+        try:
+            if e2ee_target and e2ee_sender:
+                content = self.client.encrypt_e2ee_data(content, e2ee_target, e2ee_sender)
+            elif e2ee_target:
+                raise errors.NymphemeralError('Error', 'A sender must be provided for end-to-end encryption.')
+            elif e2ee_sender:
+                raise errors.NymphemeralError('Error', 'A target must be provided for end-to-end encryption.')
+        except errors.NymphemeralError as e:
+            tkMessageBox.showerror(e.title, e.message)
+        else:
+            success, info, ciphertext = self.client.send_message(target_address, subject, content)
+            write_on_text(self.text_send, [info, ciphertext])
 
 
 class ConfigTab(tk.Frame, object):
