@@ -715,6 +715,36 @@ class Client:
         else:
             raise errors.UndecipherableMessageError()
 
+    def decrypt_e2ee_message(self, msg):
+        """Decrypt end-to-end encrypted message using the user's keyring"""
+
+        data = search_pgp_message(msg.content)
+        if not data:
+            self.debug('Not a PGP message to be decrypted')
+            raise errors.UndecipherableMessageError()
+
+        result = self.user_gpg.decrypt(data)
+        gpg_info = ''
+
+        if result.ok:
+            self.debug('End-to-end layer decrypted')
+
+            for line in result.stderr.split('\n'):
+                info = re.search('(\[GNUPG:\] )(.*)', line)
+                if not info:
+                    gpg_info += line + '\n'
+
+            if not gpg_info:
+                gpg_info = 'GPG information not available\n'
+
+            headers = str(msg.processed_message).split(data)[0]
+            full_msg = headers + gpg_info + result.data
+
+            return message.Message(True, full_msg, msg.identifier)
+        else:
+            self.debug('End-to-end layer not decrypted')
+            raise errors.UndecipherableMessageError()
+
     def save_message_to_disk(self, msg):
         try:
             new_identifier = self.directory_read_messages + '/' + msg.identifier.split('/')[-1]

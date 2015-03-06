@@ -585,6 +585,12 @@ class InboxTab(tk.Frame, object):
                     self.current_message_index = None
                     self.update_messages_list()
                 else:
+                    # Check for an end-to-end encryption layer
+                    try:
+                        self.messages[index] = self.client.decrypt_e2ee_message(self.messages[index])
+                    except errors.UndecipherableMessageError:
+                        pass
+
                     write_on_text(self.text_content_inbox, [self.messages[index].content])
                     self.update_messages_list()
                     self.toggle_save_del_button(True)
