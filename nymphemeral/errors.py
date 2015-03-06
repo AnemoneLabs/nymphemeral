@@ -1,7 +1,7 @@
 class NymphemeralError(Exception):
-    def __init__(self):
-        self.title = None
-        self.message = None
+    def __init__(self, title, message):
+        self.title = title
+        self.message = message
 
 
 class InvalidEmailAddressError(NymphemeralError):
