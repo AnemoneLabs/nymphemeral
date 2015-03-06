@@ -120,12 +120,12 @@ def generate_key(gpg, name, address, passphrase, duration):
     return gpg.export_keys(keyids=address), fingerprint
 
 
-def retrieve_fingerprint(gpg, address):
+def retrieve_fingerprint(gpg, uid):
     keys = gpg.list_keys()
     for item in keys:
-        if address in item['uids'][0]:
+        if uid in item['uids'][0]:
             return item['fingerprint']
-    return None
+    raise errors.FingerprintNotFoundError(uid)
 
 
 def encrypt_data(gpg, data, recipients, fingerprint, passphrase):
