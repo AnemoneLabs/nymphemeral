@@ -740,7 +740,7 @@ class Client:
             headers = str(msg.processed_message).split(data)[0]
             full_msg = headers + gpg_info + result.data
 
-            return message.Message(True, full_msg, msg.identifier)
+            return message.Message(False, full_msg, msg.identifier)
         else:
             self.debug('End-to-end layer not decrypted')
             raise errors.UndecipherableMessageError()
