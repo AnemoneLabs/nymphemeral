@@ -35,9 +35,9 @@ class NewsserverNotFoundError(NymphemeralError):
 
 
 class FingerprintNotFoundError(NymphemeralError):
-    def __init__(self, nym):
+    def __init__(self, uid):
         self.title = 'Fingerprint Not Found'
-        self.message = 'The fingerprint for "' + nym + '" could not be found in the keyring.'
+        self.message = 'The fingerprint for "' + uid + '" could not be found in the keyring.'
 
 
 class IncorrectPassphraseError(NymphemeralError):
