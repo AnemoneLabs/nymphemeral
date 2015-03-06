@@ -715,6 +715,27 @@ class Client:
         else:
             raise errors.UndecipherableMessageError()
 
+    def encrypt_e2ee_data(self, data, recipient, sender):
+        """
+        Encrypt end-to-end data using the user's keyring
+        recipient and sender are expected to be either UIDs or fingerprints
+        """
+
+        if re.match('[^@]+@[^@]+\.[^@]+', recipient):
+            recipient = retrieve_fingerprint(self.user_gpg, recipient)
+
+        if re.match('[^@]+@[^@]+\.[^@]+', sender):
+            sender = retrieve_fingerprint(self.user_gpg, sender)
+
+        ciphertext = self.user_gpg.encrypt(data, recipient, sign=sender, always_trust=True)
+        if ciphertext:
+            return str(ciphertext)
+        else:
+            text = ciphertext.status.capitalize()
+            if not text:
+                text = 'Unknown error'
+            raise errors.NymphemeralError('GPG Error', text + '!')
+
     def decrypt_e2ee_message(self, msg):
         """Decrypt end-to-end encrypted message using the user's keyring"""
 
