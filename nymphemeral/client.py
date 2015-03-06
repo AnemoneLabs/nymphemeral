@@ -216,7 +216,11 @@ class Client:
         self.file_mix_cfg = None
         self.check_base_files()
 
+        # Local keyring, to communicate with the server
         self.gpg = new_gpg([self.directory_base])
+
+        # User keyring, to communicate with other users (end-to-end)
+        self.user_gpg = new_gpg([self.directory_gpg, self.directory_base])
 
         self.axolotl = None
         self.nym = None
@@ -478,7 +482,7 @@ class Client:
                         else:
                             hsubs = dict(hsubs.items() + decrypted_hsubs.items())
                     except KeyError:
-                         hsubs = dict(hsubs.items() + decrypted_hsubs.items())
+                        hsubs = dict(hsubs.items() + decrypted_hsubs.items())
                 else:
                     hsubs = decrypted_hsubs
         else:
