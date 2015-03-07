@@ -4,6 +4,12 @@ class NymphemeralError(Exception):
         self.message = message
 
 
+class AmbiguousUidError(NymphemeralError):
+    def __init__(self, uid):
+        self.title = 'Ambiguous UID'
+        self.message = '"' + uid + '" has multiple fingerprints. Be more specific.'
+
+
 class InvalidEmailAddressError(NymphemeralError):
     def __init__(self, address):
         self.title = 'Invalid Email Address'
