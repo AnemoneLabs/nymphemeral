@@ -670,11 +670,11 @@ class SendTab(tk.Frame, object):
         self.entry_e2ee_target_send = tk.Entry(frame_e2ee, width=33)
         self.entry_e2ee_target_send.grid(row=1, sticky='w', padx=(12, 284))
 
-        # e2ee sender
-        label_e2ee_sender = tk.Label(frame_e2ee, text='Signer (Optional)')
-        label_e2ee_sender.grid(row=0, sticky=tk.E)
-        self.entry_e2ee_sender_send = tk.Entry(frame_e2ee, width=33)
-        self.entry_e2ee_sender_send.grid(row=1, sticky='e')
+        # e2ee signer
+        label_e2ee_signer = tk.Label(frame_e2ee, text='Signer (Optional)')
+        label_e2ee_signer.grid(row=0, sticky=tk.E)
+        self.entry_e2ee_signer_send = tk.Entry(frame_e2ee, width=33)
+        self.entry_e2ee_signer_send.grid(row=1, sticky='e')
 
         # e2ee tip
         label_tip = tk.Label(frame_e2ee, text='(UIDs or Fingerprints)')
@@ -686,7 +686,7 @@ class SendTab(tk.Frame, object):
                                                                   self.entry_subject_send.get().strip(),
                                                                   self.text_send.get(1.0, tk.END).strip(),
                                                                   self.entry_e2ee_target_send.get().strip(),
-                                                                  self.entry_e2ee_sender_send.get().strip()))
+                                                                  self.entry_e2ee_signer_send.get().strip()))
         button_send.grid()
 
     def compose_message(self, msg):
@@ -709,15 +709,15 @@ class SendTab(tk.Frame, object):
         self.gui.window_main.select_tab(self)
         self.text_send.focus_set()
 
-    def send_message(self, target_address, subject, content, e2ee_target='', e2ee_sender=''):
+    def send_message(self, target_address, subject, content, e2ee_target='', e2ee_signer=''):
         try:
             # check if end-to-end encryption is intended
             if len(e2ee_target):
-                if len(e2ee_sender):
-                    content = self.client.encrypt_e2ee_data(content, e2ee_target, e2ee_sender)
+                if len(e2ee_signer):
+                    content = self.client.encrypt_e2ee_data(content, e2ee_target, e2ee_signer)
                 else:
                     content = self.client.encrypt_e2ee_data(content, e2ee_target)
-            elif len(e2ee_sender):
+            elif len(e2ee_signer):
                 raise errors.NymphemeralError('Error', 'A target must be provided for end-to-end encryption.')
         except errors.NymphemeralError as e:
             tkMessageBox.showerror(e.title, e.message)
