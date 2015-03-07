@@ -727,11 +727,8 @@ class Client:
         recipient and sender are expected to be either UIDs or fingerprints
         """
 
-        if re.match('[^@]+@[^@]+\.[^@]+', recipient):
-            recipient = retrieve_fingerprint(self.user_gpg, recipient)
-
-        if re.match('[^@]+@[^@]+\.[^@]+', sender):
-            sender = retrieve_fingerprint(self.user_gpg, sender)
+        recipient = retrieve_fingerprint(self.user_gpg, recipient)
+        sender = retrieve_fingerprint(self.user_gpg, sender)
 
         ciphertext = self.user_gpg.encrypt(data, recipient, sign=sender, always_trust=True)
         if ciphertext:
