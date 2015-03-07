@@ -121,11 +121,17 @@ def generate_key(gpg, name, address, passphrase, duration):
 
 
 def retrieve_fingerprint(gpg, uid):
-    keys = gpg.list_keys()
-    for item in keys:
-        if uid in item['uids'][0]:
-            return item['fingerprint']
-    raise errors.FingerprintNotFoundError(uid)
+    """Return the ONLY fingerprint found for the UID specified"""
+
+    pkey = gpg.export_keys(uid)
+    if pkey:
+        fps = gpg.import_keys(pkey).fingerprints
+        for fp in fps:
+            if fp != fps[0]:
+                raise errors.AmbiguousUidError(uid)
+        return fps[0]
+    else:
+        raise errors.FingerprintNotFoundError(uid)
 
 
 def encrypt_data(gpg, data, recipients, fingerprint, passphrase):
