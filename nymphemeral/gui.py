@@ -660,24 +660,25 @@ class SendTab(tk.Frame, object):
         scrollbar.grid(row=0, column=1, sticky='ns')
         self.text_send['yscrollcommand'] = scrollbar.set
 
-        # end-to-end
-        frame_e2ee = tk.LabelFrame(frame_tab, text='End-to-End Encryption')
+        # e2ee
+        frame_e2ee = tk.LabelFrame(frame_tab, text='End-to-End Encryption (Recommended)')
         frame_e2ee.grid(sticky='we', ipady=5, pady=(0, 10))
-
-        # e2ee sender
-        label_e2ee_sender = tk.Label(frame_e2ee, text='Sender')
-        label_e2ee_sender.grid(row=0, sticky=tk.W, padx=12)
-        self.entry_e2ee_sender_send = tk.Entry(frame_e2ee, width=33)
-        self.entry_e2ee_sender_send.grid(row=1, sticky='w', padx=(12, 284))
-
-        label_tip = tk.Label(frame_e2ee, text='(UIDs or Fingerprints)')
-        label_tip.grid(row=0)
 
         # e2ee target
         label_e2ee_target = tk.Label(frame_e2ee, text='Target')
-        label_e2ee_target.grid(row=0, sticky=tk.E)
+        label_e2ee_target.grid(row=0, sticky=tk.W, padx=12)
         self.entry_e2ee_target_send = tk.Entry(frame_e2ee, width=33)
-        self.entry_e2ee_target_send.grid(row=1, sticky='e')
+        self.entry_e2ee_target_send.grid(row=1, sticky='w', padx=(12, 284))
+
+        # e2ee sender
+        label_e2ee_sender = tk.Label(frame_e2ee, text='Signer (Optional)')
+        label_e2ee_sender.grid(row=0, sticky=tk.E)
+        self.entry_e2ee_sender_send = tk.Entry(frame_e2ee, width=33)
+        self.entry_e2ee_sender_send.grid(row=1, sticky='e')
+
+        # e2ee tip
+        label_tip = tk.Label(frame_e2ee, text='(UIDs or Fingerprints)')
+        label_tip.grid(row=0)
 
         # send button
         button_send = tk.Button(frame_tab, text='Send',
@@ -710,10 +711,8 @@ class SendTab(tk.Frame, object):
 
     def send_message(self, target_address, subject, content, e2ee_target='', e2ee_sender=''):
         try:
-            if e2ee_target and e2ee_sender:
+            if e2ee_target:
                 content = self.client.encrypt_e2ee_data(content, e2ee_target, e2ee_sender)
-            elif e2ee_target:
-                raise errors.NymphemeralError('Error', 'A sender must be provided for end-to-end encryption.')
             elif e2ee_sender:
                 raise errors.NymphemeralError('Error', 'A target must be provided for end-to-end encryption.')
         except errors.NymphemeralError as e:

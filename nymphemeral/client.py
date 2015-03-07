@@ -725,10 +725,12 @@ class Client:
         """
         Encrypt end-to-end data using the user's keyring
         recipient and sender are expected to be either UIDs or fingerprints
+        sender is optional, in case signing is not intended
         """
 
         recipient = retrieve_fingerprint(self.user_gpg, recipient)
-        sender = retrieve_fingerprint(self.user_gpg, sender)
+        if sender:
+            sender = retrieve_fingerprint(self.user_gpg, sender)
 
         ciphertext = self.user_gpg.encrypt(data, recipient, sign=sender, always_trust=True)
         if ciphertext:
