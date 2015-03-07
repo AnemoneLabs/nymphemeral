@@ -711,9 +711,13 @@ class SendTab(tk.Frame, object):
 
     def send_message(self, target_address, subject, content, e2ee_target='', e2ee_sender=''):
         try:
-            if e2ee_target:
-                content = self.client.encrypt_e2ee_data(content, e2ee_target, e2ee_sender)
-            elif e2ee_sender:
+            # check if end-to-end encryption is intended
+            if len(e2ee_target):
+                if len(e2ee_sender):
+                    content = self.client.encrypt_e2ee_data(content, e2ee_target, e2ee_sender)
+                else:
+                    content = self.client.encrypt_e2ee_data(content, e2ee_target)
+            elif len(e2ee_sender):
                 raise errors.NymphemeralError('Error', 'A target must be provided for end-to-end encryption.')
         except errors.NymphemeralError as e:
             tkMessageBox.showerror(e.title, e.message)

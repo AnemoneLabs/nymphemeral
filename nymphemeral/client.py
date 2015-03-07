@@ -721,18 +721,18 @@ class Client:
         else:
             raise errors.UndecipherableMessageError()
 
-    def encrypt_e2ee_data(self, data, recipient, sender):
+    def encrypt_e2ee_data(self, data, recipient, signer=None):
         """
         Encrypt end-to-end data using the user's keyring
-        recipient and sender are expected to be either UIDs or fingerprints
-        sender is optional, in case signing is not intended
+        recipient and signer are expected to be either UIDs or fingerprints
+        signer is optional, in case signing is not intended
         """
 
         recipient = retrieve_fingerprint(self.user_gpg, recipient)
-        if sender:
-            sender = retrieve_fingerprint(self.user_gpg, sender)
+        if signer:
+            signer = retrieve_fingerprint(self.user_gpg, signer)
 
-        ciphertext = self.user_gpg.encrypt(data, recipient, sign=sender, always_trust=True)
+        ciphertext = self.user_gpg.encrypt(data, recipient, sign=signer, always_trust=True)
         if ciphertext:
             return str(ciphertext)
         else:
