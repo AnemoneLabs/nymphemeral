@@ -50,10 +50,11 @@ def create_dictionary(string):
 
 def search_block(data, beginning, end):
     """
-    Returns the first block found in the format:
+    Return the first block found in the format:
         beginning
         <content>
         end
+    Return None if beginning or end are not found
     """
 
     msg = ''
@@ -68,7 +69,7 @@ def search_block(data, beginning, end):
 
 
 def search_pgp_message(data):
-    """Returns the first PGP message found"""
+    """Return the first PGP message found, return None otherwise"""
 
     return search_block(data, '-----BEGIN PGP MESSAGE-----', '-----END PGP MESSAGE-----')
 
@@ -723,7 +724,7 @@ class Client:
 
     def encrypt_e2ee_data(self, data, recipient, signer=None):
         """
-        Encrypt end-to-end data using the user's keyring
+        Return ciphertext of end-to-end encrypted data using the user's keyring
         recipient and signer are expected to be either UIDs or fingerprints
         signer is optional, in case signing is not intended
         """
@@ -742,7 +743,7 @@ class Client:
             raise errors.NymphemeralError('GPG Error', text + '!')
 
     def decrypt_e2ee_message(self, msg):
-        """Decrypt end-to-end encrypted message using the user's keyring"""
+        """Return plaintext of end-to-end encrypted message using the user's keyring"""
 
         data = search_pgp_message(msg.content)
         if not data:
