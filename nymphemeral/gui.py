@@ -710,6 +710,8 @@ class SendTab(tk.Frame, object):
         self.text_send.focus_set()
 
     def send_message(self, target_address, subject, content, e2ee_target='', e2ee_signer=''):
+        if not content.endswith('\n'):
+            content += '\n'
         try:
             # check if end-to-end encryption is intended
             if len(e2ee_target):
