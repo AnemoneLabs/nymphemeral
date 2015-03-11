@@ -329,7 +329,7 @@ class Client:
             with open(self.file_mix_cfg, 'r') as config:
                 lines = config.readlines()
                 for line in lines:
-                    s = re.search('(CHAIN )(.*)', line)
+                    s = re.match('(CHAIN )(.*)', line)
                     if s:
                         chain = 'Mix Chain: ' + s.group(2)
                         break
