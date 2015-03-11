@@ -56,6 +56,9 @@ def write_on_text(text, content, clear=True):
 class Gui:
     def __init__(self):
         self.client = Client()
+        self.title = 'nymphemeral'
+        if self.client.is_debugging:
+            self.title += ' ' + __version__
 
         self.window_login = LoginWindow(self, self.client)
         self.window_main = None
@@ -82,7 +85,7 @@ class LoginWindow(tk.Tk, object):
         self.client = client
         self.var_output_method = None
 
-        self.title('nymphemeral')
+        self.title(self.gui.title)
         frame_login = tk.Frame(self)
         frame_login.grid(sticky='w', padx=15, pady=15)
 
@@ -287,7 +290,7 @@ class MainWindow(tk.Tk, object):
         self.tab_create = None
 
         # root window
-        self.title('nymphemeral')
+        self.title(self.gui.title)
 
         # frame inside root window
         frame_tab = tk.Frame(self)
