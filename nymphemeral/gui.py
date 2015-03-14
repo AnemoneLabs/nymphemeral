@@ -573,15 +573,14 @@ class InboxTab(tk.Frame, object):
     def select_message(self, event):
         if len(self.messages) and self.client.aampy_is_done:
             index = int(event.widget.curselection()[0])
-            selected_message = self.messages[index]
             self.current_message_index = index
 
-            if selected_message.is_unread:
+            if self.messages[index].is_unread:
                 self.button_save_del_inbox.config(state=tk.DISABLED)
                 self.button_reply_inbox.config(state=tk.DISABLED)
 
                 try:
-                    self.messages[index] = self.client.decrypt_ephemeral_message(selected_message)
+                    self.messages[index] = self.client.decrypt_ephemeral_message(self.messages[index])
                 except errors.UndecipherableMessageError as e:
                     tkMessageBox.showerror(e.title, e.message)
                     self.messages.pop(index)
@@ -594,19 +593,19 @@ class InboxTab(tk.Frame, object):
                     except errors.UndecipherableMessageError:
                         pass
 
-                    write_on_text(self.text_content_inbox, [self.messages[index].content])
                     self.update_messages_list()
-                    self.toggle_save_del_button(True)
-                    self.button_save_del_inbox.config(state=tk.NORMAL)
-                    self.button_reply_inbox.config(state=tk.NORMAL)
+                    self.display_message(self.messages[index])
             else:
-                if os.path.exists(selected_message.identifier):
-                    self.toggle_save_del_button(False)
-                else:
-                    self.toggle_save_del_button(True)
-                write_on_text(self.text_content_inbox, [selected_message.content])
-                self.button_save_del_inbox.config(state=tk.NORMAL)
-                self.button_reply_inbox.config(state=tk.NORMAL)
+                self.display_message(self.messages[index])
+
+    def display_message(self, msg):
+        write_on_text(self.text_content_inbox, [msg.content])
+        if os.path.exists(msg.identifier):
+            self.toggle_save_del_button(False)
+        else:
+            self.toggle_save_del_button(True)
+        self.button_save_del_inbox.config(state=tk.NORMAL)
+        self.button_reply_inbox.config(state=tk.NORMAL)
 
     def toggle_save_del_button(self, toggle_save):
         if toggle_save:
