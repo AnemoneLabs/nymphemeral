@@ -22,8 +22,6 @@ import errors
 from nym import Nym
 
 
-cfg = ConfigParser.ConfigParser()
-
 BASE_FILES_PATH = '/usr/share/nymphemeral'
 USER_PATH = os.path.expanduser('~')
 NYMPHEMERAL_PATH = USER_PATH + '/.config/nymphemeral'
@@ -210,6 +208,8 @@ def generate_db(directory, fingerprint, mkey, passphrase):
 
 class Client:
     def __init__(self):
+        self.cfg = ConfigParser.ConfigParser()
+
         self.directory_base = None
         self.directory_db = None
         self.directory_read_messages = None
@@ -260,28 +260,28 @@ class Client:
     def load_configs(self):
         try:
             # load default configs
-            cfg.add_section('gpg')
-            cfg.set('gpg', 'base_folder', USER_PATH + '/.gnupg')
-            cfg.add_section('main')
-            cfg.set('main', 'base_folder', NYMPHEMERAL_PATH)
-            cfg.set('main', 'db_folder', '%(base_folder)s/db')
-            cfg.set('main', 'messages_folder', '%(base_folder)s/messages')
-            cfg.set('main', 'read_folder', '%(messages_folder)s/read')
-            cfg.set('main', 'unread_folder', '%(messages_folder)s/unread')
-            cfg.set('main', 'hsub_file', '%(base_folder)s/hsubs.txt')
-            cfg.set('main', 'encrypted_hsub_file', '%(base_folder)s/encrypted_hsubs.txt')
-            cfg.set('main', 'debug_switch', 'False')
-            cfg.set('main', 'output_method', 'manual')
-            cfg.add_section('mixmaster')
-            cfg.set('mixmaster', 'base_folder', USER_PATH + '/Mix')
-            cfg.set('mixmaster', 'binary', '%(base_folder)s/mixmaster')
-            cfg.set('mixmaster', 'cfg', '%(base_folder)s/mix.cfg')
-            cfg.add_section('newsgroup')
-            cfg.set('newsgroup', 'base_folder', NYMPHEMERAL_PATH)
-            cfg.set('newsgroup', 'group', 'alt.anonymous.messages')
-            cfg.set('newsgroup', 'server', 'localhost')
-            cfg.set('newsgroup', 'port', '119')
-            cfg.set('newsgroup', 'newnews', '%(base_folder)s/.newnews')
+            self.cfg.add_section('gpg')
+            self.cfg.set('gpg', 'base_folder', USER_PATH + '/.gnupg')
+            self.cfg.add_section('main')
+            self.cfg.set('main', 'base_folder', NYMPHEMERAL_PATH)
+            self.cfg.set('main', 'db_folder', '%(base_folder)s/db')
+            self.cfg.set('main', 'messages_folder', '%(base_folder)s/messages')
+            self.cfg.set('main', 'read_folder', '%(messages_folder)s/read')
+            self.cfg.set('main', 'unread_folder', '%(messages_folder)s/unread')
+            self.cfg.set('main', 'hsub_file', '%(base_folder)s/hsubs.txt')
+            self.cfg.set('main', 'encrypted_hsub_file', '%(base_folder)s/encrypted_hsubs.txt')
+            self.cfg.set('main', 'debug_switch', 'False')
+            self.cfg.set('main', 'output_method', 'manual')
+            self.cfg.add_section('mixmaster')
+            self.cfg.set('mixmaster', 'base_folder', USER_PATH + '/Mix')
+            self.cfg.set('mixmaster', 'binary', '%(base_folder)s/mixmaster')
+            self.cfg.set('mixmaster', 'cfg', '%(base_folder)s/mix.cfg')
+            self.cfg.add_section('newsgroup')
+            self.cfg.set('newsgroup', 'base_folder', NYMPHEMERAL_PATH)
+            self.cfg.set('newsgroup', 'group', 'alt.anonymous.messages')
+            self.cfg.set('newsgroup', 'server', 'localhost')
+            self.cfg.set('newsgroup', 'port', '119')
+            self.cfg.set('newsgroup', 'newnews', '%(base_folder)s/.newnews')
 
             # parse existing configs in case new versions modify them
             # or the user modifies the file inappropriately
@@ -290,9 +290,9 @@ class Client:
                 saved_cfg.read(CONFIG_FILE)
                 for section in saved_cfg.sections():
                     try:
-                        for option in cfg.options(section):
+                        for option in self.cfg.options(section):
                             try:
-                                cfg.set(section, option, saved_cfg.get(section, option))
+                                self.cfg.set(section, option, saved_cfg.get(section, option))
                             except:
                                 pass
                     except:
@@ -301,27 +301,27 @@ class Client:
                 create_directory(NYMPHEMERAL_PATH)
             self.save_configs()
 
-            self.directory_base = cfg.get('main', 'base_folder')
-            self.directory_db = cfg.get('main', 'db_folder')
-            self.directory_read_messages = cfg.get('main', 'read_folder')
-            self.directory_unread_messages = cfg.get('main', 'unread_folder')
-            self.directory_gpg = cfg.get('gpg', 'base_folder')
-            self.file_hsub = cfg.get('main', 'hsub_file')
-            self.file_encrypted_hsub = cfg.get('main', 'encrypted_hsub_file')
-            self.is_debugging = cfg.getboolean('main', 'debug_switch')
-            self.output_method = cfg.get('main', 'output_method')
-            self.file_mix_binary = cfg.get('mixmaster', 'binary')
-            self.file_mix_cfg = cfg.get('mixmaster', 'cfg')
+            self.directory_base = self.cfg.get('main', 'base_folder')
+            self.directory_db = self.cfg.get('main', 'db_folder')
+            self.directory_read_messages = self.cfg.get('main', 'read_folder')
+            self.directory_unread_messages = self.cfg.get('main', 'unread_folder')
+            self.directory_gpg = self.cfg.get('gpg', 'base_folder')
+            self.file_hsub = self.cfg.get('main', 'hsub_file')
+            self.file_encrypted_hsub = self.cfg.get('main', 'encrypted_hsub_file')
+            self.is_debugging = self.cfg.getboolean('main', 'debug_switch')
+            self.output_method = self.cfg.get('main', 'output_method')
+            self.file_mix_binary = self.cfg.get('mixmaster', 'binary')
+            self.file_mix_cfg = self.cfg.get('mixmaster', 'cfg')
         except IOError:
             print 'Error while opening ' + str(CONFIG_FILE).split('/')[-1]
             raise
 
     def save_configs(self):
         with open(CONFIG_FILE, 'w') as config_file:
-            cfg.write(config_file)
+            self.cfg.write(config_file)
 
     def update_configs(self):
-        cfg.set('main', 'output_method', self.output_method)
+        self.cfg.set('main', 'output_method', self.output_method)
 
     def retrieve_mix_chain(self):
         chain = None
@@ -663,7 +663,7 @@ class Client:
         self.thread_aampy_event.daemon = True
         self.queue_aampy = Queue.Queue()
         self.thread_aampy = threading.Thread(target=aampy.aam, args=(self.event_aampy, self.queue_aampy, self.hsubs,
-                                                                     cfg))
+                                                                     self.cfg))
         self.thread_aampy.daemon = True
 
         self.thread_aampy_event.start()
