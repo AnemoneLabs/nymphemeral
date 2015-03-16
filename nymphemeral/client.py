@@ -176,6 +176,36 @@ def format_key_info(key):
     return info
 
 
+def retrieve_keyids(msg):
+    """
+    Return key IDs used to encrypt a PGP message
+
+    Expects to get something like the following format from gpg --list-packets:
+        :pubkey enc packet: version 3, algo 1, keyid 4096409640964096
+            data: [4096 bits]
+        :pubkey enc packet: version 3, algo 1, keyid 0248163264128256
+            data: [4096 bits]
+        :encrypted data packet:
+            length: unknown
+            mdc_method: 2
+        gpg: encrypted with RSA key, ID 64128256
+        gpg: encrypted with RSA key, ID 40964096
+    """
+
+    keyids = []
+    p = subprocess.Popen(['gpg', '--no-tty', '--list-packets', '--list-only'],
+                         stdin=subprocess.PIPE,
+                         stdout=subprocess.PIPE)
+    out, err = p.communicate(msg)
+    for line in out.splitlines():
+        result = re.match(r':pubkey.*\bkeyid (\w+)\b.*', line)
+        if result:
+            # append valid key IDs (not thrown away)
+            if not re.match('^0*$', result.group(1)):
+                keyids.append(result.group(1))
+    return keyids
+
+
 def encrypt_data(gpg, data, recipients, fingerprint, passphrase):
     result = gpg.encrypt(data,
                          recipients,
