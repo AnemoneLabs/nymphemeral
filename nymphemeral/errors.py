@@ -46,6 +46,12 @@ class FingerprintNotFoundError(NymphemeralError):
         self.message = 'The fingerprint for "' + uid + '" could not be found in the keyring.'
 
 
+class KeyNotFoundError(NymphemeralError):
+    def __init__(self, uid):
+        self.title = 'Key Not Found'
+        self.message = 'The key for "' + uid + '" could not be found in the keyring.'
+
+
 class IncorrectPassphraseError(NymphemeralError):
     def __init__(self):
         self.title = 'Incorrect Passphrase'
