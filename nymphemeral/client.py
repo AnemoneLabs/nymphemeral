@@ -119,18 +119,39 @@ def generate_key(gpg, name, address, passphrase, duration):
     return gpg.export_keys(keyids=address), fingerprint
 
 
-def retrieve_fingerprint(gpg, uid):
-    """Return the ONLY fingerprint found for the UID specified"""
+def retrieve_key(gpg, query):
+    """Return the ONLY key found for the query specified"""
 
-    pkey = gpg.export_keys(uid)
-    if pkey:
-        fps = gpg.import_keys(pkey).fingerprints
-        for fp in fps:
-            if fp != fps[0]:
-                raise errors.AmbiguousUidError(uid)
-        return fps[0]
+    query = query.lower()
+    results = []
+    keys = gpg.list_keys()
+
+    for k in keys:
+        if k['keyid'].lower().endswith(query) or k['fingerprint'].lower().endswith(query):
+            results.append(k)
+        else:
+            for sub in k['subkeys']:
+                if sub[0].lower().endswith(query):
+                    results.append(k)
+                    break
+            else:
+                for uid in k['uids']:
+                    if re.search(r'\b' + query + r'\b', uid, flags=re.IGNORECASE):
+                        results.append(k)
+                        break
+    if results:
+        for r in results[1:]:
+            if r['fingerprint'] != results[0]['fingerprint']:
+                raise errors.AmbiguousUidError(query)
+        return results[0]
     else:
-        raise errors.FingerprintNotFoundError(uid)
+        raise errors.KeyNotFoundError(query)
+
+
+def retrieve_fingerprint(gpg, query):
+    """Return the ONLY fingerprint found for the query specified"""
+
+    return retrieve_key(gpg, query)['fingerprint']
 
 
 def encrypt_data(gpg, data, recipients, fingerprint, passphrase):
@@ -722,18 +743,33 @@ class Client:
         else:
             raise errors.UndecipherableMessageError()
 
-    def encrypt_e2ee_data(self, data, recipient, signer=None):
+    def encrypt_e2ee_data(self, data, recipient, signer=None, passphrase=''):
         """
         Return ciphertext of end-to-end encrypted data using the user's keyring
-        recipient and signer are expected to be either UIDs or fingerprints
+
+        recipient and signer are expected to be fingerprints or a dictionary with the same format as the one returned
+        by gpg.list_keys()
+
         signer is optional, in case signing is not intended
         """
 
-        recipient = retrieve_fingerprint(self.user_gpg, recipient)
-        if signer:
-            signer = retrieve_fingerprint(self.user_gpg, signer)
+        try:
+            recipient = recipient['fingerprint']
+        except KeyError:
+            # it might be a string with the fingerprint
+            pass
 
-        ciphertext = self.user_gpg.encrypt(data, recipient, sign=signer, always_trust=True)
+        try:
+            signer = signer['fingerprint']
+        except KeyError:
+            # it might be a string with the fingerprint
+            pass
+        except TypeError:
+            # signer might be None
+            # Signing is optional
+            pass
+
+        ciphertext = self.user_gpg.encrypt(data, recipient, sign=signer, passphrase=passphrase, always_trust=True)
         if ciphertext:
             return str(ciphertext)
         else:
