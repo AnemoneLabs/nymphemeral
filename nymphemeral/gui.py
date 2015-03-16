@@ -40,8 +40,9 @@ import Tkinter as tk
 import ttk
 import os
 import tkMessageBox
+import tkSimpleDialog
 
-from client import Client, OUTPUT_METHOD
+from client import OUTPUT_METHOD, search_pgp_message, retrieve_keyids, retrieve_key, format_key_info, Client
 import errors
 from nym import Nym
 
@@ -570,6 +571,36 @@ class InboxTab(tk.Frame, object):
             self.progress_bar_inbox.grid_forget()
             self.button_aampy_inbox.config(text='Retrieve Messages', command=self.start_retrieving_messages)
 
+    def decrypt_e2ee_message(self, msg):
+        pgp_message = search_pgp_message(msg.content)
+        if pgp_message:
+            keyids = retrieve_keyids(pgp_message)
+            keys = []
+            if keyids:
+                for k in keyids:
+                    try:
+                        keys.append(retrieve_key(self.client.user_gpg, k))
+                    except errors.KeyNotFoundError:
+                        pass
+            if keys:
+                prompt = 'Message encrypted to:\n'
+                for k in keys:
+                    prompt += format_key_info(k)
+            else:
+                prompt = 'The key ID which the message was encrypted to was removed ' \
+                         'or is not in the keyring.\n'
+            prompt += 'Provide a passphrase to attempt to decrypt it:'
+            passphrase = tkSimpleDialog.askstring('End-to-End Encrypted Message',
+                                                  prompt,
+                                                  parent=self,
+                                                  show='*')
+            if passphrase is None:
+                return msg
+            else:
+                return self.client.decrypt_e2ee_message(msg, passphrase)
+        else:
+            return msg
+
     def select_message(self, event):
         if len(self.messages) and self.client.aampy_is_done:
             index = int(event.widget.curselection()[0])
@@ -587,9 +618,9 @@ class InboxTab(tk.Frame, object):
                     self.current_message_index = None
                     self.update_messages_list()
                 else:
-                    # Check for an end-to-end encryption layer
+                    # Check for and decrypt an end-to-end encryption layer
                     try:
-                        self.messages[index] = self.client.decrypt_e2ee_message(self.messages[index])
+                        self.messages[index] = self.decrypt_e2ee_message(self.messages[index])
                     except errors.UndecipherableMessageError:
                         pass
 
@@ -714,20 +745,39 @@ class SendTab(tk.Frame, object):
     def send_message(self, target_address, subject, content, e2ee_target='', e2ee_signer=''):
         if not content.endswith('\n'):
             content += '\n'
+        e2ee_target_info = ''
         try:
             # check if end-to-end encryption is intended
             if len(e2ee_target):
+                target_key = retrieve_key(self.client.user_gpg, e2ee_target)
+                e2ee_target_info = 'End-to-End Encryption to:\n' + format_key_info(target_key) + '\n'
                 if len(e2ee_signer):
-                    content = self.client.encrypt_e2ee_data(content, e2ee_target, e2ee_signer)
+                    signer_key = retrieve_key(self.client.user_gpg, e2ee_signer)
+                    prompt = 'Signing with:\n' \
+                             + format_key_info(signer_key) \
+                             + 'Provide a passphrase to unlock the secret key:'
+                    passphrase = tkSimpleDialog.askstring('Passphrase Required',
+                                                          prompt,
+                                                          parent=self,
+                                                          show='*')
+                    if passphrase is None:
+                        # cancel
+                        return
+                    else:
+                        content = self.client.encrypt_e2ee_data(content,
+                                                                target_key,
+                                                                signer_key,
+                                                                passphrase)
                 else:
-                    content = self.client.encrypt_e2ee_data(content, e2ee_target)
+                    # encrypt but not sign
+                    content = self.client.encrypt_e2ee_data(content, target_key)
             elif len(e2ee_signer):
                 raise errors.NymphemeralError('Error', 'A target must be provided for end-to-end encryption.')
         except errors.NymphemeralError as e:
             tkMessageBox.showerror(e.title, e.message)
         else:
             success, info, ciphertext = self.client.send_message(target_address, subject, content)
-            write_on_text(self.text_send, [info, ciphertext])
+            write_on_text(self.text_send, [info, e2ee_target_info, ciphertext])
 
 
 class ConfigTab(tk.Frame, object):
