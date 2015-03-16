@@ -14,6 +14,7 @@ import Tkinter
 
 import gnupg
 from passlib.utils.pbkdf2 import pbkdf2
+import time
 
 from pyaxo import Axolotl
 import aampy
@@ -152,6 +153,27 @@ def retrieve_fingerprint(gpg, query):
     """Return the ONLY fingerprint found for the query specified"""
 
     return retrieve_key(gpg, query)['fingerprint']
+
+
+def format_key_info(key):
+    """
+    Process a dictionary with key information and return it in a format similar to GPG's
+
+    key should be a dictionary in the same format as the one returned by gpg.list_keys()
+
+    The resulting string will be in the format:
+        Username <user@domain>
+        4096-bit key, ID 31415926, expires 2015-03-14
+    """
+
+    info = ''
+    for uid in key['uids']:
+        info += uid + '\n'
+    info += key['length'] + '-bit key' \
+        + ', ID ' + key['keyid'][-8:] \
+        + ', expires ' + time.strftime('%Y-%m-%d', time.gmtime(float(key['expires']))) \
+        + '\n'
+    return info
 
 
 def encrypt_data(gpg, data, recipients, fingerprint, passphrase):
