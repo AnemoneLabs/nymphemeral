@@ -799,26 +799,22 @@ class Client:
         """
         Return ciphertext of end-to-end encrypted data using the user's keyring
 
-        recipient and signer are expected to be fingerprints or a dictionary with the same format as the one returned
-        by gpg.list_keys()
+        recipient and signer are expected to be fingerprints (strings) or a dictionary with the same format as the one
+        returned by gpg.list_keys()
 
         signer is optional, in case signing is not intended
         """
 
         try:
             recipient = recipient['fingerprint']
-        except KeyError:
+        except TypeError:
             # it might be a string with the fingerprint
             pass
 
         try:
             signer = signer['fingerprint']
-        except KeyError:
-            # it might be a string with the fingerprint
-            pass
         except TypeError:
-            # signer might be None
-            # Signing is optional
+            # it might be a string with the fingerprint
             pass
 
         ciphertext = self.user_gpg.encrypt(data, recipient, sign=signer, passphrase=passphrase, always_trust=True)
