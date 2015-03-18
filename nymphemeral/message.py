@@ -1,69 +1,96 @@
 import email
-import sys
 import re
 
 from dateutil import parser
 
 
-class Message():
+class Message(object):
     def __init__(self, is_unread, string, identifier):
+        self._subject = None
+        self._sender = None
+        self._id = None
+        self._date = None
+        self._content = None
+        self._title = None
+        self._processed_message = None
+
         self.is_unread = is_unread
-        self.processed_message = email.message_from_string(string)
+        self.processed_message = string
         self.identifier = identifier
-        self.sender = None
-        self.subject = None
-        self.date = None
-        self.content = None
-        self.title = None
-        self.retrieve_attributes()
 
-    def retrieve_attributes(self):
-        try:
-            m = self.processed_message
-            title = ''
+    @property
+    def subject(self):
+        return self._subject
 
-            if 'date' in m:
-                self.date = parser.parse(m.get('date'))
-                title += str(self.date)[:16] + ' '
+    @property
+    def sender(self):
+        return self._sender
 
-            if 'from' in m:
-                sender = m.get('from')
-                self.sender = re.search('[^( |<)]+@[^( |>)]+', sender).group(0)
-                title += self.sender + ': '
+    @property
+    def id(self):
+        return self._id
+
+    @property
+    def date(self):
+        return self._date
+
+    @property
+    def content(self):
+        return self._content
+
+    @property
+    def title(self):
+        return self._title
+
+    @property
+    def processed_message(self):
+        return self._processed_message
+
+    @processed_message.setter
+    def processed_message(self, string):
+        message = email.message_from_string(string)
+        title = ''
+
+        self._id = message.get('Message-ID')
+
+        if 'Date' in message:
+            self._date = parser.parse(message.get('Date'))
+            title += str(self.date)[:16] + ' '
+
+        if 'From' in message:
+            sender = message.get('From')
+            self._sender = re.search('[^( |<)]+@[^( |>)]+', sender).group(0)
+            title += self.sender + ': '
+        else:
+            title = 'Unknown sender: '
+
+        if 'Subject' in message:
+            self._subject = message.get('Subject')
+            title += self.subject
+        else:
+            title += '(no subject)'
+
+        # content types we print
+        mtypes = ('text/plain', 'text/html', 'message/rfc822')
+
+        if message.is_multipart():
+            content = ''
+            for part in message.walk():
+                if part['Content-Transfer-Encoding'] == 'base64' and part.get_content_type() in mtypes:
+                    content += part.get_payload(decode=True)
+                elif part.get_content_type() in mtypes:
+                    content += part.as_string()
+        else:
+            if message['Content-Transfer-Encoding'] == 'base64':
+                content = message.get_payload(decode=True)
             else:
-                title = 'Unknown sender: '
+                content = message.get_payload()
+        self._content = content
 
-            if 'subject' in m:
-                self.subject = m.get('subject')
-                title += self.subject
-            else:
-                title += '(no subject)'
+        if self.is_unread:
+            title = 'Undecrypted message'
+            if self.date:
+                title += ' - ' + str(self.date)
 
-            # content types we print
-            mtypes = ('text/plain', 'text/html', 'message/rfc822')
-
-            if m.is_multipart():
-                content = ''
-                for part in m.walk():
-                    if part['Content-Transfer-Encoding'] == 'base64' and part.get_content_type() in mtypes:
-                        content += part.get_payload(decode=True)
-                    elif part.get_content_type() in mtypes:
-                        content += part.as_string()
-                    else:
-                        pass
-            else:
-                if self.processed_message['Content-Transfer-Encoding'] == 'base64':
-                    content = self.processed_message.get_payload(decode=True)
-                else:
-                    content = self.processed_message.get_payload()
-
-            self.content = content
-
-            if self.is_unread:
-                title = 'Undecrypted message'
-                if self.date:
-                    title += ' - ' + str(self.date)
-            self.title = title
-        except:
-            print 'Error while retrieving attributes: ', sys.exc_info()[0]
-            raise
+        self._title = title
+        self._processed_message = message
