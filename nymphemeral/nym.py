@@ -3,12 +3,28 @@ import re
 from errors import *
 
 
-class Nym():
+class Nym(object):
     def __init__(self, address, passphrase=None, fingerprint=None, hsub=None):
-        if not re.match(r'[^@]+@[^@]+\.[^@]+', address):
-            raise InvalidEmailAddressError(address)
+        self._server = None
+        self._address = None
+
         self.address = address
         self.passphrase = passphrase
         self.fingerprint = fingerprint
         self.hsub = hsub
-        self.server = address.split('@')[1]
+
+    @property
+    def server(self):
+        return self._server
+
+    @property
+    def address(self):
+        return self._address
+
+    @address.setter
+    def address(self, address):
+        if re.match(r'[^@]+@[^@]+\.[^@]+', address):
+            self._server = address.split('@')[1]
+            self._address = address
+        else:
+            raise InvalidEmailAddressError(address)
