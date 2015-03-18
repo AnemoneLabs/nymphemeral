@@ -1,6 +1,6 @@
 import re
 
-from errors import *
+from errors import InvalidEmailAddressError
 
 
 class Nym(object):
