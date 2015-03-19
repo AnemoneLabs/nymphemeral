@@ -41,15 +41,15 @@ class NewsserverNotFoundError(NymphemeralError):
 
 
 class FingerprintNotFoundError(NymphemeralError):
-    def __init__(self, uid):
+    def __init__(self, query):
         self.title = 'Fingerprint Not Found'
-        self.message = 'The fingerprint for "' + uid + '" could not be found in the keyring.'
+        self.message = 'The fingerprint for "' + query + '" could not be found in the keyring.'
 
 
 class KeyNotFoundError(NymphemeralError):
-    def __init__(self, uid):
+    def __init__(self, query):
         self.title = 'Key Not Found'
-        self.message = 'The key for "' + uid + '" could not be found in the keyring.'
+        self.message = 'The key for "' + query + '" could not be found in the keyring.'
 
 
 class IncorrectPassphraseError(NymphemeralError):
