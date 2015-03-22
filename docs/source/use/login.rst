@@ -46,14 +46,14 @@ public keys whenever you want by clicking on Manage Servers in the
 login window.
 
 .. figure:: key.png
-   :scale: 50%
+   :scale: 55%
    :alt: Key Manager Window
    :align: left
 
    Key Manager Window
 
 .. figure:: servers.png
-   :scale: 75%
+   :scale: 80%
    :alt: Server Manager Window
    :align: right
 
