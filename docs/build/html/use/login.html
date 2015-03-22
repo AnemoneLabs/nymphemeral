@@ -1,0 +1,167 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Starting Session &mdash; nymphemeral 1.3.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.3.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="nymphemeral 1.3.1 documentation" href="../index.html" />
+    <link rel="next" title="Creating a Nym" href="creation.html" />
+    <link rel="prev" title="Files Structure" href="files.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="creation.html" title="Creating a Nym"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="files.html" title="Files Structure"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">nymphemeral 1.3.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="starting-session">
+<h1>Starting Session<a class="headerlink" href="#starting-session" title="Permalink to this headline">¶</a></h1>
+<div class="figure align-right" id="id1">
+<a class="reference internal image-reference" href="../_images/login.png"><img alt="Login Window" src="../_images/login.png" style="width: 200.9px; height: 288.4px;" /></a>
+<p class="caption"><span class="caption-text">Login Window</span></p>
+</div>
+<p>When you run the client, a login window will be displayed. Fill in
+the <code class="docutils literal"><span class="pre">Address</span></code> and <code class="docutils literal"><span class="pre">Passhphrase</span></code> fields, choose the output method
+that you would like to use and click Start Session.</p>
+<div class="section" id="output-method">
+<h2>Output method<a class="headerlink" href="#output-method" title="Permalink to this headline">¶</a></h2>
+<p>When <strong>Mixmaster</strong> is installed and configured, clicking the
+<code class="docutils literal"><span class="pre">Send</span> <span class="pre">via</span> <span class="pre">Mixmaster</span></code> radio button on the login screen will route
+all messages to the nymserv through the Mixmaster network
+automatically.</p>
+<p>If you have <strong>sendmail</strong> configured and running on your machine, you
+can also choose to send messages to the nymserv as regular email via
+the <code class="docutils literal"><span class="pre">Send</span> <span class="pre">via</span> <span class="pre">Email</span></code> radio button automatically.</p>
+<p>If you would rather send messages manually, select the
+<code class="docutils literal"><span class="pre">Display</span> <span class="pre">Output</span> <span class="pre">in</span> <span class="pre">Message</span> <span class="pre">Window</span></code> radio button and then copy the
+encrypted message from the message window for transmission. If you
+choose this option it is your responsibility to send the encrypted
+message to the server. When this last method is being used, the
+client assumes that the message will get to the server. Therefore,
+when you finish the creation process, the nym information will be
+written to disk right away as well as it will be deleted when you
+confirm to delete the nym.</p>
+<p><strong>Important:</strong> Regardless the method that is being used, information
+about the message that has just been created is displayed in the
+first lines of the text box from the current tab.</p>
+<div class="section" id="managing-servers">
+<h3>Managing Servers<a class="headerlink" href="#managing-servers" title="Permalink to this headline">¶</a></h3>
+<p>If the nymserver&#8217;s public key is not found in the keyring, you will
+be prompted to add it. You can also add, modify or delete these
+public keys whenever you want by clicking on Manage Servers in the
+login window.</p>
+<div class="figure align-left" id="id2">
+<a class="reference internal image-reference" href="../_images/key.png"><img alt="Key Manager Window" src="../_images/key.png" style="width: 258.5px; height: 224.5px;" /></a>
+<p class="caption"><span class="caption-text">Key Manager Window</span></p>
+</div>
+<div class="figure align-right" id="id3">
+<a class="reference internal image-reference" href="../_images/servers.png"><img alt="Server Manager Window" src="../_images/servers.png" style="width: 279.75px; height: 219.75px;" /></a>
+<p class="caption"><span class="caption-text">Server Manager Window</span></p>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Starting Session</a><ul>
+<li><a class="reference internal" href="#output-method">Output method</a><ul>
+<li><a class="reference internal" href="#managing-servers">Managing Servers</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="files.html"
+                        title="previous chapter">Files Structure</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="creation.html"
+                        title="next chapter">Creating a Nym</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/use/login.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Felipe Dau and David R. Andersen.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.3</a>
+      
+      |
+      <a href="../_sources/use/login.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>

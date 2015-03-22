@@ -1,0 +1,146 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Overview &mdash; nymphemeral 1.3.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.3.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="nymphemeral 1.3.1 documentation" href="index.html" />
+    <link rel="next" title="Main Dependencies" href="install/main.html" />
+    <link rel="prev" title="nymphemeral" href="index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="install/main.html" title="Main Dependencies"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="nymphemeral"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">nymphemeral 1.3.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="overview">
+<h1>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h1>
+<p>nymphemeral is a tool made for users searching for secure and
+anonymous communication on the internet.</p>
+<p>It is a GUI client that relies on a pseudonymous remailer that
+communicates to its users by posting messages to a shared mailbox,
+a Zax-type nym server. Both the server and the client apply an
+ephemeral encryption layer on their messages based on the axolotl
+ratchet protocol, providing forward and future secrecy to the
+conversation.</p>
+<div class="section" id="features">
+<h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Created to be used with the <a class="reference external" href="https://github.com/rxcomm/nymserv">new nymserv</a>, a Zax-style nym server
+with forward secrecy</li>
+<li>Uses <a class="reference external" href="https://pypi.python.org/pypi/python-gnupg">python-gnupg</a> and <a class="reference external" href="https://github.com/rxcomm/pyaxo">pyaxo</a> for encryption</li>
+<li>Uses <a class="reference external" href="https://github.com/rxcomm/aampy">aampy</a> to retrieve messages from <a class="reference external" href="https://groups.google.com/forum/#!forum/alt.anonymous.messages">alt.anonymous.messages</a></li>
+<li>Sends messages through <a class="reference external" href="http://www.zen19351.zen.co.uk/mixmaster302">mixmaster</a>, sendmail, or outputs the
+resulting ciphertexts to be sent manually</li>
+<li>Manages the nym servers public keys</li>
+</ul>
+</div>
+<div class="section" id="current-release">
+<h2>Current Release<a class="headerlink" href="#current-release" title="Permalink to this headline">¶</a></h2>
+<p>The current version of nymphemeral is 1.3.1, a prototype, released
+2015-03-03.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Overview</a><ul>
+<li><a class="reference internal" href="#features">Features</a></li>
+<li><a class="reference internal" href="#current-release">Current Release</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">nymphemeral</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="install/main.html"
+                        title="next chapter">Main Dependencies</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/overview.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Felipe Dau and David R. Andersen.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.3</a>
+      
+      |
+      <a href="_sources/overview.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>
