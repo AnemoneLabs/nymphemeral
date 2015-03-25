@@ -733,9 +733,8 @@ class SendTab(tk.Frame, object):
         for line in msg.content.splitlines():
             content += '> ' + line + '\n'
         cursor_position = 1.0
-        message_id = msg.processed_message.get('Message-ID')
-        if message_id:
-            content = 'In-Reply-To: ' + message_id + '\n\n' + content
+        if msg.id:
+            content = 'In-Reply-To: ' + msg.id + '\n\n' + content
             cursor_position = 3.0
         write_on_text(self.text_send, [content])
         self.text_send.mark_set(tk.INSERT, cursor_position)
