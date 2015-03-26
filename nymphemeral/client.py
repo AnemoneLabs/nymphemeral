@@ -841,7 +841,7 @@ class Client:
             self.debug('End-to-end layer decrypted')
 
             for line in result.stderr.split('\n'):
-                info = re.search('(\[GNUPG:\] )(.*)', line)
+                info = re.match('(\[GNUPG:\] )(.*)', line)
                 if not info:
                     gpg_info += line + '\n'
 
