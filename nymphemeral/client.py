@@ -5,7 +5,6 @@ import hashlib
 import sys
 import shutil
 import threading
-import Queue
 import ConfigParser
 import email
 import itertools
@@ -307,11 +306,9 @@ class Client:
         self.hsubs = {}
 
         # attributes to handle aampy (to retrieve new messages) using threads
-        self.aampy_is_done = True
-        self.event_aampy = None
-        self.queue_aampy = None
+        self.aampy = self.initialize_aampy()
         self.thread_aampy = None
-        self.thread_aampy_event = None
+        self.thread_aampy_wait = None
 
         self.chain = self.retrieve_mix_chain()
 
@@ -395,6 +392,13 @@ class Client:
 
     def update_configs(self):
         self.cfg.set('main', 'output_method', self.output_method)
+
+    def initialize_aampy(self):
+        group = self.cfg.get('newsgroup', 'group')
+        server = self.cfg.get('newsgroup', 'server')
+        port = self.cfg.get('newsgroup', 'port')
+        newnews = self.cfg.get('newsgroup', 'newnews')
+        return aampy.AAMpy(self.directory_base, group, server, port, newnews, self.is_debugging)
 
     def retrieve_mix_chain(self):
         chain = None
@@ -731,29 +735,23 @@ class Client:
         return counter
 
     def start_aampy(self):
-        self.event_aampy = threading.Event()
-        self.thread_aampy_event = threading.Thread(target=self.wait_for_aampy)
-        self.thread_aampy_event.daemon = True
-        self.queue_aampy = Queue.Queue()
-        self.thread_aampy = threading.Thread(target=aampy.aam, args=(self.event_aampy, self.queue_aampy, self.hsubs,
-                                                                     self.cfg))
+        self.aampy.reset()
+
+        self.thread_aampy_wait = threading.Thread(target=self.wait_for_aampy)
+        self.thread_aampy_wait.daemon = True
+        self.thread_aampy = threading.Thread(target=self.aampy.retrieve_messages, args=(self.hsubs,))
         self.thread_aampy.daemon = True
 
-        self.thread_aampy_event.start()
+        self.thread_aampy_wait.start()
         self.thread_aampy.start()
 
     def stop_aampy(self):
-        self.event_aampy.set()
+        self.aampy.stop()
 
     def wait_for_aampy(self):
-        try:
-            time = self.hsubs['time']
-        except KeyError:
-            time = 0
-        self.aampy_is_done = False
-        self.event_aampy.wait()
-        self.aampy_is_done = True
-        if self.hsubs and time != self.hsubs['time']:
+        self.aampy.event.wait()
+        if self.hsubs and self.aampy.timestamp:
+            self.hsubs['time'] = self.aampy.timestamp
             self.save_hsubs(self.hsubs)
 
     def decrypt_ephemeral_data(self, data):

@@ -70,7 +70,7 @@ class Gui:
         self.window_main = MainWindow(self, self.client, creating_nym)
 
     def end_session(self):
-        if not self.client.aampy_is_done:
+        if self.client.aampy.is_running:
             self.window_main.stop_retrieving_messages()
         self.client.end_session()
         self.window_main.destroy()
@@ -545,9 +545,9 @@ class InboxTab(tk.Frame, object):
         self.toggle_interface(False)
 
     def wait_for_retrieval(self):
-        if self.client.aampy_is_done:
+        if self.client.aampy.is_running is False:
             self.gui.window_main.id_after = None
-            if self.client.queue_aampy.get()['server_found']:
+            if self.client.aampy.server_found:
                 self.load_messages()
             else:
                 self.toggle_interface(False)
@@ -602,7 +602,7 @@ class InboxTab(tk.Frame, object):
             return msg
 
     def select_message(self, event):
-        if len(self.messages) and self.client.aampy_is_done:
+        if len(self.messages) and not self.client.aampy.is_running:
             index = int(event.widget.curselection()[0])
             self.current_message_index = index
 
