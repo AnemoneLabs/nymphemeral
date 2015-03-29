@@ -50,6 +50,7 @@ class AAMpy(object):
         self._is_running = None
         self._server_found = None
         self._timestamp = None
+        self._progress_ratio = None
 
     @property
     def event(self):
@@ -67,11 +68,16 @@ class AAMpy(object):
     def timestamp(self):
         return self._timestamp
 
+    @property
+    def progress_ratio(self):
+        return self._progress_ratio
+
     def reset(self):
         self._event = threading.Event()
         self._is_running = None
         self._server_found = None
         self._timestamp = None
+        self._progress_ratio = None
 
     def stop(self):
         self._is_running = False
@@ -83,6 +89,7 @@ class AAMpy(object):
 
         self._server_found = False
         self._timestamp = None
+        self._progress_ratio = None
         self._is_running = True
 
         try:
@@ -110,6 +117,9 @@ class AAMpy(object):
 
         # download messages
         response, articles = server.newnews(self._group, YYMMDD, HHMMSS)
+        total_messages = len(articles)
+        messages_checked = 0
+        self._progress_ratio = 0
 
         for msg_id in articles:
             if self._event.is_set():
@@ -139,6 +149,8 @@ class AAMpy(object):
                 date = parser.parse(message.get('Date'))
                 if date:
                     self._timestamp = float(calendar.timegm(date.astimezone(tz.tzutc()).timetuple()))
+                messages_checked += 1
+                self._progress_ratio = float(messages_checked) / float(total_messages)
 
         if self._timestamp == timestamp:
             self._timestamp = None

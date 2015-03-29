@@ -553,6 +553,9 @@ class InboxTab(tk.Frame, object):
                 self.toggle_interface(False)
                 tkMessageBox.showerror('Socket Error', 'The news server cannot be found!')
         else:
+            if self.client.aampy.progress_ratio is not None:
+                self.progress_bar_inbox.stop()
+                self.progress_bar_inbox.config(mode='determinate', value=int(self.client.aampy.progress_ratio * 100))
             self.gui.window_main.id_after = self.gui.window_main.after(1000, lambda: self.wait_for_retrieval())
 
     def toggle_interface(self, retrieving_messages):
@@ -562,6 +565,7 @@ class InboxTab(tk.Frame, object):
             self.list_messages_inbox.config(state=tk.DISABLED)
             self.text_content_inbox.config(state=tk.DISABLED)
             self.progress_bar_inbox.grid(row=0, column=1, sticky='nswe', padx=(15, 0))
+            self.progress_bar_inbox.config(mode='indeterminate')
             self.progress_bar_inbox.start(25)
             self.button_aampy_inbox.config(text='Stop', command=self.stop_retrieving_messages)
         else:
