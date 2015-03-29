@@ -351,7 +351,6 @@ class Client:
             self.cfg.set('newsgroup', 'group', 'alt.anonymous.messages')
             self.cfg.set('newsgroup', 'server', 'localhost')
             self.cfg.set('newsgroup', 'port', '119')
-            self.cfg.set('newsgroup', 'newnews', '%(base_folder)s/.newnews')
 
             # parse existing configs in case new versions modify them
             # or the user modifies the file inappropriately

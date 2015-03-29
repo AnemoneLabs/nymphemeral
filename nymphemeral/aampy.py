@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 For more information, https://github.com/felipedau/nymphemeral
 """
+import calendar
 import copy
 import email
 import nntplib
@@ -32,16 +33,17 @@ import string
 import threading
 import time
 
+from dateutil import parser, tz
+
 import hsub
 
 
 class AAMpy(object):
-    def __init__(self, directory, group, server, port, newnews, is_debugging=False):
+    def __init__(self, directory, group, server, port, is_debugging=False):
         self._directory = directory
         self._group = group
         self._server = server
         self._port = port
-        self._newnews = newnews
         self._is_debugging = is_debugging
 
         self._event = None
@@ -79,7 +81,6 @@ class AAMpy(object):
         if self._is_debugging:
             print 'aampy is running'
 
-        current_time = time.time()
         self._server_found = False
         self._timestamp = None
         self._is_running = True
@@ -108,36 +109,40 @@ class AAMpy(object):
         HHMMSS = time.strftime('%H%M%S', time.gmtime(timestamp))
 
         # download messages
-        server.newnews(self._group, YYMMDD, HHMMSS, self._newnews)
+        response, articles = server.newnews(self._group, YYMMDD, HHMMSS)
 
-        with open(self._newnews, 'r') as f:
-            ids = f.read().splitlines()
-            for msg_id in ids:
-                if self._event.is_set():
-                    if self._is_debugging:
-                        print 'aampy was interrupted'
-                    return
-                try:
-                    resp, id, message_id, text = server.article(msg_id)
-                except (nntplib.error_temp, nntplib.error_perm):
-                    # no such message (maybe it was deleted?)
-                    pass
-                else:
-                    message = email.message_from_string(string.join(text, "\n"))
-                    for nick, passphrase in temp_hsubs.items():
-                        for label, item in message.items():
-                            if label == 'Subject':
-                                match = hsub.check(passphrase, item)
-                                # if match: write message to file
-                                if match:
+        for msg_id in articles:
+            if self._event.is_set():
+                if self._is_debugging:
+                    print 'aampy was interrupted'
+                return
+            try:
+                resp, id, message_id, text = server.article(msg_id)
+            except (nntplib.error_temp, nntplib.error_perm):
+                # no such message (maybe it was deleted?)
+                pass
+            else:
+                message = email.message_from_string(string.join(text, "\n"))
+                for nick, passphrase in temp_hsubs.items():
+                    for label, item in message.items():
+                        if label == 'Subject':
+                            match = hsub.check(passphrase, item)
+                            # if match: write message to file
+                            if match:
+                                if self._is_debugging:
+                                    print 'Found a message for nickname ' + nick
+                                file_name = 'message_' + nick + '_' + message_id[1:6] + '.txt'
+                                with open(self._directory + '/' + file_name, "w") as f:
+                                    f.write(message.as_string()+'\n')
                                     if self._is_debugging:
-                                        print 'Found a message for nickname ' + nick
-                                    file_name = 'message_' + nick + '_' + message_id[1:6] + '.txt'
-                                    with open(self._directory + '/' + file_name, "w") as f:
-                                        f.write(message.as_string()+'\n')
-                                        if self._is_debugging:
-                                            print 'Encrypted message stored in ' + file_name
-        self._timestamp = current_time
+                                        print 'Encrypted message stored in ' + file_name
+                date = parser.parse(message.get('Date'))
+                if date:
+                    self._timestamp = float(calendar.timegm(date.astimezone(tz.tzutc()).timetuple()))
+
+        if self._timestamp == timestamp:
+            self._timestamp = None
+
         if self._is_debugging:
             print 'aampy is done'
         self.stop()
