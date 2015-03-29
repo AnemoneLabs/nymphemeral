@@ -397,8 +397,7 @@ class Client:
         group = self.cfg.get('newsgroup', 'group')
         server = self.cfg.get('newsgroup', 'server')
         port = self.cfg.get('newsgroup', 'port')
-        newnews = self.cfg.get('newsgroup', 'newnews')
-        return aampy.AAMpy(self.directory_base, group, server, port, newnews, self.is_debugging)
+        return aampy.AAMpy(self.directory_unread_messages, group, server, port, self.is_debugging)
 
     def retrieve_mix_chain(self):
         chain = None
