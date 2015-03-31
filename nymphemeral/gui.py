@@ -672,6 +672,7 @@ class SendTab(tk.Frame, object):
 
         self.gui = gui
         self.client = client
+        self.var_throw_keyids = tk.BooleanVar()
 
         frame_tab = tk.Frame(self)
         frame_tab.grid(sticky='nswe', padx=15, pady=15)
@@ -717,6 +718,10 @@ class SendTab(tk.Frame, object):
         label_tip = tk.Label(frame_e2ee, text='(UIDs or Fingerprints)')
         label_tip.grid(row=0)
 
+        # throw key IDs checkbox
+        check_throw_keyids = tk.Checkbutton(frame_e2ee, text="Throw Key IDs", variable=self.var_throw_keyids)
+        check_throw_keyids.grid(sticky='w', padx=(5, 0))
+
         # send button
         button_send = tk.Button(frame_tab, text='Send',
                                 command=lambda: self.send_message(self.entry_target_send.get().strip(),
@@ -754,6 +759,7 @@ class SendTab(tk.Frame, object):
             if len(e2ee_target):
                 target_key = retrieve_key(self.client.user_gpg, e2ee_target)
                 e2ee_target_info = 'End-to-End Encryption to:\n' + format_key_info(target_key) + '\n'
+                throw_keyids = bool(self.var_throw_keyids.get())
                 if len(e2ee_signer):
                     signer_key = retrieve_key(self.client.user_gpg, e2ee_signer)
                     prompt = 'Signing with:\n' \
@@ -770,10 +776,11 @@ class SendTab(tk.Frame, object):
                         content = self.client.encrypt_e2ee_data(content,
                                                                 target_key,
                                                                 signer_key,
-                                                                passphrase)
+                                                                passphrase,
+                                                                throw_keyids)
                 else:
                     # encrypt but not sign
-                    content = self.client.encrypt_e2ee_data(content, target_key)
+                    content = self.client.encrypt_e2ee_data(content, target_key, throw_keyids=throw_keyids)
             elif len(e2ee_signer):
                 raise errors.NymphemeralError('Error', 'A target must be provided for end-to-end encryption.')
         except errors.NymphemeralError as e:

@@ -91,20 +91,26 @@ def save_data(data, identifier):
     return False
 
 
-def new_gpg(paths):
+def new_gpg(paths, throw_keyids=False):
+    binary = '/usr/bin/gpg'
+
     keyring = []
     for r in list(itertools.product(paths, ['/pubring.gpg'])):
         keyring.append(''.join(r))
     secret_keyring = []
     for r in list(itertools.product(paths, ['/secring.gpg'])):
         secret_keyring.append(''.join(r))
-    binary = '/usr/bin/gpg'
+
+    options = ['--personal-digest-preferences=sha256',
+               '--s2k-digest-algo=sha256']
+    if throw_keyids:
+        options.append('--throw-keyids')
+
     gpg = gnupg.GPG(binary,
                     paths[0],
                     keyring=keyring,
                     secret_keyring=secret_keyring,
-                    options=['--personal-digest-preferences=sha256',
-                             '--s2k-digest-algo=sha256'])
+                    options=options)
     gpg.encoding = 'latin-1'
     return gpg
 
@@ -791,7 +797,7 @@ class Client:
         else:
             raise errors.UndecipherableMessageError()
 
-    def encrypt_e2ee_data(self, data, recipient, signer=None, passphrase=''):
+    def encrypt_e2ee_data(self, data, recipient, signer=None, passphrase='', throw_keyids=False):
         """
         Return ciphertext of end-to-end encrypted data using the user's keyring
 
@@ -813,7 +819,8 @@ class Client:
             # it might be a string with the fingerprint
             pass
 
-        ciphertext = self.user_gpg.encrypt(data, recipient, sign=signer, passphrase=passphrase, always_trust=True)
+        gpg = new_gpg([self.directory_gpg, self.directory_base], throw_keyids)
+        ciphertext = gpg.encrypt(data, recipient, sign=signer, passphrase=passphrase, always_trust=True)
         if ciphertext:
             return str(ciphertext)
         else:
@@ -836,10 +843,28 @@ class Client:
         if result.ok:
             self.debug('End-to-end layer decrypted')
 
-            for line in result.stderr.split('\n'):
-                info = re.match('(\[GNUPG:\] )(.*)', line)
-                if not info:
-                    gpg_info += line + '\n'
+            lines = result.stderr.split('\n')
+
+            # filter what should be displayed to the user
+            for i, line in enumerate(lines):
+                if line.startswith('[GNUPG:]'):
+                    continue
+
+                if line.startswith('gpg: anonymous recipient; trying secret key'):
+                    continue
+
+                if line == 'gpg: encrypted with RSA key, ID 00000000':
+                    continue
+
+                if line == 'gpg: okay, we are the anonymous recipient.':
+                    j = 1
+                    line_id = lines[i - j]
+                    while not line_id.startswith('gpg: anonymous recipient; trying secret key'):
+                        j += 1
+                        line_id = lines[i - j]
+                    gpg_info = gpg_info + line_id + '\n'
+
+                gpg_info += line + '\n'
 
             if not gpg_info:
                 gpg_info = 'GPG information not available\n'
