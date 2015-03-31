@@ -7,7 +7,6 @@ import shutil
 import threading
 import ConfigParser
 import email
-import itertools
 from binascii import b2a_base64, a2b_base64
 import Tkinter
 
@@ -91,15 +90,8 @@ def save_data(data, identifier):
     return False
 
 
-def new_gpg(paths, throw_keyids=False):
+def new_gpg(home, throw_keyids=False):
     binary = '/usr/bin/gpg'
-
-    keyring = []
-    for r in list(itertools.product(paths, ['/pubring.gpg'])):
-        keyring.append(''.join(r))
-    secret_keyring = []
-    for r in list(itertools.product(paths, ['/secring.gpg'])):
-        secret_keyring.append(''.join(r))
 
     options = ['--personal-digest-preferences=sha256',
                '--s2k-digest-algo=sha256']
@@ -107,9 +99,7 @@ def new_gpg(paths, throw_keyids=False):
         options.append('--throw-keyids')
 
     gpg = gnupg.GPG(binary,
-                    paths[0],
-                    keyring=keyring,
-                    secret_keyring=secret_keyring,
+                    home,
                     options=options)
     gpg.encoding = 'latin-1'
     return gpg
@@ -301,11 +291,8 @@ class Client:
         self.file_mix_cfg = None
         self.check_base_files()
 
-        # Local keyring, to communicate with the server
-        self.gpg = new_gpg([self.directory_base])
-
-        # User keyring, to communicate with other users (end-to-end)
-        self.user_gpg = new_gpg([self.directory_gpg, self.directory_base])
+        # create a GPG instance using nymphemeral's base directory as home
+        self.gpg = new_gpg(self.directory_base)
 
         self.axolotl = None
         self.nym = None
@@ -819,7 +806,7 @@ class Client:
             # it might be a string with the fingerprint
             pass
 
-        gpg = new_gpg([self.directory_gpg, self.directory_base], throw_keyids)
+        gpg = new_gpg(self.directory_base, throw_keyids)
         ciphertext = gpg.encrypt(data, recipient, sign=signer, passphrase=passphrase, always_trust=True)
         if ciphertext:
             return str(ciphertext)
@@ -837,7 +824,7 @@ class Client:
             self.debug('Not a PGP message to be decrypted')
             raise errors.UndecipherableMessageError()
 
-        result = self.user_gpg.decrypt(data, passphrase=passphrase)
+        result = self.gpg.decrypt(data, passphrase=passphrase)
         gpg_info = ''
 
         if result.ok:
