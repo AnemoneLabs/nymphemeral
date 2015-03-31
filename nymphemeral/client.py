@@ -423,13 +423,13 @@ class Client:
             url_match = None
             for uid in item['uids']:
                 if not config_match:
-                    config_match = re.search('[^( |<)]*config@[^( |>)]*', uid)
+                    config_match = re.search(r'\bconfig@(\S+)\b', uid, flags=re.IGNORECASE)
                 if not send_match:
-                    send_match = re.search('[^( |<)]*send@[^( |>)]*', uid)
+                    send_match = re.search(r'\bsend@(\S+)+\b', uid, flags=re.IGNORECASE)
                 if not url_match:
-                    url_match = re.search('[^( |<)]*url@[^( |>)]*', uid)
+                    url_match = re.search(r'\burl@(\S+)\b', uid, flags=re.IGNORECASE)
             if config_match and send_match and url_match:
-                server = config_match.group(0).split('@')[1]
+                server = config_match.group(1)
                 servers[server] = item['fingerprint']
         return servers
 
