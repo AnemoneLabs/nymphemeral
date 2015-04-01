@@ -583,7 +583,7 @@ class InboxTab(tk.Frame, object):
             if keyids:
                 for k in keyids:
                     try:
-                        keys.append(retrieve_key(self.client.user_gpg, k))
+                        keys.append(retrieve_key(self.client.gpg, k))
                     except errors.KeyNotFoundError:
                         pass
             if keys:
@@ -757,11 +757,11 @@ class SendTab(tk.Frame, object):
         try:
             # check if end-to-end encryption is intended
             if len(e2ee_target):
-                target_key = retrieve_key(self.client.user_gpg, e2ee_target)
+                target_key = retrieve_key(self.client.gpg, e2ee_target)
                 e2ee_target_info = 'End-to-End Encryption to:\n' + format_key_info(target_key) + '\n'
                 throw_keyids = bool(self.var_throw_keyids.get())
                 if len(e2ee_signer):
-                    signer_key = retrieve_key(self.client.user_gpg, e2ee_signer)
+                    signer_key = retrieve_key(self.client.gpg, e2ee_signer)
                     prompt = 'Signing with:\n' \
                              + format_key_info(signer_key) \
                              + 'Provide a passphrase to unlock the secret key:'
