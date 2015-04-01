@@ -434,13 +434,14 @@ class Client:
         return servers
 
     def retrieve_nyms(self):
+        servers = self.retrieve_servers()
         nyms = []
         keys = self.gpg.list_keys()
         for item in keys:
             if len(item['uids']) == 1:
-                search = re.search('(?<=<).*(?=>)', item['uids'][0])
-                if search:
-                    address = search.group()
+                search = re.search(r'\b(\S+@(\S+))\b', item['uids'][0])
+                if search and search.group(2) in servers:
+                    address = search.group(1)
                     nym = Nym(address,
                               fingerprint=item['fingerprint'])
                     nyms.append(nym)
