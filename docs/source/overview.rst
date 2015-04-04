@@ -7,19 +7,23 @@ anonymous communication on the internet.
 It is a GUI client that relies on a pseudonymous remailer that
 communicates to its users by posting messages to a shared mailbox,
 a Zax-type nym server. Both the server and the client apply an
-ephemeral encryption layer on their messages based on the axolotl
-ratchet protocol, providing forward and future secrecy to the
+ephemeral encryption layer on their messages based on the `Axolotl
+Ratchet protocol`_, providing forward and future secrecy to the
 conversation.
 
 Features
 --------
-- Created to be used with the `new nymserv`_, a Zax-style nym server
-  with forward secrecy
+- Communicates with the `new nymserv`_, a Zax-type nym server with
+  forward secrecy
+
 - Uses `python-gnupg`_ and `pyaxo`_ for encryption
+
 - Uses `aampy`_ to retrieve messages from `alt.anonymous.messages`_
-- Sends messages through `mixmaster`_, sendmail, or outputs the
+
+- Sends messages through `Mixmaster`_, sendmail, or outputs the
   resulting ciphertexts to be sent manually
-- Manages the nym servers public keys
+
+- Supports End-to-End Encryption
 
 Current Release
 ---------------
@@ -28,6 +32,7 @@ The current version of nymphemeral is 1.3.1, a prototype, released
 
 .. _`aampy`: https://github.com/rxcomm/aampy
 .. _`alt.anonymous.messages`: https://groups.google.com/forum/#!forum/alt.anonymous.messages
+.. _`axolotl ratchet protocol`: https://github.com/trevp/axolotl/wiki
 .. _`mixmaster`: http://www.zen19351.zen.co.uk/mixmaster302
 .. _`new nymserv`: https://github.com/rxcomm/nymserv
 .. _`pyaxo`: https://github.com/rxcomm/pyaxo
