@@ -1,8 +1,8 @@
 ================
 Acknowledgements
 ================
-- Thanks to `rxcomm`_ for the new nymserv, nym.now.im, pyaxo, aampy and
-  for assisting on the development of this client
+- Thanks to `rxcomm`_ for the new nymserv, nym.now.im, pyaxo, aampy
+  and for assisting on the development of this client
 
 - Thanks to `crooks`_ (Zax) for the original nymserv software
 

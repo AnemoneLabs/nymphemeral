@@ -39,6 +39,7 @@ nymphemeral 1.2.1, release 2014-11-10
 
 - Encrypt hSub passphrases
 
-- Support headers added by the user at the top of the message being composed
+- Support headers added by the user at the top of the message being
+  composed
 
 - Add the 'In-Reply-To' header to the reply
