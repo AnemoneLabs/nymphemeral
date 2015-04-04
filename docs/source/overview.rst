@@ -6,21 +6,21 @@ anonymous communication on the internet.
 
 It is a GUI client that relies on a pseudonymous remailer that
 communicates to its users by posting messages to a shared mailbox,
-a Zax-type nym server. Both the server and the client apply an
+a **Zax-type** nym server. Both the server and the client apply an
 ephemeral encryption layer on their messages based on the `Axolotl
 Ratchet protocol`_, providing forward and future secrecy to the
 conversation.
 
 Features
 --------
-- Communicates with the `new nymserv`_, a Zax-type nym server with
+- Communicates with the `new nymserv`_, a *Zax-type* nym server with
   forward secrecy
 
 - Uses `python-gnupg`_ and `pyaxo`_ for encryption
 
 - Uses `aampy`_ to retrieve messages from `alt.anonymous.messages`_
 
-- Sends messages through `Mixmaster`_, sendmail, or outputs the
+- Sends messages through `Mixmaster`_, *sendmail*, or outputs the
   resulting ciphertexts to be sent manually
 
 - Supports End-to-End Encryption

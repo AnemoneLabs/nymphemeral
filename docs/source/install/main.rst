@@ -1,3 +1,5 @@
+.. _main-dependencies:
+
 =================
 Main Dependencies
 =================
@@ -6,7 +8,7 @@ If you use `pip`_, install nymphemeral with::
     sudo pip install nymphemeral
 
 The dependencies will be automatically downloaded and installed.
-**You can go to the next section (Other Dependencies).**
+You can go to :ref:`other-dependencies`.
 
 If you do not use *pip*, first make sure that you have the
 following::

@@ -1,8 +1,10 @@
+.. _other-dependencies:
+
 ==================
 Other Dependencies
 ==================
 nymphemeral will be ready for use after installation via either of
-the two methods described in **Main Dependencies**. However, you
+the two methods described in :ref:`main-dependencies`. However, you
 should install the following dependencies to be able to use all of
 its features.
 
@@ -10,10 +12,12 @@ Mixmaster
 ---------
 Follow the `Mixmaster instructions`_ to get `Mixmaster`_ running.
 **Make sure you have** `OpenSSL`_ **1.0.1g or later.** If your
-*mixmaster* configuration is located anywhere other than the default
+*Mixmaster* configuration is located anywhere other than the default
 ``~/Mix`` directory, you should edit
 ``~/.config/nymphemeral/nymphemeral.cfg`` to point to your
 configuration.
+
+.. _newsserver:
 
 News Server
 -----------

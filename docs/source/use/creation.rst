@@ -12,7 +12,7 @@ Back to the login window, when you click ``Start Session`` and the
 nymserver's public key is already in the keyring, then the client
 will search for the nym address that was given. If the nym is not
 found, you will be asked if you wish to create it and you will be
-directed to the Create Nym tab in the main window.
+directed to the ``Create Nym`` tab in the main window.
 
 To create a nym, fill in the ``Ephemeral Key``, ``hSub Key``,
 ``Name`` and ``Duration`` (e.g. ``1w``, ``2m``, or ``3y``). Finally,

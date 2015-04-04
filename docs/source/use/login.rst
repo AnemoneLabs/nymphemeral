@@ -10,7 +10,7 @@ Starting Session
 
 When you run the client, a login window will be displayed. Fill in
 the ``Address`` and ``Passhphrase`` fields, choose the output method
-that you would like to use and click Start Session.
+that you would like to use and click ``Start Session``.
 
 
 Output method
@@ -42,8 +42,8 @@ Managing Servers
 ================
 If the nymserver's public key is not found in the keyring, you will
 be prompted to add it. You can also add, modify or delete these
-public keys whenever you want by clicking on Manage Servers in the
-login window.
+public keys whenever you want by clicking on ``Manage Servers`` in
+the login window.
 
 .. figure:: key.png
    :scale: 55%

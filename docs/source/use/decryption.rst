@@ -19,7 +19,8 @@ click ``Reply Message`` and you will be directed to the
 
 **Note:** Clicking on undecrypted messages will delete them when the
 process is done. If it fails to decrypt then it is useless. If it
-succeeds, then it becomes useless due to the **Axolotl ratchet
-protocol**. You can go to `pyaxo`_ to read more about it.
+succeeds, then it becomes useless due to the `Axolotl ratchet
+protocol`_. You can go to `pyaxo`_ to read more about it.
 
+.. _`axolotl ratchet protocol`: https://github.com/trevp/axolotl/wiki
 .. _`pyaxo`: https://github.com/rxcomm/pyaxo
