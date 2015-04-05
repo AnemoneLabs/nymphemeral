@@ -20,10 +20,11 @@ Installation (On a Debian Wheezy/Ubuntu Trusty system)
 ======================================================
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
 
-    install/main
-    install/other
+    install/dependencies
+    install/mixmaster
+    install/newsserver
 
 Usage
 =====
