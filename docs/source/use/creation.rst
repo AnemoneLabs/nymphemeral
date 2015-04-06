@@ -35,7 +35,7 @@ created and the other tabs will be enabled.
    Creation Message
 
 hSub Passphrases
-''''''''''''''''
+----------------
 The first nym that you create will encrypt its hSub passphase and can
 only be decrypted by itself. The next nym to be created will save its
 hSub passphrase in plaintext and will not be able to access the

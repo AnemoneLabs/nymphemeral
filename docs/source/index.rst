@@ -49,7 +49,3 @@ Other
     changelog
     feedback
     thanks
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

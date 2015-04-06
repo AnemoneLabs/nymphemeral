@@ -39,7 +39,7 @@ about the message that has just been created is displayed in the
 first lines of the text box from the current tab.
 
 Managing Servers
-================
+----------------
 If the nymserver's public key is not found in the keyring, you will
 be prompted to add it. You can also add, modify or delete these
 public keys whenever you want by clicking on ``Manage Servers`` in
