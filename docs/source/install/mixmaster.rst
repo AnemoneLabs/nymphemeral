@@ -178,7 +178,22 @@ looks for .conf files (which is usually ``/etc/stunnel``)::
 
     sudo cp /usr/share/nymphemeral/connections/stunnel.conf /etc/stunnel
 
-You will also need ``socsmtp.sh``. Copy it as well::
+Open ``/etc/default/stunnel4`` and enable *stunnel* automatic startup
+by switching ``ENABLE`` to ``1``::
+
+    # Change to one to enable stunnel automatic startup
+    ENABLED=1
+
+And start it with::
+
+    sudo service stunnel4 start
+
+You should get the following message::
+
+    Starting SSL tunnels: [Started: /etc/stunnel/stunnel.conf] stunnel.
+
+Now you need to start the tunneling itself. Copy ``socsmtp.sh`` as
+well::
 
     cp /usr/share/nymphemeral/connections/socsmtp.sh ~
 
@@ -191,11 +206,11 @@ And finally, run it::
     cd
     ./socsmtp.sh
 
-**Now, nymphemeral should be ready to tunnel via Tor messages sent
+**nymphemeral should be ready to tunnel via Tor messages sent
 using Mixmaster!**
 
-**Note:** This script will have to be executed every time the system
-starts up.
+**Note:** You do not need to start *stunnel* again, but this script
+has to be executed every time the system starts up.
 
 .. _`another option`: https://www.torproject.org/docs/debian.html.en#ubuntu
 .. _`jeremy bentham remailer`: http://anemone.mooo.com/stats/
