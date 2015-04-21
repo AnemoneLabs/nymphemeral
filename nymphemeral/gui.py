@@ -692,7 +692,7 @@ class SendTab(tk.Frame, object):
         # message box
         frame_text = tk.LabelFrame(frame_tab, text='Message')
         frame_text.grid(pady=10)
-        self.text_send = tk.Text(frame_text, height=28)
+        self.text_send = tk.Text(frame_text, height=26)
         self.text_send.grid(row=0, column=0)
         scrollbar = tk.Scrollbar(frame_text, command=self.text_send.yview)
         scrollbar.grid(row=0, column=1, sticky='ns')
