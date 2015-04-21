@@ -4,9 +4,11 @@
 Mixmaster
 =========
 This article describes how to compile the new large-key version of
-*Mixmaster* on a *Debian Wheezy* system. The instructions should be
-helpful for building *Mixmaster* on other flavors of linux as well.
-See :ref:`ubuntu-loader` for a change if using *Ubuntu*.
+*Mixmaster* on a *Debian Wheezy* system. Most of its content was
+taken from `this post`_ by the `Jeremy Bentham Remailer`_ Admin. The
+instructions should be helpful for building *Mixmaster* on other
+flavors of linux as well. See :ref:`ubuntu-loader` for a change if
+using *Ubuntu*.
 
 Preliminaries
 -------------
@@ -218,4 +220,5 @@ has to be executed every time the system starts up.
 .. _`openssl download page`: https://www.openssl.org/source/
 .. _`socat`: http://www.dest-unreach.org/socat
 .. _`stunnel`: https://www.stunnel.org
+.. _`this post`: http://anemone.mooo.com/mixmaster.html
 .. _`tor`: https://www.torproject.org
