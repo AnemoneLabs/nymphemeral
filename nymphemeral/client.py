@@ -785,7 +785,7 @@ class Client:
         else:
             raise errors.UndecipherableMessageError()
 
-    def encrypt_e2ee_data(self, data, recipient, signer=None, passphrase='', throw_keyids=False):
+    def encrypt_e2ee_data(self, data, recipient, signer=None, passphrase=None, throw_keyids=False):
         """
         Return ciphertext of end-to-end encrypted data using the user's keyring
 
@@ -817,7 +817,7 @@ class Client:
                 text = 'Unknown error'
             raise errors.NymphemeralError('GPG Error', text + '!')
 
-    def decrypt_e2ee_message(self, msg, passphrase=''):
+    def decrypt_e2ee_message(self, msg, passphrase=None):
         """Return plaintext of end-to-end encrypted message using the user's keyring"""
 
         data = search_pgp_message(msg.content)
