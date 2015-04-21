@@ -90,11 +90,17 @@ def save_data(data, identifier):
     return False
 
 
-def new_gpg(home, throw_keyids=False):
+def new_gpg(home, use_agent=False, throw_keyids=False):
     binary = '/usr/bin/gpg'
 
     options = ['--personal-digest-preferences=sha256',
                '--s2k-digest-algo=sha256']
+
+    if use_agent:
+        options.append('--use-agent')
+    else:
+        options.append('--no-use-agent')
+
     if throw_keyids:
         options.append('--throw-keyids')
 
@@ -278,11 +284,11 @@ class Client:
     def __init__(self):
         self.cfg = ConfigParser.ConfigParser()
 
+        self.use_agent = None
         self.directory_base = None
         self.directory_db = None
         self.directory_read_messages = None
         self.directory_unread_messages = None
-        self.directory_gpg = None
         self.file_hsub = None
         self.file_encrypted_hsub = None
         self.is_debugging = None
@@ -324,7 +330,7 @@ class Client:
         try:
             # load default configs
             self.cfg.add_section('gpg')
-            self.cfg.set('gpg', 'base_folder', USER_PATH + '/.gnupg')
+            self.cfg.set('gpg', 'use_agent', 'False')
             self.cfg.add_section('main')
             self.cfg.set('main', 'base_folder', NYMPHEMERAL_PATH)
             self.cfg.set('main', 'db_folder', '%(base_folder)s/db')
@@ -363,11 +369,11 @@ class Client:
                 create_directory(NYMPHEMERAL_PATH)
             self.save_configs()
 
+            self.use_agent = self.cfg.getboolean('gpg', 'use_agent')
             self.directory_base = self.cfg.get('main', 'base_folder')
             self.directory_db = self.cfg.get('main', 'db_folder')
             self.directory_read_messages = self.cfg.get('main', 'read_folder')
             self.directory_unread_messages = self.cfg.get('main', 'unread_folder')
-            self.directory_gpg = self.cfg.get('gpg', 'base_folder')
             self.file_hsub = self.cfg.get('main', 'hsub_file')
             self.file_encrypted_hsub = self.cfg.get('main', 'encrypted_hsub_file')
             self.is_debugging = self.cfg.getboolean('main', 'debug_switch')
@@ -383,6 +389,7 @@ class Client:
             self.cfg.write(config_file)
 
     def update_configs(self):
+        self.cfg.set('gpg', 'use_agent', self.use_agent)
         self.cfg.set('main', 'output_method', self.output_method)
 
     def initialize_aampy(self):
@@ -447,7 +454,7 @@ class Client:
                     nyms.append(nym)
         return nyms
 
-    def start_session(self, nym, output_method='manual', creating_nym=False):
+    def start_session(self, nym, use_agent=False, output_method='manual', creating_nym=False):
         if nym.server not in self.retrieve_servers():
             raise errors.NymservNotFoundError(nym.server)
         result = filter(lambda n: n.address == nym.address, self.retrieve_nyms())
@@ -471,16 +478,25 @@ class Client:
         self.hsubs = self.retrieve_hsubs()
         if not creating_nym:
             self.nym.hsub = self.hsubs[nym.address]
-        self.update_output_method(output_method)
+        self.check_configs(use_agent, output_method)
 
     def end_session(self):
         self.axolotl = None
         self.nym = None
         self.hsubs = {}
 
-    def update_output_method(self, method):
-        if method != self.output_method:
-            self.output_method = method
+    def check_configs(self, use_agent, output_method):
+        update = False
+
+        if use_agent != self.use_agent:
+            self.use_agent = use_agent
+            update = True
+
+        if output_method != self.output_method:
+            self.output_method = output_method
+            update = True
+
+        if update:
             self.update_configs()
             self.save_configs()
 
@@ -807,7 +823,7 @@ class Client:
             # it might be a string with the fingerprint
             pass
 
-        gpg = new_gpg(self.directory_base, throw_keyids)
+        gpg = new_gpg(self.directory_base, self.use_agent, throw_keyids)
         ciphertext = gpg.encrypt(data, recipient, sign=signer, passphrase=passphrase, always_trust=True)
         if ciphertext:
             return str(ciphertext)
@@ -825,7 +841,8 @@ class Client:
             self.debug('Not a PGP message to be decrypted')
             raise errors.UndecipherableMessageError()
 
-        result = self.gpg.decrypt(data, passphrase=passphrase)
+        gpg = new_gpg(self.directory_base, self.use_agent)
+        result = gpg.decrypt(data, passphrase=passphrase)
         gpg_info = ''
 
         if result.ok:

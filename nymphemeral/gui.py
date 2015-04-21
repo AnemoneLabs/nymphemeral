@@ -85,6 +85,7 @@ class LoginWindow(tk.Tk, object):
         self.gui = gui
         self.client = client
         self.var_output_method = None
+        self.var_use_agent = tk.BooleanVar()
 
         self.title(self.gui.title)
         frame_login = tk.Frame(self)
@@ -110,6 +111,11 @@ class LoginWindow(tk.Tk, object):
         button_servers = tk.Button(frame_login, text='Manage Servers', command=lambda: ServersWindow(self.gui,
                                                                                                      self.client))
         button_servers.grid(pady=(5, 0))
+
+        # GPG agent checkbox
+        check_agent = tk.Checkbutton(frame_login, text="Use GPG Agent", variable=self.var_use_agent)
+        check_agent.grid(sticky='w', padx=0, pady=(10, 0))
+        self.var_use_agent.set(self.client.use_agent)
 
         # output radio buttons
         frame_radio = tk.LabelFrame(frame_login, text='Output Method')
@@ -149,12 +155,13 @@ class LoginWindow(tk.Tk, object):
                 return key
 
     def start_session(self, address, passphrase, creating_nym=False):
+        use_agent = bool(self.var_use_agent.get())
         method = self.get_output_method()
         try:
             nym = Nym(address, passphrase)
             if not len(passphrase):
                 raise errors.InvalidPassphraseError()
-            self.client.start_session(nym, method, creating_nym)
+            self.client.start_session(nym, use_agent, method, creating_nym)
         except (errors.InvalidEmailAddressError, errors.InvalidPassphraseError, errors.FingerprintNotFoundError,
                 errors.IncorrectPassphraseError) as e:
             tkMessageBox.showerror(e.title, e.message)
@@ -578,30 +585,33 @@ class InboxTab(tk.Frame, object):
     def decrypt_e2ee_message(self, msg):
         pgp_message = search_pgp_message(msg.content)
         if pgp_message:
-            keyids = retrieve_keyids(pgp_message)
-            keys = []
-            if keyids:
-                for k in keyids:
-                    try:
-                        keys.append(retrieve_key(self.client.gpg, k))
-                    except errors.KeyNotFoundError:
-                        pass
-            if keys:
-                prompt = 'Message encrypted to:\n'
-                for k in keys:
-                    prompt += format_key_info(k)
+            if self.client.use_agent:
+                return self.client.decrypt_e2ee_message(msg)
             else:
-                prompt = 'The key ID which the message was encrypted to was removed ' \
-                         'or is not in the keyring.\n'
-            prompt += 'Provide a passphrase to attempt to decrypt it:'
-            passphrase = tkSimpleDialog.askstring('End-to-End Encrypted Message',
-                                                  prompt,
-                                                  parent=self,
-                                                  show='*')
-            if passphrase is None:
-                return msg
-            else:
-                return self.client.decrypt_e2ee_message(msg, passphrase)
+                keyids = retrieve_keyids(pgp_message)
+                keys = []
+                if keyids:
+                    for k in keyids:
+                        try:
+                            keys.append(retrieve_key(self.client.gpg, k))
+                        except errors.KeyNotFoundError:
+                            pass
+                if keys:
+                    prompt = 'Message encrypted to:\n'
+                    for k in keys:
+                        prompt += format_key_info(k)
+                else:
+                    prompt = 'The key ID which the message was encrypted to was removed ' \
+                             'or is not in the keyring.\n'
+                prompt += 'Provide a passphrase to attempt to decrypt it:'
+                passphrase = tkSimpleDialog.askstring('End-to-End Encrypted Message',
+                                                      prompt,
+                                                      parent=self,
+                                                      show='*')
+                if passphrase is None:
+                    return msg
+                else:
+                    return self.client.decrypt_e2ee_message(msg, passphrase)
         else:
             return msg
 
@@ -762,22 +772,28 @@ class SendTab(tk.Frame, object):
                 throw_keyids = bool(self.var_throw_keyids.get())
                 if len(e2ee_signer):
                     signer_key = retrieve_key(self.client.gpg, e2ee_signer)
-                    prompt = 'Signing with:\n' \
-                             + format_key_info(signer_key) \
-                             + 'Provide a passphrase to unlock the secret key:'
-                    passphrase = tkSimpleDialog.askstring('Passphrase Required',
-                                                          prompt,
-                                                          parent=self,
-                                                          show='*')
-                    if passphrase is None:
-                        # cancel
-                        return
-                    else:
+                    if self.client.use_agent:
                         content = self.client.encrypt_e2ee_data(content,
                                                                 target_key,
                                                                 signer_key,
-                                                                passphrase,
-                                                                throw_keyids)
+                                                                throw_keyids=throw_keyids)
+                    else:
+                        prompt = 'Signing with:\n' \
+                                 + format_key_info(signer_key) \
+                                 + 'Provide a passphrase to unlock the secret key:'
+                        passphrase = tkSimpleDialog.askstring('Passphrase Required',
+                                                              prompt,
+                                                              parent=self,
+                                                              show='*')
+                        if passphrase is None:
+                            # cancel
+                            return
+                        else:
+                            content = self.client.encrypt_e2ee_data(content,
+                                                                    target_key,
+                                                                    signer_key,
+                                                                    passphrase,
+                                                                    throw_keyids)
                 else:
                     # encrypt but not sign
                     content = self.client.encrypt_e2ee_data(content, target_key, throw_keyids=throw_keyids)
