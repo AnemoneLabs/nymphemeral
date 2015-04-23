@@ -13,6 +13,8 @@ nymphemeral 1.3.2
 
   - Sign
 
+  - Support GPG agent
+
 - Redesign aampy
 
 nymphemeral 1.3.1, released 2015-03-03
