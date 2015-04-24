@@ -52,6 +52,12 @@ class KeyNotFoundError(NymphemeralError):
         self.message = 'The key for "' + query + '" could not be found in the keyring.'
 
 
+class SecretKeyNotFoundError(NymphemeralError):
+    def __init__(self, query):
+        self.title = 'Scret Key Not Found'
+        self.message = 'The secret key for "' + query + '" could not be found in the keyring.'
+
+
 class IncorrectPassphraseError(NymphemeralError):
     def __init__(self):
         self.title = 'Incorrect Passphrase'
