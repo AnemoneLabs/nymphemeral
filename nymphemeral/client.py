@@ -801,6 +801,34 @@ class Client:
         else:
             raise errors.UndecipherableMessageError()
 
+    def sign_data(self, data, signer, passphrase=None):
+        """
+        Return data signed by the fingerprint given
+
+        signer is expected to be a fingerprint (string) or a dictionary with the same format as the one returned by
+        gpg.list_keys()
+        """
+
+        try:
+            signer = signer['fingerprint']
+        except TypeError:
+            # it might be a string with the fingerprint
+            pass
+
+        gpg = new_gpg(self.directory_base, self.use_agent)
+        result = gpg.sign(data, keyid=signer, passphrase=passphrase)
+        if result:
+            return str(result)
+        else:
+            bad_pass_error = "bad passphrase"
+            skey_error = "secret key not available"
+            if bad_pass_error in result.stderr:
+                raise errors.IncorrectPassphraseError()
+            elif skey_error in result.stderr:
+                raise errors.SecretKeyNotFoundError(signer)
+            else:
+                raise errors.NymphemeralError('GPG Error', result.stderr)
+
     def encrypt_e2ee_data(self, data, recipient, signer=None, passphrase=None, throw_keyids=False):
         """
         Return ciphertext of end-to-end encrypted data using the user's keyring
