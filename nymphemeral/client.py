@@ -831,7 +831,7 @@ class Client:
 
     def encrypt_e2ee_data(self, data, recipient, signer=None, passphrase=None, throw_keyids=False):
         """
-        Return ciphertext of end-to-end encrypted data using the user's keyring
+        Return ciphertext of end-to-end encrypted data using nymphemeral's keyring
 
         recipient and signer are expected to be fingerprints (strings) or a dictionary with the same format as the one
         returned by gpg.list_keys()
@@ -862,7 +862,7 @@ class Client:
             raise errors.NymphemeralError('GPG Error', text + '!')
 
     def decrypt_e2ee_message(self, msg, passphrase=None):
-        """Return plaintext of end-to-end encrypted message using the user's keyring"""
+        """Return plaintext of end-to-end encrypted message using nymphemeral's keyring"""
 
         data = search_pgp_message(msg.content)
         if not data:
