@@ -719,7 +719,7 @@ class SendTab(tk.Frame, object):
         self.entry_e2ee_target_send.grid(row=1, sticky='w', padx=(12, 284))
 
         # e2ee signer
-        label_e2ee_signer = tk.Label(frame_e2ee, text='Signer (Optional)')
+        label_e2ee_signer = tk.Label(frame_e2ee, text='Signer')
         label_e2ee_signer.grid(row=0, sticky=tk.E)
         self.entry_e2ee_signer_send = tk.Entry(frame_e2ee, width=33)
         self.entry_e2ee_signer_send.grid(row=1, sticky='e')
@@ -763,21 +763,21 @@ class SendTab(tk.Frame, object):
     def send_message(self, target_address, subject, content, e2ee_target='', e2ee_signer=''):
         if not content.endswith('\n'):
             content += '\n'
-        e2ee_target_info = ''
         try:
+            e2ee_target_info = ''
             # check if end-to-end encryption is intended
-            if len(e2ee_target):
-                target_key = retrieve_key(self.client.gpg, e2ee_target)
-                e2ee_target_info = 'End-to-End Encryption to:\n' + format_key_info(target_key) + '\n'
+            if e2ee_target or e2ee_signer:
+                target_key = None
                 throw_keyids = bool(self.var_throw_keyids.get())
+                if len(e2ee_target):
+                    target_key = retrieve_key(self.client.gpg, e2ee_target)
+                    e2ee_target_info = 'End-to-End Encryption to:\n' + format_key_info(target_key) + '\n'
+
+                signer_key = None
+                passphrase = None
                 if len(e2ee_signer):
                     signer_key = retrieve_key(self.client.gpg, e2ee_signer)
-                    if self.client.use_agent:
-                        content = self.client.encrypt_e2ee_data(content,
-                                                                target_key,
-                                                                signer_key,
-                                                                throw_keyids=throw_keyids)
-                    else:
+                    if not self.client.use_agent:
                         prompt = 'Signing with:\n' \
                                  + format_key_info(signer_key) \
                                  + 'Provide a passphrase to unlock the secret key:'
@@ -788,17 +788,22 @@ class SendTab(tk.Frame, object):
                         if passphrase is None:
                             # cancel
                             return
-                        else:
-                            content = self.client.encrypt_e2ee_data(content,
-                                                                    target_key,
-                                                                    signer_key,
-                                                                    passphrase,
-                                                                    throw_keyids)
+
+                if not target_key:
+                    # sign only
+                    content = self.client.sign_data(content, signer_key, passphrase)
+                elif signer_key:
+                    # encrypt and sign
+                    content = self.client.encrypt_e2ee_data(content,
+                                                            target_key,
+                                                            signer_key,
+                                                            passphrase,
+                                                            throw_keyids)
                 else:
-                    # encrypt but not sign
-                    content = self.client.encrypt_e2ee_data(content, target_key, throw_keyids=throw_keyids)
-            elif len(e2ee_signer):
-                raise errors.NymphemeralError('Error', 'A target must be provided for end-to-end encryption.')
+                    # encrypt only
+                    content = self.client.encrypt_e2ee_data(content,
+                                                            target_key,
+                                                            throw_keyids=throw_keyids)
         except errors.NymphemeralError as e:
             tkMessageBox.showerror(e.title, e.message)
         else:
