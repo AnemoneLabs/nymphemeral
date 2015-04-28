@@ -12,6 +12,11 @@ When you run the client, a login window will be displayed. Fill in
 the ``Address`` and ``Passhphrase`` fields, choose the output method
 that you would like to use and click ``Start Session``.
 
+GPG Agent
+---------
+If it is enabled, the GPG Agent's dialogs will be displayed when you
+need to sign/decrypt messages, prompting you for a passphrase. If you
+decide not to enable it, nymphemeral's own dialogs will be used.
 
 Output method
 -------------
