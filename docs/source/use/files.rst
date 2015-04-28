@@ -43,8 +43,9 @@ that belong to the following sections:
 
 [gpg]
 '''''
-You can set ``base_folder`` to point to *GPG's* home path. (Default:
-``~/.gnupg``)
+Although this option can be modified through the GUI, you can toggle
+``use_agent`` between ``True``/``False`` to use the GPG Agent when
+encrypting/signing messages.
 
 [main]
 ''''''
