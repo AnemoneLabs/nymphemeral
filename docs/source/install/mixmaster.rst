@@ -122,9 +122,8 @@ to::
 Getting New Remailer Stats
 --------------------------
 Before you can use *Mixmaster*, you need to update the stats. We are
-going to use the `Jeremy Bentham Remailer`_, since it accepts
-connections through *Tor*, but the process should be similar to other
-remailers you wish to use.
+going to use the pinger from the `Jeremy Bentham Remailer`_, but the
+process should be similar to other pingers you wish to use.
 
 An easy way to do this **securely** is with *curl*. First, create a
 file called ``update.sh`` in your ``~/Mix`` directory, with the
