@@ -921,12 +921,13 @@ class Client:
                 self.debug('Message encryption failed. Will be saved as plain text')
             if save_data(data, new_identifier):
                 self.debug('Message saved to disk')
-                return new_identifier
+                msg.identifier = new_identifier
+                return True
             else:
                 self.debug('Message could not be saved')
         except IOError:
             print 'Error while saving to disk' + ':', sys.exc_info()[0]
-        return None
+        return False
 
     def delete_message_from_disk(self, msg):
         try:
