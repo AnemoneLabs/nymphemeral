@@ -634,11 +634,20 @@ class Client:
             self.add_hsub(self.nym)
         return success, info, ciphertext
 
-    def send_message(self, target_address, subject, content):
+    def send_message(self, target_address, subject, headers, body):
         recipient = 'send@' + self.nym.server
-        msg = email.message_from_string('To: ' + target_address +
-                                        '\nSubject: ' + subject +
-                                        '\n' + content).as_string().strip()
+
+        lines = []
+        lines.append('To: ' + target_address)
+        lines.append('Subject: ' + subject)
+        for header in headers.splitlines():
+            h = header.strip()
+            if len(h):
+                lines.append(h)
+        lines.append('')
+        lines.append(body)
+        content = '\n'.join(lines)
+        msg = email.message_from_string(content).as_string().strip()
 
         self.axolotl.loadState(self.nym.fingerprint, 'a')
         ciphertext = b2a_base64(self.axolotl.encrypt(msg)).strip()

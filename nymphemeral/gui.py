@@ -699,18 +699,27 @@ class SendTab(tk.Frame, object):
         self.entry_subject_send = tk.Entry(frame_tab)
         self.entry_subject_send.grid(sticky='we')
 
-        # message box
-        frame_text = tk.LabelFrame(frame_tab, text='Message')
-        frame_text.grid(pady=10)
-        self.text_send = tk.Text(frame_text, height=26)
-        self.text_send.grid(row=0, column=0)
-        scrollbar = tk.Scrollbar(frame_text, command=self.text_send.yview)
-        scrollbar.grid(row=0, column=1, sticky='ns')
-        self.text_send['yscrollcommand'] = scrollbar.set
+        # header box
+        frame_header = tk.LabelFrame(frame_tab, text='Headers (Optional)')
+        frame_header.grid(pady=(10, 0))
+        self.text_header = tk.Text(frame_header, height=4)
+        self.text_header.grid(row=0, column=0)
+        scrollbar_header = tk.Scrollbar(frame_header, command=self.text_header.yview)
+        scrollbar_header.grid(row=0, column=1, sticky='ns')
+        self.text_header['yscrollcommand'] = scrollbar_header.set
+
+        # body box
+        frame_body = tk.LabelFrame(frame_tab, text='Message')
+        frame_body.grid(pady=(10, 0))
+        self.text_body = tk.Text(frame_body, height=20)
+        self.text_body.grid(row=0, column=0)
+        scrollbar_body = tk.Scrollbar(frame_body, command=self.text_body.yview)
+        scrollbar_body.grid(row=0, column=1, sticky='ns')
+        self.text_body['yscrollcommand'] = scrollbar_body.set
 
         # e2ee
         frame_e2ee = tk.LabelFrame(frame_tab, text='End-to-End Encryption (Recommended)')
-        frame_e2ee.grid(sticky='we', ipady=5, pady=(0, 10))
+        frame_e2ee.grid(sticky='we', ipady=5, pady=(10, 0))
 
         # e2ee target
         label_e2ee_target = tk.Label(frame_e2ee, text='Target')
@@ -736,10 +745,11 @@ class SendTab(tk.Frame, object):
         button_send = tk.Button(frame_tab, text='Send',
                                 command=lambda: self.send_message(self.entry_target_send.get().strip(),
                                                                   self.entry_subject_send.get().strip(),
-                                                                  self.text_send.get(1.0, tk.END).strip(),
+                                                                  self.text_header.get(1.0, tk.END).strip(),
+                                                                  self.text_body.get(1.0, tk.END).strip(),
                                                                   self.entry_e2ee_target_send.get().strip(),
                                                                   self.entry_e2ee_signer_send.get().strip()))
-        button_send.grid()
+        button_send.grid(pady=(10, 0))
 
     def compose_message(self, msg):
         self.entry_target_send.delete(0, tk.END)
@@ -751,18 +761,18 @@ class SendTab(tk.Frame, object):
         content = '\n\n'
         for line in msg.content.splitlines():
             content += '> ' + line + '\n'
-        cursor_position = 1.0
         if msg.id:
-            content = 'In-Reply-To: ' + msg.id + '\n\n' + content
-            cursor_position = 3.0
-        write_on_text(self.text_send, [content])
-        self.text_send.mark_set(tk.INSERT, cursor_position)
+            header = 'In-Reply-To: ' + msg.id
+            write_on_text(self.text_header, [header])
+        write_on_text(self.text_body, [content])
+        cursor_position = 1.0
+        self.text_body.mark_set(tk.INSERT, cursor_position)
         self.gui.window_main.select_tab(self)
-        self.text_send.focus_set()
+        self.text_body.focus_set()
 
-    def send_message(self, target_address, subject, content, e2ee_target='', e2ee_signer=''):
-        if not content.endswith('\n'):
-            content += '\n'
+    def send_message(self, target_address, subject, headers, body, e2ee_target='', e2ee_signer=''):
+        if not body.endswith('\n'):
+            body += '\n'
         try:
             e2ee_target_info = ''
             # check if end-to-end encryption is intended
@@ -791,24 +801,24 @@ class SendTab(tk.Frame, object):
 
                 if not target_key:
                     # sign only
-                    content = self.client.sign_data(content, signer_key, passphrase)
+                    body = self.client.sign_data(body, signer_key, passphrase)
                 elif signer_key:
                     # encrypt and sign
-                    content = self.client.encrypt_e2ee_data(content,
-                                                            target_key,
-                                                            signer_key,
-                                                            passphrase,
-                                                            throw_keyids)
+                    body = self.client.encrypt_e2ee_data(body,
+                                                         target_key,
+                                                         signer_key,
+                                                         passphrase,
+                                                         throw_keyids)
                 else:
                     # encrypt only
-                    content = self.client.encrypt_e2ee_data(content,
-                                                            target_key,
-                                                            throw_keyids=throw_keyids)
+                    body = self.client.encrypt_e2ee_data(body,
+                                                         target_key,
+                                                         throw_keyids=throw_keyids)
         except errors.NymphemeralError as e:
             tkMessageBox.showerror(e.title, e.message)
         else:
-            success, info, ciphertext = self.client.send_message(target_address, subject, content)
-            write_on_text(self.text_send, [info, e2ee_target_info, ciphertext])
+            success, info, ciphertext = self.client.send_message(target_address, subject, headers, body)
+            write_on_text(self.text_body, [info, e2ee_target_info, ciphertext])
 
 
 class ConfigTab(tk.Frame, object):
