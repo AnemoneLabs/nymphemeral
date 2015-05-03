@@ -331,7 +331,6 @@ class MainWindow(tk.Tk, object):
             self.notebook.add(self.tab_create, text='Create Nym')
             self.set_creation_interface(True)
 
-
         self.notebook.pack(fill=tk.BOTH, expand=True)
 
         # footer
@@ -502,14 +501,32 @@ class InboxTab(tk.Frame, object):
         self.list_messages_inbox['yscrollcommand'] = scrollbar_list.set
         self.list_messages_inbox.bind('<<ListboxSelect>>', self.select_message)
 
-        # content list box
-        frame_text = tk.LabelFrame(frame_tab, text='Content')
-        frame_text.grid(pady=10, sticky='we')
-        self.text_content_inbox = tk.Text(frame_text, height=22)
-        self.text_content_inbox.grid(row=0, column=0, sticky='we')
-        scrollbar_text = tk.Scrollbar(frame_text, command=self.text_content_inbox.yview)
-        scrollbar_text.grid(row=0, column=1, sticky='nsew')
-        self.text_content_inbox['yscrollcommand'] = scrollbar_text.set
+        # message contents
+        frame_content = tk.Frame(frame_tab)
+        frame_content.grid(pady=10, sticky='we')
+        notebook = ttk.Notebook(frame_content)
+        notebook.pack()
+
+        frame_body = tk.Frame(notebook)
+        frame_headers = tk.Frame(notebook)
+
+        # body tab
+        self.text_body_inbox = tk.Text(frame_body, height=22)
+        scrollbar_body = tk.Scrollbar(frame_body, command=self.text_body_inbox.yview)
+        scrollbar_body.grid(row=0, column=1, sticky='nsew')
+        self.text_body_inbox['yscrollcommand'] = scrollbar_body.set
+        self.text_body_inbox.grid(row=0, column=0, sticky='we')
+
+        # headers tab
+        self.text_headers_inbox = tk.Text(frame_headers, height=22)
+        scrollbar_headers = tk.Scrollbar(frame_headers, command=self.text_headers_inbox.yview)
+        scrollbar_headers.grid(row=0, column=1, sticky='nsew')
+        self.text_headers_inbox['yscrollcommand'] = scrollbar_headers.set
+        self.text_headers_inbox.grid(row=0, column=0, sticky='we')
+
+        notebook.add(frame_body, text='Body')
+        notebook.add(frame_headers, text='Headers')
+        notebook.pack(fill=tk.BOTH, expand=True)
 
         buttons_row = frame_tab.grid_size()[1] + 1
 
@@ -570,14 +587,14 @@ class InboxTab(tk.Frame, object):
         self.button_reply_inbox.config(state=tk.DISABLED)
         if retrieving_messages:
             self.list_messages_inbox.config(state=tk.DISABLED)
-            self.text_content_inbox.config(state=tk.DISABLED)
+            self.text_body_inbox.config(state=tk.DISABLED)
             self.progress_bar_inbox.grid(row=0, column=1, sticky='nswe', padx=(15, 0))
             self.progress_bar_inbox.config(mode='indeterminate')
             self.progress_bar_inbox.start(25)
             self.button_aampy_inbox.config(text='Stop', command=self.stop_retrieving_messages)
         else:
             self.list_messages_inbox.config(state=tk.NORMAL)
-            self.text_content_inbox.config(state=tk.NORMAL)
+            self.text_body_inbox.config(state=tk.NORMAL)
             self.progress_bar_inbox.stop()
             self.progress_bar_inbox.grid_forget()
             self.button_aampy_inbox.config(text='Retrieve Messages', command=self.start_retrieving_messages)
@@ -644,7 +661,11 @@ class InboxTab(tk.Frame, object):
                 self.display_message(self.messages[index])
 
     def display_message(self, msg):
-        write_on_text(self.text_content_inbox, [msg.content])
+        self.text_headers_inbox.config(state=tk.NORMAL)
+        write_on_text(self.text_headers_inbox, [msg.headers])
+        self.text_headers_inbox.config(state=tk.DISABLED)
+
+        write_on_text(self.text_body_inbox, [msg.content])
         if os.path.exists(msg.identifier):
             self.toggle_save_del_button(False)
         else:
