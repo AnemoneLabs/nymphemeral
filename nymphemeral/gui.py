@@ -514,14 +514,14 @@ class InboxTab(tk.Frame, object):
         frame_headers = tk.Frame(notebook)
 
         # body tab
-        self.text_body_inbox = tk.Text(frame_body, height=22)
+        self.text_body_inbox = tk.Text(frame_body, height=22, state=tk.DISABLED)
         scrollbar_body = tk.Scrollbar(frame_body, command=self.text_body_inbox.yview)
         scrollbar_body.grid(row=0, column=1, sticky='nsew')
         self.text_body_inbox['yscrollcommand'] = scrollbar_body.set
         self.text_body_inbox.grid(row=0, column=0, sticky='we')
 
         # headers tab
-        self.text_headers_inbox = tk.Text(frame_headers, height=22)
+        self.text_headers_inbox = tk.Text(frame_headers, height=22, state=tk.DISABLED)
         scrollbar_headers = tk.Scrollbar(frame_headers, command=self.text_headers_inbox.yview)
         scrollbar_headers.grid(row=0, column=1, sticky='nsew')
         self.text_headers_inbox['yscrollcommand'] = scrollbar_headers.set
@@ -590,14 +590,12 @@ class InboxTab(tk.Frame, object):
         self.button_reply_inbox.config(state=tk.DISABLED)
         if retrieving_messages:
             self.list_messages_inbox.config(state=tk.DISABLED)
-            self.text_body_inbox.config(state=tk.DISABLED)
             self.progress_bar_inbox.grid(row=0, column=1, sticky='nswe', padx=(15, 0))
             self.progress_bar_inbox.config(mode='indeterminate')
             self.progress_bar_inbox.start(25)
             self.button_aampy_inbox.config(text='Stop', command=self.stop_retrieving_messages)
         else:
             self.list_messages_inbox.config(state=tk.NORMAL)
-            self.text_body_inbox.config(state=tk.NORMAL)
             self.progress_bar_inbox.stop()
             self.progress_bar_inbox.grid_forget()
             self.button_aampy_inbox.config(text='Retrieve Messages', command=self.start_retrieving_messages)
@@ -664,10 +662,7 @@ class InboxTab(tk.Frame, object):
                 self.display_message(self.messages[index])
 
     def display_message(self, msg):
-        self.text_headers_inbox.config(state=tk.NORMAL)
         write_on_text(self.text_headers_inbox, [msg.headers])
-        self.text_headers_inbox.config(state=tk.DISABLED)
-
         write_on_text(self.text_body_inbox, [msg.content])
         if os.path.exists(msg.identifier):
             self.toggle_save_del_button(False)
