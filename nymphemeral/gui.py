@@ -776,7 +776,9 @@ class SendTab(tk.Frame, object):
             self.entry_target_send.insert(0, msg.sender.lower())
         self.entry_subject_send.delete(0, tk.END)
         if msg.subject:
-            self.entry_subject_send.insert(0, 'Re: ' + msg.subject)
+            self.entry_subject_send.insert(0, msg.subject)
+            if not msg.subject.startswith('Re: '):
+                self.entry_subject_send.insert(0, 'Re: ')
         content = '\n\n'
         for line in msg.content.splitlines():
             content += '> ' + line + '\n'
