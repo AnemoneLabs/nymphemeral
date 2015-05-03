@@ -48,10 +48,13 @@ from nym import Nym
 
 
 def write_on_text(text, content, clear=True):
+    state = text.cget('state')
+    text.config(state=tk.NORMAL)
     if clear:
         text.delete(1.0, tk.END)
     for c in content:
         text.insert(tk.INSERT, c)
+    text.config(state=state)
 
 
 class Gui:
