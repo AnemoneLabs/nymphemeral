@@ -10,6 +10,7 @@ class Message(object):
         self._sender = None
         self._id = None
         self._date = None
+        self._headers = None
         self._content = None
         self._title = None
         self._processed_message = None
@@ -33,6 +34,10 @@ class Message(object):
     @property
     def date(self):
         return self._date
+
+    @property
+    def headers(self):
+        return self._headers
 
     @property
     def content(self):
@@ -69,6 +74,11 @@ class Message(object):
             title += self.subject
         else:
             title += '(no subject)'
+
+        headers = []
+        for key, value in message.items():
+            headers.append(': '.join([key, value]))
+        self._headers = '\n'.join(headers)
 
         # content types we print
         mtypes = ('text/plain', 'text/html', 'message/rfc822')
