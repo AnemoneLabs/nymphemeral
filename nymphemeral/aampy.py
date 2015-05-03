@@ -132,7 +132,7 @@ class AAMpy(object):
                 # no such message (maybe it was deleted?)
                 pass
             else:
-                message = email.message_from_string(string.join(text, "\n"))
+                message = email.message_from_string(string.join(text, '\n'))
                 for nick, passphrase in temp_hsubs.items():
                     for label, item in message.items():
                         if label == 'Subject':
@@ -142,7 +142,7 @@ class AAMpy(object):
                                 if self._is_debugging:
                                     print 'Found a message for nickname ' + nick
                                 file_name = 'message_' + nick + '_' + message_id[1:6] + '.txt'
-                                with open(self._directory + '/' + file_name, "w") as f:
+                                with open(self._directory + '/' + file_name, 'w') as f:
                                     f.write(message.as_string()+'\n')
                                     if self._is_debugging:
                                         print 'Encrypted message stored in ' + file_name

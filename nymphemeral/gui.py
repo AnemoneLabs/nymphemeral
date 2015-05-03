@@ -116,7 +116,7 @@ class LoginWindow(tk.Tk, object):
         button_servers.grid(pady=(5, 0))
 
         # GPG agent checkbox
-        check_agent = tk.Checkbutton(frame_login, text="Use GPG Agent", variable=self.var_use_agent)
+        check_agent = tk.Checkbutton(frame_login, text='Use GPG Agent', variable=self.var_use_agent)
         check_agent.grid(sticky='w', padx=0, pady=(10, 0))
         self.var_use_agent.set(self.client.use_agent)
 
@@ -757,7 +757,7 @@ class SendTab(tk.Frame, object):
         label_tip.grid(row=0)
 
         # throw key IDs checkbox
-        check_throw_keyids = tk.Checkbutton(frame_e2ee, text="Throw Key IDs", variable=self.var_throw_keyids)
+        check_throw_keyids = tk.Checkbutton(frame_e2ee, text='Throw Key IDs', variable=self.var_throw_keyids)
         check_throw_keyids.grid(sticky='w', padx=(5, 0))
 
         # send button

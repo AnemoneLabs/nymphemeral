@@ -829,8 +829,8 @@ class Client:
         if result:
             return str(result)
         else:
-            bad_pass_error = "bad passphrase"
-            skey_error = "secret key not available"
+            bad_pass_error = 'bad passphrase'
+            skey_error = 'secret key not available'
             if bad_pass_error in result.stderr:
                 raise errors.IncorrectPassphraseError()
             elif skey_error in result.stderr:
