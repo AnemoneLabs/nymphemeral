@@ -30,6 +30,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 For more information, see https://github.com/felipedau/nymphemeral
 """
+import operator
 
 __author__ = 'Felipe Dau and David R. Andersen'
 __license__ = 'GPL'
@@ -940,10 +941,10 @@ class UnreadCounterTab(tk.Frame, object):
         self.update_unread_counter()
 
     def update_unread_counter(self):
-        counter = self.client.count_unread_messages()
+        counter = sorted(self.client.count_unread_messages().items(), key=operator.itemgetter(0))
         self.list_unread.delete(0, tk.END)
         if counter:
-            for nym, count in counter.iteritems():
+            for nym, count in counter:
                 self.list_unread.insert(tk.END, nym + '(' + str(count) + ')')
         else:
             self.list_unread.insert(tk.END, 'No messages found')
