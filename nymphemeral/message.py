@@ -76,8 +76,8 @@ class Message(object):
             title += '(no subject)'
 
         headers = []
-        for key, value in message.items():
-            headers.append(': '.join([key, value]))
+        for item in message.items():
+            headers.append(': '.join(item))
         self._headers = '\n'.join(headers)
 
         # content types we print
