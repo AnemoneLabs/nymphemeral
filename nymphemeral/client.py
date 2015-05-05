@@ -330,7 +330,7 @@ class Client:
         try:
             # load default configs
             self.cfg.add_section('gpg')
-            self.cfg.set('gpg', 'use_agent', 'False')
+            self.cfg.set('gpg', 'use_agent', 'True')
             self.cfg.add_section('main')
             self.cfg.set('main', 'base_folder', NYMPHEMERAL_PATH)
             self.cfg.set('main', 'db_folder', '%(base_folder)s/db')

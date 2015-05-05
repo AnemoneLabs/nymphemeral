@@ -45,7 +45,7 @@ that belong to the following sections:
 '''''
 Although this option can be modified through the GUI, you can toggle
 ``use_agent`` between ``True``/``False`` to use the GPG Agent when
-signing/decrypting messages.
+signing/decrypting messages. (Default: ``True``)
 
 [main]
 ''''''
