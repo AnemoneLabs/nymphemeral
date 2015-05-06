@@ -57,25 +57,24 @@ ignore it - you did not have a file there to move::
 Build Mixmaster
 ---------------
 
-Download `Mixmaster 3.0.2e`_.
+Download `Mixmaster 3.0.3`_.
 
 Be sure to verify the SHA256 hash of the downloaded file. You can do
 this by executing the command::
 
-    sha256sum mixmaster-3.0.2e.tar.gz
+    sha256sum mixmaster-3.0.3b.tar.gz
 
 The output should match the following hex number::
 
-    8f026db671fc9636fe3526890ea8ea21a43a777b49cac4eca5b9a04eadb28c7a
-
+    4cd6121e49cddba9b0771d453fa7b6cf824bee920af36206d1414388a47708de
 
 Extract the *Mixmaster* tarball::
 
-    tar xvf mixmaster-3.0.2e.tar.gz
+    tar xvf mixmaster-3.0.3b.tar.gz
 
 Run the ``Install`` script::
 
-    cd mixmaster-3.0.2e
+    cd mixmaster-3.0.3b
     ./Install
 
 Answer the questions posed by the script:
@@ -215,7 +214,7 @@ has to be executed every time the system starts up.
 
 .. _`another option`: https://www.torproject.org/docs/debian.html.en#ubuntu
 .. _`jeremy bentham remailer`: http://anemone.mooo.com/stats/
-.. _`mixmaster 3.0.2e`: http://www.zen19351.zen.co.uk/mixmaster302
+.. _`mixmaster 3.0.3`: http://www.zen19351.zen.co.uk/mixmaster303
 .. _`openssl download page`: https://www.openssl.org/source/
 .. _`socat`: http://www.dest-unreach.org/socat
 .. _`stunnel`: https://www.stunnel.org
