@@ -36,7 +36,7 @@ Usage
     use/login
     use/creation
     use/decryption
-    use/composal
+    use/composition
     use/configuration
     use/counter
 
