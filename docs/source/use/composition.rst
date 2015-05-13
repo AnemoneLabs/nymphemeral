@@ -1,3 +1,5 @@
+.. _composition:
+
 ================
 Sending Messages
 ================
@@ -67,3 +69,6 @@ will prompt you for a passphrase to unlock the secret key:
    :align: center
 
    GPG Agent
+
+**Note:** You should read the :ref:`keyring` section to add the keys
+involved in the End-to-End Encryption to nymphemeral's keyring.

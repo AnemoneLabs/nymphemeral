@@ -1,3 +1,5 @@
+.. _decryption:
+
 ===================
 Decrypting Messages
 ===================
@@ -45,6 +47,9 @@ the keyring:
 
 If the key is not found or the authentication fails, the ciphertext
 will be displayed, allowing you to decrypt it manually.
+
+**Note:** You should read the :ref:`keyring` section to add the keys
+involved in the End-to-End Encryption to nymphemeral's keyring.
 
 .. _`axolotl ratchet protocol`: https://github.com/trevp/axolotl/wiki
 .. _`pyaxo`: https://github.com/rxcomm/pyaxo

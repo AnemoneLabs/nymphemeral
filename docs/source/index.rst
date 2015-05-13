@@ -33,6 +33,7 @@ Usage
     :maxdepth: 2
 
     use/files
+    use/keyring
     use/login
     use/creation
     use/decryption
