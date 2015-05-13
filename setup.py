@@ -69,6 +69,7 @@ setup(
         (BASE_DIRECTORY, ['COPYING']),
         (BASE_DIRECTORY, ['README.rst']),
         (BASE_DIRECTORY + '/db', glob('db/generic.db')),
+        (BASE_DIRECTORY + '/docs', glob('docs/*')),
         (BASE_DIRECTORY + '/connections', glob('connections/*')),
     ],
 )
