@@ -1,21 +1,28 @@
 ===================
 Decrypting Messages
 ===================
-.. figure:: decrypted.png
-   :scale: 30%
-   :alt: Decrypt Message Tab
+After the nym is created, go to the ``Inbox`` tab. There you can
+click ``Retrieve Messages`` to start **aampy** and if there are
+messages sent to you that are tied to your hSub key, they will be
+displayed in the ``Messages`` list box. Clicking on one of the
+messages will decrypt it and display it in the ``Body`` tab and its
+headers in the ``Headers`` tab. If you wish to keep the message,
+click ``Save to Disk``. You can also click ``Reply Message`` and you
+will be directed to the ``Send Message`` tab.
+
+.. figure:: inbox-body.png
+   :scale: 50%
+   :alt: Inbox Body Tab
+   :align: left
+
+   Body Tab
+
+.. figure:: inbox-headers.png
+   :scale: 50%
+   :alt: Inbox Headers Tab
    :align: right
 
-   Decrypt Message Tab
-
-After the nym is created, go to the ``Decrypt Message`` tab. There
-you can click ``Retrieve Messages`` to start **aampy** and if there
-are messages sent to you that are tied to your hSub key, they will be
-displayed in the ``Messages`` list box. Clicking on one of the
-messages will decrypt it and display it in the ``Content`` text box.
-If you wish to keep the message, click ``Save to Disk``. You can also
-click ``Reply Message`` and you will be directed to the
-``Send Message`` tab.
+   Headers Tab
 
 **Note:** Clicking on undecrypted messages will delete them when the
 process is done. If it fails to decrypt then it is useless. If it
