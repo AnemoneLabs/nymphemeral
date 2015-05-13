@@ -29,5 +29,22 @@ process is done. If it fails to decrypt then it is useless. If it
 succeeds, then it becomes useless due to the `Axolotl ratchet
 protocol`_. You can go to `pyaxo`_ to read more about it.
 
+End-to-End Encryption
+---------------------
+If someone has sent you an End-to-End Encrypted message, when you
+click on the message to decrypt it, after removing the encryption
+layers that were added by the nym server, either the GPG Agent or
+nymphemeral will prompt you for a passphrase if the key is found in
+the keyring:
+
+.. figure:: agent.png
+   :alt: GPG Agent
+   :align: center
+
+   GPG Agent
+
+If the key is not found or the authentication fails, the ciphertext
+will be displayed, allowing you to decrypt it manually.
+
 .. _`axolotl ratchet protocol`: https://github.com/trevp/axolotl/wiki
 .. _`pyaxo`: https://github.com/rxcomm/pyaxo
