@@ -5,7 +5,7 @@ After installing the client, run nymphemeral at the command line and
 it will create the following files and directories inside the base
 directory (``~/.config/nymphemeral``):
 
-- ``*.gpg``: GPG keyring files
+- ``*.gpg``: *GPG* keyring files
 
 - ``nymphemeral.cfg``: Config file that stores preferences and paths
   used by the client. This file is not encrypted and does not have
@@ -43,8 +43,9 @@ that belong to the following sections:
 
 [gpg]
 '''''
-You can set ``base_folder`` to point to GPG's home path. (Default:
-``~/.gnupg``)
+Although this option can be modified through the GUI, you can toggle
+``use_agent`` between ``True``/``False`` to use the GPG Agent when
+signing/decrypting messages. (Default: ``True``)
 
 [main]
 ''''''
@@ -53,14 +54,15 @@ regarding operations performed by the client. (Default: ``False``)
 
 [mixmaster]
 '''''''''''
-You can set ``base_folder`` to point to your Mixmaster installation.
+You can set ``base_folder`` to point to your *Mixmaster* installation.
 (Default: ``~/Mix``).
 
 [newsgroup]
 '''''''''''
 If you already have a news server running, replace ``group``,
 ``server`` and ``port`` with its information. Otherwise, visit
-nymphemeral to find out how to create one using socat and stunnel.
+:ref:`newsserver` to find out how to create one using *socat*
+and *stunnel*.
 
 **Important:** Changes made to ``nymphemeral.cfg`` will only take
 effect by restarting the client.

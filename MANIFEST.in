@@ -2,5 +2,6 @@ include CHANGELOG.md
 include COPYING
 include README.rst
 include db/generic.db
+recursive-include docs *
 recursive-include scripts *
 recursive-include connections *

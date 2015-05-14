@@ -1,7 +1,7 @@
 ===================
 Configuring the Nym
 ===================
-.. figure:: configure.png
+.. figure:: configured.png
    :scale: 30%
    :alt: Configure Nym Tab
    :align: right

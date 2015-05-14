@@ -30,32 +30,40 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 For more information, see https://github.com/felipedau/nymphemeral
 """
+import operator
 
 __author__ = 'Felipe Dau and David R. Andersen'
 __license__ = 'GPL'
-__version__ = '1.3.1'
-__status__ = 'Prototype'
+__version__ = '1.3.2'
+__status__ = 'Beta'
 
 import Tkinter as tk
 import ttk
 import os
 import tkMessageBox
+import tkSimpleDialog
 
-from client import Client, OUTPUT_METHOD
+from client import OUTPUT_METHOD, search_pgp_message, retrieve_keyids, retrieve_key, format_key_info, Client
 import errors
 from nym import Nym
 
 
 def write_on_text(text, content, clear=True):
+    state = text.cget('state')
+    text.config(state=tk.NORMAL)
     if clear:
         text.delete(1.0, tk.END)
     for c in content:
         text.insert(tk.INSERT, c)
+    text.config(state=state)
 
 
 class Gui:
     def __init__(self):
         self.client = Client()
+        self.title = 'nymphemeral'
+        if self.client.is_debugging:
+            self.title += ' ' + __version__
 
         self.window_login = LoginWindow(self, self.client)
         self.window_main = None
@@ -66,7 +74,7 @@ class Gui:
         self.window_main = MainWindow(self, self.client, creating_nym)
 
     def end_session(self):
-        if not self.client.aampy_is_done:
+        if self.client.aampy.is_running:
             self.window_main.stop_retrieving_messages()
         self.client.end_session()
         self.window_main.destroy()
@@ -81,8 +89,9 @@ class LoginWindow(tk.Tk, object):
         self.gui = gui
         self.client = client
         self.var_output_method = None
+        self.var_use_agent = tk.BooleanVar()
 
-        self.title('nymphemeral')
+        self.title(self.gui.title)
         frame_login = tk.Frame(self)
         frame_login.grid(sticky='w', padx=15, pady=15)
 
@@ -106,6 +115,11 @@ class LoginWindow(tk.Tk, object):
         button_servers = tk.Button(frame_login, text='Manage Servers', command=lambda: ServersWindow(self.gui,
                                                                                                      self.client))
         button_servers.grid(pady=(5, 0))
+
+        # GPG agent checkbox
+        check_agent = tk.Checkbutton(frame_login, text='Use GPG Agent', variable=self.var_use_agent)
+        check_agent.grid(sticky='w', padx=0, pady=(10, 0))
+        self.var_use_agent.set(self.client.use_agent)
 
         # output radio buttons
         frame_radio = tk.LabelFrame(frame_login, text='Output Method')
@@ -145,12 +159,13 @@ class LoginWindow(tk.Tk, object):
                 return key
 
     def start_session(self, address, passphrase, creating_nym=False):
+        use_agent = bool(self.var_use_agent.get())
         method = self.get_output_method()
         try:
             nym = Nym(address, passphrase)
             if not len(passphrase):
                 raise errors.InvalidPassphraseError()
-            self.client.start_session(nym, method, creating_nym)
+            self.client.start_session(nym, use_agent, method, creating_nym)
         except (errors.InvalidEmailAddressError, errors.InvalidPassphraseError, errors.FingerprintNotFoundError,
                 errors.IncorrectPassphraseError) as e:
             tkMessageBox.showerror(e.title, e.message)
@@ -287,7 +302,7 @@ class MainWindow(tk.Tk, object):
         self.tab_create = None
 
         # root window
-        self.title('nymphemeral')
+        self.title(self.gui.title)
 
         # frame inside root window
         frame_tab = tk.Frame(self)
@@ -319,7 +334,6 @@ class MainWindow(tk.Tk, object):
             self.tabs.append(self.tab_create)
             self.notebook.add(self.tab_create, text='Create Nym')
             self.set_creation_interface(True)
-
 
         self.notebook.pack(fill=tk.BOTH, expand=True)
 
@@ -491,14 +505,32 @@ class InboxTab(tk.Frame, object):
         self.list_messages_inbox['yscrollcommand'] = scrollbar_list.set
         self.list_messages_inbox.bind('<<ListboxSelect>>', self.select_message)
 
-        # content list box
-        frame_text = tk.LabelFrame(frame_tab, text='Content')
-        frame_text.grid(pady=10, sticky='we')
-        self.text_content_inbox = tk.Text(frame_text, height=22)
-        self.text_content_inbox.grid(row=0, column=0, sticky='we')
-        scrollbar_text = tk.Scrollbar(frame_text, command=self.text_content_inbox.yview)
-        scrollbar_text.grid(row=0, column=1, sticky='nsew')
-        self.text_content_inbox['yscrollcommand'] = scrollbar_text.set
+        # message contents
+        frame_content = tk.Frame(frame_tab)
+        frame_content.grid(pady=10, sticky='we')
+        notebook = ttk.Notebook(frame_content)
+        notebook.pack()
+
+        frame_body = tk.Frame(notebook)
+        frame_headers = tk.Frame(notebook)
+
+        # body tab
+        self.text_body_inbox = tk.Text(frame_body, height=22, state=tk.DISABLED)
+        scrollbar_body = tk.Scrollbar(frame_body, command=self.text_body_inbox.yview)
+        scrollbar_body.grid(row=0, column=1, sticky='nsew')
+        self.text_body_inbox['yscrollcommand'] = scrollbar_body.set
+        self.text_body_inbox.grid(row=0, column=0, sticky='we')
+
+        # headers tab
+        self.text_headers_inbox = tk.Text(frame_headers, height=22, state=tk.DISABLED)
+        scrollbar_headers = tk.Scrollbar(frame_headers, command=self.text_headers_inbox.yview)
+        scrollbar_headers.grid(row=0, column=1, sticky='nsew')
+        self.text_headers_inbox['yscrollcommand'] = scrollbar_headers.set
+        self.text_headers_inbox.grid(row=0, column=0, sticky='we')
+
+        notebook.add(frame_body, text='Body')
+        notebook.add(frame_headers, text='Headers')
+        notebook.pack(fill=tk.BOTH, expand=True)
 
         buttons_row = frame_tab.grid_size()[1] + 1
 
@@ -541,14 +573,17 @@ class InboxTab(tk.Frame, object):
         self.toggle_interface(False)
 
     def wait_for_retrieval(self):
-        if self.client.aampy_is_done:
+        if self.client.aampy.is_running is False:
             self.gui.window_main.id_after = None
-            if self.client.queue_aampy.get()['server_found']:
+            if self.client.aampy.server_found:
                 self.load_messages()
             else:
                 self.toggle_interface(False)
                 tkMessageBox.showerror('Socket Error', 'The news server cannot be found!')
         else:
+            if self.client.aampy.progress_ratio is not None:
+                self.progress_bar_inbox.stop()
+                self.progress_bar_inbox.config(mode='determinate', value=int(self.client.aampy.progress_ratio * 100))
             self.gui.window_main.id_after = self.gui.window_main.after(1000, lambda: self.wait_for_retrieval())
 
     def toggle_interface(self, retrieving_messages):
@@ -556,48 +591,86 @@ class InboxTab(tk.Frame, object):
         self.button_reply_inbox.config(state=tk.DISABLED)
         if retrieving_messages:
             self.list_messages_inbox.config(state=tk.DISABLED)
-            self.text_content_inbox.config(state=tk.DISABLED)
             self.progress_bar_inbox.grid(row=0, column=1, sticky='nswe', padx=(15, 0))
+            self.progress_bar_inbox.config(mode='indeterminate')
             self.progress_bar_inbox.start(25)
             self.button_aampy_inbox.config(text='Stop', command=self.stop_retrieving_messages)
         else:
             self.list_messages_inbox.config(state=tk.NORMAL)
-            self.text_content_inbox.config(state=tk.NORMAL)
             self.progress_bar_inbox.stop()
             self.progress_bar_inbox.grid_forget()
             self.button_aampy_inbox.config(text='Retrieve Messages', command=self.start_retrieving_messages)
 
+    def decrypt_e2ee_message(self, msg):
+        pgp_message = search_pgp_message(msg.content)
+        if pgp_message:
+            if self.client.use_agent:
+                return self.client.decrypt_e2ee_message(msg)
+            else:
+                keyids = retrieve_keyids(pgp_message)
+                keys = []
+                if keyids:
+                    for k in keyids:
+                        try:
+                            keys.append(retrieve_key(self.client.gpg, k))
+                        except errors.KeyNotFoundError:
+                            pass
+                if keys:
+                    prompt = 'Message encrypted to:\n'
+                    for k in keys:
+                        prompt += format_key_info(k)
+                else:
+                    prompt = 'The key ID which the message was encrypted to was removed ' \
+                             'or is not in the keyring.\n'
+                prompt += 'Provide a passphrase to attempt to decrypt it:'
+                passphrase = tkSimpleDialog.askstring('End-to-End Encrypted Message',
+                                                      prompt,
+                                                      parent=self,
+                                                      show='*')
+                if passphrase is None:
+                    return msg
+                else:
+                    return self.client.decrypt_e2ee_message(msg, passphrase)
+        else:
+            return msg
+
     def select_message(self, event):
-        if len(self.messages) and self.client.aampy_is_done:
+        if len(self.messages) and not self.client.aampy.is_running:
             index = int(event.widget.curselection()[0])
-            selected_message = self.messages[index]
             self.current_message_index = index
 
-            if selected_message.is_unread:
+            if self.messages[index].is_unread:
                 self.button_save_del_inbox.config(state=tk.DISABLED)
                 self.button_reply_inbox.config(state=tk.DISABLED)
 
                 try:
-                    self.messages[index] = self.client.decrypt_ephemeral_message(selected_message)
+                    self.messages[index] = self.client.decrypt_ephemeral_message(self.messages[index])
                 except errors.UndecipherableMessageError as e:
                     tkMessageBox.showerror(e.title, e.message)
                     self.messages.pop(index)
                     self.current_message_index = None
                     self.update_messages_list()
                 else:
-                    write_on_text(self.text_content_inbox, [self.messages[index].content])
+                    # Check for and decrypt an end-to-end encryption layer
+                    try:
+                        self.messages[index] = self.decrypt_e2ee_message(self.messages[index])
+                    except errors.UndecipherableMessageError:
+                        pass
+
                     self.update_messages_list()
-                    self.toggle_save_del_button(True)
-                    self.button_save_del_inbox.config(state=tk.NORMAL)
-                    self.button_reply_inbox.config(state=tk.NORMAL)
+                    self.display_message(self.messages[index])
             else:
-                if os.path.exists(selected_message.identifier):
-                    self.toggle_save_del_button(False)
-                else:
-                    self.toggle_save_del_button(True)
-                write_on_text(self.text_content_inbox, [selected_message.content])
-                self.button_save_del_inbox.config(state=tk.NORMAL)
-                self.button_reply_inbox.config(state=tk.NORMAL)
+                self.display_message(self.messages[index])
+
+    def display_message(self, msg):
+        write_on_text(self.text_headers_inbox, [msg.headers])
+        write_on_text(self.text_body_inbox, [msg.content])
+        if os.path.exists(msg.identifier):
+            self.toggle_save_del_button(False)
+        else:
+            self.toggle_save_del_button(True)
+        self.button_save_del_inbox.config(state=tk.NORMAL)
+        self.button_reply_inbox.config(state=tk.NORMAL)
 
     def toggle_save_del_button(self, toggle_save):
         if toggle_save:
@@ -629,6 +702,7 @@ class SendTab(tk.Frame, object):
 
         self.gui = gui
         self.client = client
+        self.var_throw_keyids = tk.BooleanVar()
 
         frame_tab = tk.Frame(self)
         frame_tab.grid(sticky='nswe', padx=15, pady=15)
@@ -645,21 +719,57 @@ class SendTab(tk.Frame, object):
         self.entry_subject_send = tk.Entry(frame_tab)
         self.entry_subject_send.grid(sticky='we')
 
-        # message box
-        frame_text = tk.LabelFrame(frame_tab, text='Message')
-        frame_text.grid(pady=10)
-        self.text_send = tk.Text(frame_text, height=32)
-        self.text_send.grid(row=0, column=0)
-        scrollbar = tk.Scrollbar(frame_text, command=self.text_send.yview)
-        scrollbar.grid(row=0, column=1, sticky='ns')
-        self.text_send['yscrollcommand'] = scrollbar.set
+        # header box
+        frame_header = tk.LabelFrame(frame_tab, text='Headers (Optional)')
+        frame_header.grid(pady=(10, 0))
+        self.text_header = tk.Text(frame_header, height=4)
+        self.text_header.grid(row=0, column=0)
+        scrollbar_header = tk.Scrollbar(frame_header, command=self.text_header.yview)
+        scrollbar_header.grid(row=0, column=1, sticky='ns')
+        self.text_header['yscrollcommand'] = scrollbar_header.set
+
+        # body box
+        frame_body = tk.LabelFrame(frame_tab, text='Message')
+        frame_body.grid(pady=(10, 0))
+        self.text_body = tk.Text(frame_body, height=20)
+        self.text_body.grid(row=0, column=0)
+        scrollbar_body = tk.Scrollbar(frame_body, command=self.text_body.yview)
+        scrollbar_body.grid(row=0, column=1, sticky='ns')
+        self.text_body['yscrollcommand'] = scrollbar_body.set
+
+        # e2ee
+        frame_e2ee = tk.LabelFrame(frame_tab, text='End-to-End Encryption (Recommended)')
+        frame_e2ee.grid(sticky='we', ipady=5, pady=(10, 0))
+
+        # e2ee target
+        label_e2ee_target = tk.Label(frame_e2ee, text='Target')
+        label_e2ee_target.grid(row=0, sticky=tk.W, padx=12)
+        self.entry_e2ee_target_send = tk.Entry(frame_e2ee, width=33)
+        self.entry_e2ee_target_send.grid(row=1, sticky='w', padx=(12, 284))
+
+        # e2ee signer
+        label_e2ee_signer = tk.Label(frame_e2ee, text='Signer')
+        label_e2ee_signer.grid(row=0, sticky=tk.E)
+        self.entry_e2ee_signer_send = tk.Entry(frame_e2ee, width=33)
+        self.entry_e2ee_signer_send.grid(row=1, sticky='e')
+
+        # e2ee tip
+        label_tip = tk.Label(frame_e2ee, text='(UIDs or Fingerprints)')
+        label_tip.grid(row=0)
+
+        # throw key IDs checkbox
+        check_throw_keyids = tk.Checkbutton(frame_e2ee, text='Throw Key IDs', variable=self.var_throw_keyids)
+        check_throw_keyids.grid(sticky='w', padx=(5, 0))
 
         # send button
         button_send = tk.Button(frame_tab, text='Send',
                                 command=lambda: self.send_message(self.entry_target_send.get().strip(),
                                                                   self.entry_subject_send.get().strip(),
-                                                                  self.text_send.get(1.0, tk.END).strip()))
-        button_send.grid()
+                                                                  self.text_header.get(1.0, tk.END).strip(),
+                                                                  self.text_body.get(1.0, tk.END).strip(),
+                                                                  self.entry_e2ee_target_send.get().strip(),
+                                                                  self.entry_e2ee_signer_send.get().strip()))
+        button_send.grid(pady=(10, 0))
 
     def compose_message(self, msg):
         self.entry_target_send.delete(0, tk.END)
@@ -667,23 +777,70 @@ class SendTab(tk.Frame, object):
             self.entry_target_send.insert(0, msg.sender.lower())
         self.entry_subject_send.delete(0, tk.END)
         if msg.subject:
-            self.entry_subject_send.insert(0, 'Re: ' + msg.subject)
+            self.entry_subject_send.insert(0, msg.subject)
+            if not msg.subject.startswith('Re: '):
+                self.entry_subject_send.insert(0, 'Re: ')
         content = '\n\n'
         for line in msg.content.splitlines():
             content += '> ' + line + '\n'
+        if msg.id:
+            header = 'In-Reply-To: ' + msg.id
+            write_on_text(self.text_header, [header])
+        write_on_text(self.text_body, [content])
         cursor_position = 1.0
-        message_id = msg.processed_message.get('Message-ID')
-        if message_id:
-            content = 'In-Reply-To: ' + message_id + '\n\n' + content
-            cursor_position = 3.0
-        write_on_text(self.text_send, [content])
-        self.text_send.mark_set(tk.INSERT, cursor_position)
+        self.text_body.mark_set(tk.INSERT, cursor_position)
         self.gui.window_main.select_tab(self)
-        self.text_send.focus_set()
+        self.text_body.focus_set()
 
-    def send_message(self, target_address, subject, content):
-        success, info, ciphertext = self.client.send_message(target_address, subject, content)
-        write_on_text(self.text_send, [info, ciphertext])
+    def send_message(self, target_address, subject, headers, body, e2ee_target='', e2ee_signer=''):
+        if not body.endswith('\n'):
+            body += '\n'
+        try:
+            e2ee_target_info = ''
+            # check if end-to-end encryption is intended
+            if e2ee_target or e2ee_signer:
+                target_key = None
+                throw_keyids = bool(self.var_throw_keyids.get())
+                if len(e2ee_target):
+                    target_key = retrieve_key(self.client.gpg, e2ee_target)
+                    e2ee_target_info = 'End-to-End Encryption to:\n' + format_key_info(target_key) + '\n'
+
+                signer_key = None
+                passphrase = None
+                if len(e2ee_signer):
+                    signer_key = retrieve_key(self.client.gpg, e2ee_signer)
+                    if not self.client.use_agent:
+                        prompt = 'Signing with:\n' \
+                                 + format_key_info(signer_key) \
+                                 + 'Provide a passphrase to unlock the secret key:'
+                        passphrase = tkSimpleDialog.askstring('Passphrase Required',
+                                                              prompt,
+                                                              parent=self,
+                                                              show='*')
+                        if passphrase is None:
+                            # cancel
+                            return
+
+                if not target_key:
+                    # sign only
+                    body = self.client.sign_data(body, signer_key, passphrase)
+                elif signer_key:
+                    # encrypt and sign
+                    body = self.client.encrypt_e2ee_data(body,
+                                                         target_key,
+                                                         signer_key,
+                                                         passphrase,
+                                                         throw_keyids)
+                else:
+                    # encrypt only
+                    body = self.client.encrypt_e2ee_data(body,
+                                                         target_key,
+                                                         throw_keyids=throw_keyids)
+        except errors.NymphemeralError as e:
+            tkMessageBox.showerror(e.title, e.message)
+        else:
+            success, info, ciphertext = self.client.send_message(target_address, subject, headers, body)
+            write_on_text(self.text_body, [info, e2ee_target_info, ciphertext])
 
 
 class ConfigTab(tk.Frame, object):
@@ -784,10 +941,10 @@ class UnreadCounterTab(tk.Frame, object):
         self.update_unread_counter()
 
     def update_unread_counter(self):
-        counter = self.client.count_unread_messages()
+        counter = sorted(self.client.count_unread_messages().items(), key=operator.itemgetter(0))
         self.list_unread.delete(0, tk.END)
         if counter:
-            for nym, count in counter.iteritems():
+            for nym, count in counter:
                 self.list_unread.insert(tk.END, nym + '(' + str(count) + ')')
         else:
             self.list_unread.insert(tk.END, 'No messages found')

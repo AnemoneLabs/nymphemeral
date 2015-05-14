@@ -5,15 +5,14 @@ import hashlib
 import sys
 import shutil
 import threading
-import Queue
 import ConfigParser
 import email
-import itertools
 from binascii import b2a_base64, a2b_base64
 import Tkinter
 
 import gnupg
 from passlib.utils.pbkdf2 import pbkdf2
+import time
 
 from pyaxo import Axolotl
 import aampy
@@ -21,8 +20,6 @@ import message
 import errors
 from nym import Nym
 
-
-cfg = ConfigParser.ConfigParser()
 
 BASE_FILES_PATH = '/usr/share/nymphemeral'
 USER_PATH = os.path.expanduser('~')
@@ -48,14 +45,30 @@ def create_dictionary(string):
     return dict(t.split() for t in string.strip().split('\n'))
 
 
+def search_block(data, beginning, end):
+    """
+    Return the first block found in the format:
+        beginning
+        <content>
+        end
+    Return None if beginning or end are not found
+    """
+
+    msg = ''
+    for line in data.split('\n'):
+        if msg:
+            msg += line + '\n'
+            if line == end:
+                return msg
+        elif line == beginning:
+            msg = line + '\n'
+    return None
+
+
 def search_pgp_message(data):
-    re_pgp = re.compile('-----BEGIN PGP MESSAGE-----.*-----END PGP MESSAGE-----', flags=re.DOTALL)
-    return re_pgp.search(data)
+    """Return the first PGP message found, return None otherwise"""
 
-
-def is_pgp_message(data):
-    re_pgp = re.compile('-----BEGIN PGP MESSAGE-----.*-----END PGP MESSAGE-----$', flags=re.DOTALL)
-    return re_pgp.match(data)
+    return search_block(data, '-----BEGIN PGP MESSAGE-----', '-----END PGP MESSAGE-----')
 
 
 def read_data(identifier):
@@ -77,20 +90,23 @@ def save_data(data, identifier):
     return False
 
 
-def new_gpg(paths):
-    keyring = []
-    for r in list(itertools.product(paths, ['/pubring.gpg'])):
-        keyring.append(''.join(r))
-    secret_keyring = []
-    for r in list(itertools.product(paths, ['/secring.gpg'])):
-        secret_keyring.append(''.join(r))
+def new_gpg(home, use_agent=False, throw_keyids=False):
     binary = '/usr/bin/gpg'
+
+    options = ['--personal-digest-preferences=sha256',
+               '--s2k-digest-algo=sha256']
+
+    if use_agent:
+        options.append('--use-agent')
+    else:
+        options.append('--no-use-agent')
+
+    if throw_keyids:
+        options.append('--throw-keyids')
+
     gpg = gnupg.GPG(binary,
-                    paths[0],
-                    keyring=keyring,
-                    secret_keyring=secret_keyring,
-                    options=['--personal-digest-preferences=sha256',
-                             '--s2k-digest-algo=sha256'])
+                    home,
+                    options=options)
     gpg.encoding = 'latin-1'
     return gpg
 
@@ -105,12 +121,90 @@ def generate_key(gpg, name, address, passphrase, duration):
     return gpg.export_keys(keyids=address), fingerprint
 
 
-def retrieve_fingerprint(gpg, address):
+def retrieve_key(gpg, query):
+    """Return the ONLY key found for the query specified"""
+
+    query = query.lower()
+    results = []
     keys = gpg.list_keys()
-    for item in keys:
-        if address in item['uids'][0]:
-            return item['fingerprint']
-    return None
+
+    for k in keys:
+        if k['keyid'].lower().endswith(query) or k['fingerprint'].lower().endswith(query):
+            results.append(k)
+        else:
+            for sub in k['subkeys']:
+                if sub[0].lower().endswith(query):
+                    results.append(k)
+                    break
+            else:
+                for uid in k['uids']:
+                    if re.search(r'\b' + query + r'\b', uid, flags=re.IGNORECASE):
+                        results.append(k)
+                        break
+    if results:
+        for r in results[1:]:
+            if r['fingerprint'] != results[0]['fingerprint']:
+                raise errors.AmbiguousUidError(query)
+        return results[0]
+    else:
+        raise errors.KeyNotFoundError(query)
+
+
+def retrieve_fingerprint(gpg, query):
+    """Return the ONLY fingerprint found for the query specified"""
+
+    return retrieve_key(gpg, query)['fingerprint']
+
+
+def format_key_info(key):
+    """
+    Process a dictionary with key information and return it in a format similar to GPG's
+
+    key should be a dictionary in the same format as the one returned by gpg.list_keys()
+
+    The resulting string will be in the format:
+        Username <user@domain>
+        4096-bit key, ID 31415926, expires 2015-03-14
+    """
+
+    info = ''
+    for uid in key['uids']:
+        info += uid + '\n'
+    info += key['length'] + '-bit key' \
+        + ', ID ' + key['keyid'][-8:] \
+        + ', expires ' + time.strftime('%Y-%m-%d', time.gmtime(float(key['expires']))) \
+        + '\n'
+    return info
+
+
+def retrieve_keyids(msg):
+    """
+    Return key IDs used to encrypt a PGP message
+
+    Expects to get something like the following format from gpg --list-packets:
+        :pubkey enc packet: version 3, algo 1, keyid 4096409640964096
+            data: [4096 bits]
+        :pubkey enc packet: version 3, algo 1, keyid 0248163264128256
+            data: [4096 bits]
+        :encrypted data packet:
+            length: unknown
+            mdc_method: 2
+        gpg: encrypted with RSA key, ID 64128256
+        gpg: encrypted with RSA key, ID 40964096
+    """
+
+    keyids = []
+    p = subprocess.Popen(['gpg', '--no-tty', '--list-packets', '--list-only'],
+                         stdin=subprocess.PIPE,
+                         stdout=subprocess.PIPE)
+    out, err = p.communicate(msg)
+    for line in out.splitlines():
+        result = re.match(r':pubkey.*\bkeyid (\w+)\b.*', line)
+        if result:
+            # append valid key IDs (not thrown away)
+            if not re.match('^0*$', result.group(1)):
+                keyids.append(result.group(1))
+    return keyids
 
 
 def encrypt_data(gpg, data, recipients, fingerprint, passphrase):
@@ -188,11 +282,13 @@ def generate_db(directory, fingerprint, mkey, passphrase):
 
 class Client:
     def __init__(self):
+        self.cfg = ConfigParser.ConfigParser()
+
+        self.use_agent = None
         self.directory_base = None
         self.directory_db = None
         self.directory_read_messages = None
         self.directory_unread_messages = None
-        self.directory_gpg = None
         self.file_hsub = None
         self.file_encrypted_hsub = None
         self.is_debugging = None
@@ -201,20 +297,17 @@ class Client:
         self.file_mix_cfg = None
         self.check_base_files()
 
-        self.gpg = new_gpg([self.directory_base])
+        # create a GPG instance using nymphemeral's base directory as home
+        self.gpg = new_gpg(self.directory_base)
 
         self.axolotl = None
         self.nym = None
         self.hsubs = {}
 
         # attributes to handle aampy (to retrieve new messages) using threads
-        self.aampy_is_done = True
-        self.event_aampy = None
-        self.queue_aampy = None
+        self.aampy = self.initialize_aampy()
         self.thread_aampy = None
-        self.thread_aampy_event = None
-
-        self.thread_decrypt = None
+        self.thread_aampy_wait = None
 
         self.chain = self.retrieve_mix_chain()
 
@@ -236,28 +329,27 @@ class Client:
     def load_configs(self):
         try:
             # load default configs
-            cfg.add_section('gpg')
-            cfg.set('gpg', 'base_folder', USER_PATH + '/.gnupg')
-            cfg.add_section('main')
-            cfg.set('main', 'base_folder', NYMPHEMERAL_PATH)
-            cfg.set('main', 'db_folder', '%(base_folder)s/db')
-            cfg.set('main', 'messages_folder', '%(base_folder)s/messages')
-            cfg.set('main', 'read_folder', '%(messages_folder)s/read')
-            cfg.set('main', 'unread_folder', '%(messages_folder)s/unread')
-            cfg.set('main', 'hsub_file', '%(base_folder)s/hsubs.txt')
-            cfg.set('main', 'encrypted_hsub_file', '%(base_folder)s/encrypted_hsubs.txt')
-            cfg.set('main', 'debug_switch', 'False')
-            cfg.set('main', 'output_method', 'manual')
-            cfg.add_section('mixmaster')
-            cfg.set('mixmaster', 'base_folder', USER_PATH + '/Mix')
-            cfg.set('mixmaster', 'binary', '%(base_folder)s/mixmaster')
-            cfg.set('mixmaster', 'cfg', '%(base_folder)s/mix.cfg')
-            cfg.add_section('newsgroup')
-            cfg.set('newsgroup', 'base_folder', NYMPHEMERAL_PATH)
-            cfg.set('newsgroup', 'group', 'alt.anonymous.messages')
-            cfg.set('newsgroup', 'server', 'localhost')
-            cfg.set('newsgroup', 'port', '119')
-            cfg.set('newsgroup', 'newnews', '%(base_folder)s/.newnews')
+            self.cfg.add_section('gpg')
+            self.cfg.set('gpg', 'use_agent', 'True')
+            self.cfg.add_section('main')
+            self.cfg.set('main', 'base_folder', NYMPHEMERAL_PATH)
+            self.cfg.set('main', 'db_folder', '%(base_folder)s/db')
+            self.cfg.set('main', 'messages_folder', '%(base_folder)s/messages')
+            self.cfg.set('main', 'read_folder', '%(messages_folder)s/read')
+            self.cfg.set('main', 'unread_folder', '%(messages_folder)s/unread')
+            self.cfg.set('main', 'hsub_file', '%(base_folder)s/hsubs.txt')
+            self.cfg.set('main', 'encrypted_hsub_file', '%(base_folder)s/encrypted_hsubs.txt')
+            self.cfg.set('main', 'debug_switch', 'False')
+            self.cfg.set('main', 'output_method', 'manual')
+            self.cfg.add_section('mixmaster')
+            self.cfg.set('mixmaster', 'base_folder', USER_PATH + '/Mix')
+            self.cfg.set('mixmaster', 'binary', '%(base_folder)s/mixmaster')
+            self.cfg.set('mixmaster', 'cfg', '%(base_folder)s/mix.cfg')
+            self.cfg.add_section('newsgroup')
+            self.cfg.set('newsgroup', 'base_folder', NYMPHEMERAL_PATH)
+            self.cfg.set('newsgroup', 'group', 'alt.anonymous.messages')
+            self.cfg.set('newsgroup', 'server', 'localhost')
+            self.cfg.set('newsgroup', 'port', '119')
 
             # parse existing configs in case new versions modify them
             # or the user modifies the file inappropriately
@@ -266,9 +358,9 @@ class Client:
                 saved_cfg.read(CONFIG_FILE)
                 for section in saved_cfg.sections():
                     try:
-                        for option in cfg.options(section):
+                        for option in self.cfg.options(section):
                             try:
-                                cfg.set(section, option, saved_cfg.get(section, option))
+                                self.cfg.set(section, option, saved_cfg.get(section, option))
                             except:
                                 pass
                     except:
@@ -277,27 +369,34 @@ class Client:
                 create_directory(NYMPHEMERAL_PATH)
             self.save_configs()
 
-            self.directory_base = cfg.get('main', 'base_folder')
-            self.directory_db = cfg.get('main', 'db_folder')
-            self.directory_read_messages = cfg.get('main', 'read_folder')
-            self.directory_unread_messages = cfg.get('main', 'unread_folder')
-            self.directory_gpg = cfg.get('gpg', 'base_folder')
-            self.file_hsub = cfg.get('main', 'hsub_file')
-            self.file_encrypted_hsub = cfg.get('main', 'encrypted_hsub_file')
-            self.is_debugging = cfg.getboolean('main', 'debug_switch')
-            self.output_method = cfg.get('main', 'output_method')
-            self.file_mix_binary = cfg.get('mixmaster', 'binary')
-            self.file_mix_cfg = cfg.get('mixmaster', 'cfg')
+            self.use_agent = self.cfg.getboolean('gpg', 'use_agent')
+            self.directory_base = self.cfg.get('main', 'base_folder')
+            self.directory_db = self.cfg.get('main', 'db_folder')
+            self.directory_read_messages = self.cfg.get('main', 'read_folder')
+            self.directory_unread_messages = self.cfg.get('main', 'unread_folder')
+            self.file_hsub = self.cfg.get('main', 'hsub_file')
+            self.file_encrypted_hsub = self.cfg.get('main', 'encrypted_hsub_file')
+            self.is_debugging = self.cfg.getboolean('main', 'debug_switch')
+            self.output_method = self.cfg.get('main', 'output_method')
+            self.file_mix_binary = self.cfg.get('mixmaster', 'binary')
+            self.file_mix_cfg = self.cfg.get('mixmaster', 'cfg')
         except IOError:
             print 'Error while opening ' + str(CONFIG_FILE).split('/')[-1]
             raise
 
     def save_configs(self):
         with open(CONFIG_FILE, 'w') as config_file:
-            cfg.write(config_file)
+            self.cfg.write(config_file)
 
     def update_configs(self):
-        cfg.set('main', 'output_method', self.output_method)
+        self.cfg.set('gpg', 'use_agent', self.use_agent)
+        self.cfg.set('main', 'output_method', self.output_method)
+
+    def initialize_aampy(self):
+        group = self.cfg.get('newsgroup', 'group')
+        server = self.cfg.get('newsgroup', 'server')
+        port = self.cfg.get('newsgroup', 'port')
+        return aampy.AAMpy(self.directory_unread_messages, group, server, port, self.is_debugging)
 
     def retrieve_mix_chain(self):
         chain = None
@@ -305,7 +404,7 @@ class Client:
             with open(self.file_mix_cfg, 'r') as config:
                 lines = config.readlines()
                 for line in lines:
-                    s = re.search('(CHAIN )(.*)', line)
+                    s = re.match('(CHAIN )(.*)', line)
                     if s:
                         chain = 'Mix Chain: ' + s.group(2)
                         break
@@ -331,30 +430,31 @@ class Client:
             url_match = None
             for uid in item['uids']:
                 if not config_match:
-                    config_match = re.search('[^( |<)]*config@[^( |>)]*', uid)
+                    config_match = re.search(r'\bconfig@(\S+)\b', uid, flags=re.IGNORECASE)
                 if not send_match:
-                    send_match = re.search('[^( |<)]*send@[^( |>)]*', uid)
+                    send_match = re.search(r'\bsend@(\S+)+\b', uid, flags=re.IGNORECASE)
                 if not url_match:
-                    url_match = re.search('[^( |<)]*url@[^( |>)]*', uid)
+                    url_match = re.search(r'\burl@(\S+)\b', uid, flags=re.IGNORECASE)
             if config_match and send_match and url_match:
-                server = config_match.group(0).split('@')[1]
+                server = config_match.group(1)
                 servers[server] = item['fingerprint']
         return servers
 
     def retrieve_nyms(self):
+        servers = self.retrieve_servers()
         nyms = []
         keys = self.gpg.list_keys()
         for item in keys:
             if len(item['uids']) == 1:
-                search = re.search('(?<=<).*(?=>)', item['uids'][0])
-                if search:
-                    address = search.group()
+                search = re.search(r'\b(\S+@(\S+))\b', item['uids'][0])
+                if search and search.group(2) in servers:
+                    address = search.group(1)
                     nym = Nym(address,
                               fingerprint=item['fingerprint'])
                     nyms.append(nym)
         return nyms
 
-    def start_session(self, nym, output_method='manual', creating_nym=False):
+    def start_session(self, nym, use_agent=False, output_method='manual', creating_nym=False):
         if nym.server not in self.retrieve_servers():
             raise errors.NymservNotFoundError(nym.server)
         result = filter(lambda n: n.address == nym.address, self.retrieve_nyms())
@@ -378,16 +478,25 @@ class Client:
         self.hsubs = self.retrieve_hsubs()
         if not creating_nym:
             self.nym.hsub = self.hsubs[nym.address]
-        self.update_output_method(output_method)
+        self.check_configs(use_agent, output_method)
 
     def end_session(self):
         self.axolotl = None
         self.nym = None
         self.hsubs = {}
 
-    def update_output_method(self, method):
-        if method != self.output_method:
-            self.output_method = method
+    def check_configs(self, use_agent, output_method):
+        update = False
+
+        if use_agent != self.use_agent:
+            self.use_agent = use_agent
+            update = True
+
+        if output_method != self.output_method:
+            self.output_method = output_method
+            update = True
+
+        if update:
             self.update_configs()
             self.save_configs()
 
@@ -465,7 +574,7 @@ class Client:
                         else:
                             hsubs = dict(hsubs.items() + decrypted_hsubs.items())
                     except KeyError:
-                         hsubs = dict(hsubs.items() + decrypted_hsubs.items())
+                        hsubs = dict(hsubs.items() + decrypted_hsubs.items())
                 else:
                     hsubs = decrypted_hsubs
         else:
@@ -486,11 +595,10 @@ class Client:
                 file_path = path + '/' + file_name
                 data = read_data(file_path)
                 if read_messages:
-                    if is_pgp_message(data):
-                        decrypted_data = decrypt_data(self.gpg, data, self.nym.passphrase)
-                        if decrypted_data:
-                            data = decrypted_data
-                    else:
+                    decrypted_data = decrypt_data(self.gpg, data, self.nym.passphrase)
+                    if decrypted_data:
+                        data = decrypted_data
+                    elif not search_pgp_message(data):
                         encrypted_data = encrypt_data(self.gpg, data, self.nym.address, self.nym.fingerprint,
                                                       self.nym.passphrase)
                         if encrypted_data:
@@ -526,11 +634,20 @@ class Client:
             self.add_hsub(self.nym)
         return success, info, ciphertext
 
-    def send_message(self, target_address, subject, content):
+    def send_message(self, target_address, subject, headers, body):
         recipient = 'send@' + self.nym.server
-        msg = email.message_from_string('To: ' + target_address +
-                                        '\nSubject: ' + subject +
-                                        '\n' + content).as_string().strip()
+
+        lines = []
+        lines.append('To: ' + target_address)
+        lines.append('Subject: ' + subject)
+        for header in headers.splitlines():
+            h = header.strip()
+            if len(h):
+                lines.append(h)
+        lines.append('')
+        lines.append(body)
+        content = '\n'.join(lines)
+        msg = email.message_from_string(content).as_string().strip()
 
         self.axolotl.loadState(self.nym.fingerprint, 'a')
         ciphertext = b2a_base64(self.axolotl.encrypt(msg)).strip()
@@ -635,32 +752,26 @@ class Client:
         return counter
 
     def start_aampy(self):
-        self.event_aampy = threading.Event()
-        self.thread_aampy_event = threading.Thread(target=self.wait_for_aampy)
-        self.thread_aampy_event.daemon = True
-        self.queue_aampy = Queue.Queue()
-        self.thread_aampy = threading.Thread(target=aampy.aam, args=(self.event_aampy, self.queue_aampy, self.hsubs,
-                                                                     cfg))
+        self.aampy.reset()
+
+        self.thread_aampy_wait = threading.Thread(target=self.wait_for_aampy)
+        self.thread_aampy_wait.daemon = True
+        self.thread_aampy = threading.Thread(target=self.aampy.retrieve_messages, args=(self.hsubs,))
         self.thread_aampy.daemon = True
 
-        self.thread_aampy_event.start()
+        self.thread_aampy_wait.start()
         self.thread_aampy.start()
 
     def stop_aampy(self):
-        self.event_aampy.set()
+        self.aampy.stop()
 
     def wait_for_aampy(self):
-        try:
-            time = self.hsubs['time']
-        except KeyError:
-            time = 0
-        self.aampy_is_done = False
-        self.event_aampy.wait()
-        self.aampy_is_done = True
-        if self.hsubs and time != self.hsubs['time']:
+        self.aampy.event.wait()
+        if self.hsubs and self.aampy.timestamp:
+            self.hsubs['time'] = self.aampy.timestamp
             self.save_hsubs(self.hsubs)
 
-    def decrypt_ephemeral_data(self, data, queue):
+    def decrypt_ephemeral_data(self, data):
         ciphertext = None
         self.axolotl.loadState(self.nym.fingerprint, 'a')
         # workaround to suppress prints by pyaxo
@@ -673,7 +784,7 @@ class Client:
         else:
             sys.stdout = sys.__stdout__
             self.axolotl.saveState()
-        queue.put(ciphertext)
+        return ciphertext
 
     def decrypt_ephemeral_message(self, msg):
         exp = re.compile('^[A-Za-z0-9+\/=]+\Z')
@@ -683,25 +794,129 @@ class Client:
             if len(item.strip()) % 4 == 0 and exp.match(item) and len(
                     item.strip()) <= 64 and not item.startswith(' '):
                 data += item
-        queue = Queue.Queue()
-        self.thread_decrypt = threading.Thread(target=self.decrypt_ephemeral_data, args=(data, queue))
-        self.thread_decrypt.start()
-        self.thread_decrypt.join()
-        ciphertext = queue.get()
+        ciphertext = self.decrypt_ephemeral_data(data)
         self.delete_message_from_disk(msg)
         if ciphertext:
             self.debug('Ephemeral layer decrypted')
-            if is_pgp_message(ciphertext):
-                plaintext = decrypt_data(self.gpg, ciphertext, self.nym.passphrase)
-                if plaintext:
-                    self.debug('Asymmetric layer decrypted')
-                else:
-                    self.debug('Asymmetric layer not decrypted')
-                    plaintext = 'There is still an asymmetric layer that could not be decrypted:\n\n' + ciphertext
+            plaintext = decrypt_data(self.gpg, ciphertext, self.nym.passphrase)
+            if plaintext:
+                self.debug('Asymmetric layer decrypted')
             else:
                 plaintext = ciphertext
+                if search_pgp_message(ciphertext):
+                    self.debug('Asymmetric layer not decrypted')
+                    plaintext = 'The asymmetric layer encrypted by the server could not be decrypted:\n\n' + ciphertext
             return message.Message(False, plaintext, msg.identifier)
         else:
+            raise errors.UndecipherableMessageError()
+
+    def sign_data(self, data, signer, passphrase=None):
+        """
+        Return data signed by the fingerprint given
+
+        signer is expected to be a fingerprint (string) or a dictionary with the same format as the one returned by
+        gpg.list_keys()
+        """
+
+        try:
+            signer = signer['fingerprint']
+        except TypeError:
+            # it might be a string with the fingerprint
+            pass
+
+        gpg = new_gpg(self.directory_base, self.use_agent)
+        result = gpg.sign(data, keyid=signer, passphrase=passphrase)
+        if result:
+            return str(result)
+        else:
+            bad_pass_error = 'bad passphrase'
+            skey_error = 'secret key not available'
+            if bad_pass_error in result.stderr:
+                raise errors.IncorrectPassphraseError()
+            elif skey_error in result.stderr:
+                raise errors.SecretKeyNotFoundError(signer)
+            else:
+                raise errors.NymphemeralError('GPG Error', result.stderr)
+
+    def encrypt_e2ee_data(self, data, recipient, signer=None, passphrase=None, throw_keyids=False):
+        """
+        Return ciphertext of end-to-end encrypted data using nymphemeral's keyring
+
+        recipient and signer are expected to be fingerprints (strings) or a dictionary with the same format as the one
+        returned by gpg.list_keys()
+
+        signer is optional, in case signing is not intended
+        """
+
+        try:
+            recipient = recipient['fingerprint']
+        except TypeError:
+            # it might be a string with the fingerprint
+            pass
+
+        try:
+            signer = signer['fingerprint']
+        except TypeError:
+            # it might be a string with the fingerprint
+            pass
+
+        gpg = new_gpg(self.directory_base, self.use_agent, throw_keyids)
+        ciphertext = gpg.encrypt(data, recipient, sign=signer, passphrase=passphrase, always_trust=True)
+        if ciphertext:
+            return str(ciphertext)
+        else:
+            text = ciphertext.status.capitalize()
+            if not text:
+                text = 'Unknown error'
+            raise errors.NymphemeralError('GPG Error', text + '!')
+
+    def decrypt_e2ee_message(self, msg, passphrase=None):
+        """Return plaintext of end-to-end encrypted message using nymphemeral's keyring"""
+
+        data = search_pgp_message(msg.content)
+        if not data:
+            self.debug('Not a PGP message to be decrypted')
+            raise errors.UndecipherableMessageError()
+
+        gpg = new_gpg(self.directory_base, self.use_agent)
+        result = gpg.decrypt(data, passphrase=passphrase)
+        gpg_info = ''
+
+        if result.ok:
+            self.debug('End-to-end layer decrypted')
+
+            lines = result.stderr.split('\n')
+
+            # filter what should be displayed to the user
+            for i, line in enumerate(lines):
+                if line.startswith('[GNUPG:]'):
+                    continue
+
+                if line.startswith('gpg: anonymous recipient; trying secret key'):
+                    continue
+
+                if line == 'gpg: encrypted with RSA key, ID 00000000':
+                    continue
+
+                if line == 'gpg: okay, we are the anonymous recipient.':
+                    j = 1
+                    line_id = lines[i - j]
+                    while not line_id.startswith('gpg: anonymous recipient; trying secret key'):
+                        j += 1
+                        line_id = lines[i - j]
+                    gpg_info = gpg_info + line_id + '\n'
+
+                gpg_info += line + '\n'
+
+            if not gpg_info:
+                gpg_info = 'GPG information not available\n'
+
+            headers = str(msg.processed_message).split(data)[0]
+            full_msg = headers + gpg_info + result.data
+
+            return message.Message(False, full_msg, msg.identifier)
+        else:
+            self.debug('End-to-end layer not decrypted')
             raise errors.UndecipherableMessageError()
 
     def save_message_to_disk(self, msg):
@@ -715,12 +930,13 @@ class Client:
                 self.debug('Message encryption failed. Will be saved as plain text')
             if save_data(data, new_identifier):
                 self.debug('Message saved to disk')
-                return new_identifier
+                msg.identifier = new_identifier
+                return True
             else:
                 self.debug('Message could not be saved')
         except IOError:
             print 'Error while saving to disk' + ':', sys.exc_info()[0]
-        return None
+        return False
 
     def delete_message_from_disk(self, msg):
         try:

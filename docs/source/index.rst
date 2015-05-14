@@ -20,10 +20,11 @@ Installation (On a Debian Wheezy/Ubuntu Trusty system)
 ======================================================
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
 
-    install/main
-    install/other
+    install/dependencies
+    install/mixmaster
+    install/newsserver
 
 Usage
 =====
@@ -32,10 +33,11 @@ Usage
     :maxdepth: 2
 
     use/files
+    use/keyring
     use/login
     use/creation
     use/decryption
-    use/composal
+    use/composition
     use/configuration
     use/counter
 
@@ -43,11 +45,8 @@ Other
 =====
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
 
+    changelog
     feedback
     thanks
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
