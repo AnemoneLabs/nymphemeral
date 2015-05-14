@@ -54,7 +54,7 @@ Acknowledgements
 .. _`crooks`: https://github.com/crooks
 .. _`documentation`: http://nymphemeral.readthedocs.org/
 .. _`github issue tracker`: https://github.com/felipedau/nymphemeral/issues
-.. _`installation`: http://nymphemeral.readthedocs.org/en/latest/install/main.html
+.. _`installation`: http://nymphemeral.readthedocs.org/en/latest/install/dependencies.html
 .. _`mixmaster`: http://www.zen19351.zen.co.uk/mixmaster302
 .. _`new nymserv`: https://github.com/rxcomm/nymserv
 .. _`pyaxo`: https://github.com/rxcomm/pyaxo
