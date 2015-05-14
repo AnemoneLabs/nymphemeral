@@ -27,8 +27,8 @@ Features
 
 Current Release
 ---------------
-The current version of nymphemeral is 1.3.1, a prototype, released
-2015-03-03.
+The current version of nymphemeral is 1.3.2, a beta, released
+2015-05-13.
 
 .. _`aampy`: https://github.com/rxcomm/aampy
 .. _`alt.anonymous.messages`: https://groups.google.com/forum/#!forum/alt.anonymous.messages

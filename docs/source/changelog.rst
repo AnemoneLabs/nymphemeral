@@ -2,8 +2,8 @@
 Changelog
 =========
 
-nymphemeral 1.3.2
-=================
+nymphemeral 1.3.2, released 2015-05-13
+======================================
 
 - Add End-to-End encryption
 

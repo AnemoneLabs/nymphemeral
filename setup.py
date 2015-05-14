@@ -34,8 +34,8 @@ BASE_DIRECTORY = '/usr/share/nymphemeral'
 
 setup(
     name='nymphemeral',
-    version='1.3.1.1',
-    description='An ephemeral nymserver GUI client',
+    version='1.3.2',
+    description='An ephemeral nym GUI client',
     url='https://github.com/felipedau/nymphemeral',
     author='Felipe Dau',
     author_email='dau.felipe@gmail.com',

@@ -26,8 +26,8 @@ Features
 
 Current Release
 ---------------
-The current version of nymphemeral is 1.3.1, a prototype, released
-2015-03-03.
+The current version of nymphemeral is 1.3.2, a beta, released
+2015-05-13.
 
 Documentation
 -------------
