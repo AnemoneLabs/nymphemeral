@@ -1,4 +1,3 @@
-include CHANGELOG.md
 include COPYING
 include README.rst
 include db/generic.db

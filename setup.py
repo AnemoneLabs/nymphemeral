@@ -65,7 +65,6 @@ setup(
         'python-dateutil>=2.2',
     ],
     data_files=[
-        (BASE_DIRECTORY, ['CHANGELOG.md']),
         (BASE_DIRECTORY, ['COPYING']),
         (BASE_DIRECTORY, ['README.rst']),
         (BASE_DIRECTORY + '/db', glob('db/generic.db')),
