@@ -33,8 +33,9 @@ Other Dependencies
 ------------------
 nymphemeral will be ready for use after installation via either of
 the two methods described in :ref:`main-dependencies`. However, you
-should install :ref:`mixmaster` and have a :ref:`newsserver` running
-to be able to use all of its features.
+should follow the instructions from :ref:`connections`, install
+:ref:`mixmaster` and have a :ref:`newsserver` running to be able to
+use all of its features.
 
 .. _`pip`: https://pypi.python.org/pypi/pip
 .. _`pyaxo`: https://github.com/rxcomm/pyaxo
