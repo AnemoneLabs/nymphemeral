@@ -23,6 +23,7 @@ Installation (On a Debian Wheezy/Ubuntu Trusty system)
     :maxdepth: 1
 
     install/dependencies
+    install/connections
     install/mixmaster
     install/newsserver
 
