@@ -101,8 +101,8 @@ From the ``socsmtp.sh`` file::
     socat TCP-Listen:2526,bind=localhost,fork SOCKS4A:localhost:lnwxejysejqjlm3l.onion:2525,socksport=9050 > /dev/null 2>&1 &
 
 Note that *socat* accepts connections through port ``2526`` (the one
-that *stunnel* connects to) and then connects to the Jeremy Bentham
-Remailer SMTP server at anemonee.mooo.com via *Tor* through port
+that *stunnel* connects to) and then connects to the `Jeremy Bentham
+Remailer`_ SMTP server at anemonee.mooo.com via *Tor* through port
 ``9050``.
 
 Run it with::
@@ -126,7 +126,8 @@ You do not need to start *stunnel* or *Tor* again, but the scripts
 have to be executed every time the system starts up or whenever you
 wish to use nymphemeral.
 
-.. _`this option`: https://www.torproject.org/docs/debian.html.en#ubuntu
+.. _`jeremy bentham remailer`: http://anemone.mooo.com/stats/
 .. _`socat`: http://www.dest-unreach.org/socat
 .. _`stunnel`: https://www.stunnel.org
+.. _`this option`: https://www.torproject.org/docs/debian.html.en#ubuntu
 .. _`tor`: https://www.torproject.org
