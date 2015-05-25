@@ -4,11 +4,13 @@
 Mixmaster
 =========
 This article describes how to compile the new large-key version of
-*Mixmaster* on a *Debian Wheezy* system. Most of its content was
-taken from `this post`_ by the `Jeremy Bentham Remailer`_ Admin. The
-instructions should be helpful for building *Mixmaster* on other
-flavors of linux as well. See :ref:`ubuntu-loader` for a change if
-using *Ubuntu*.
+*Mixmaster* on a *Debian Wheezy* system. If you already have it
+installed and configured, you can skip this section.
+
+Most of its content was taken from `this post`_ by the `Jeremy
+Bentham Remailer`_ Admin. The instructions should be helpful for
+building *Mixmaster* on other flavors of linux as well. See
+:ref:`ubuntu-loader` for a change if using *Ubuntu*.
 
 Preliminaries
 -------------
@@ -156,67 +158,46 @@ update your remailer stats by simply::
 You should update the remailer stats *at least once a day* when using
 *Mixmaster*.
 
-.. _tor-socat-stunnel:
+Config File
+-----------
+*Mixmaster* just needs to be configured through the ``~/Mix/mix.cfg``
+file. A very simple config file could be written as follows::
 
-Tor, Socat and Stunnel
-----------------------
-As we mentioned, we recommend using `Tor`_ along with *Mixmaster*.
-You can install it with::
+    CHAIN *,*,*,*,*
+    SMTPRELAY localhost
+    SMTPPORT 2525
+    HELONAME anonymous.invalid
+    REMAILERADDR anonymous@anonymous.invalid
 
-    sudo apt-get install tor
+Chain
+'''''
+The ``CHAIN`` is the path that your messages will take before being
+delivered. In the configuration above, the messages are going to pass
+by five mixes, and finally get to the actual target. You can use any
+sequence and number of mixes in the chain, passing their names or
+simply ``*`` (which means that it could be any mix), separated by
+commas.
 
-or you can use `another option`_ if you wish to have the most recent
-version.
+**Note:** Adding more mixes to the chain will probably increase the
+latency to deliver your messages. That is actually not a bad thing,
+but you should decide how long you are willing to wait to exchange
+messages.
 
-For the tunneling, you should also download `socat`_ and `stunnel`_::
-
-    sudo apt-get install socat stunnel4
-
-To configure *stunnel*, you can use the ``.conf`` file we provide
-with nymphemeral. Copy that file to the directory where *stunnel*
-looks for .conf files (which is usually ``/etc/stunnel``)::
-
-    sudo cp /usr/share/nymphemeral/connections/stunnel.conf /etc/stunnel
-
-Open ``/etc/default/stunnel4`` and enable *stunnel* automatic startup
-by switching ``ENABLE`` to ``1``::
-
-    # Change to one to enable stunnel automatic startup
-    ENABLED=1
-
-And start it with::
-
-    sudo service stunnel4 start
-
-You should get the following message::
-
-    Starting SSL tunnels: [Started: /etc/stunnel/stunnel.conf] stunnel.
-
-Now you need to start the tunneling itself. Copy ``socsmtp.sh`` as
-well::
-
-    cp /usr/share/nymphemeral/connections/socsmtp.sh ~
-
-Enable it to be executed::
-
-    chmod +x ~/socsmtp.sh
-
-And finally, run it::
-
-    cd
-    ./socsmtp.sh
+SMTP Server
+'''''''''''
+If you followed :ref:`connections`, you remember that we will use
+port ``2525`` to reach an SMTP server. Using the options
+``SMTPRELAY`` and ``SMTPPORT`` will tell *Mixmaster* to use that
+specific connection. Finally, as part of the protocol you need to
+provide a ``HELONAME`` and a ``REMAILERADDR``. As we want to be
+anonymous, we provide an invalid address.
 
 **nymphemeral should be ready to tunnel via Tor messages sent
 using Mixmaster!**
 
-**Note:** You do not need to start *stunnel* again, but this script
-has to be executed every time the system starts up.
-
-.. _`another option`: https://www.torproject.org/docs/debian.html.en#ubuntu
 .. _`jeremy bentham remailer`: http://anemone.mooo.com/stats/
 .. _`mixmaster 3.0.3`: http://www.zen19351.zen.co.uk/mixmaster303
 .. _`openssl download page`: https://www.openssl.org/source/
 .. _`socat`: http://www.dest-unreach.org/socat
-.. _`stunnel`: https://www.stunnel.org
 .. _`this post`: http://anemone.mooo.com/mixmaster.html
 .. _`tor`: https://www.torproject.org
