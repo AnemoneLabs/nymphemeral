@@ -29,6 +29,15 @@ Current Release
 The current version of nymphemeral is 1.3.2, a beta, released
 2015-05-13.
 
+Quick Install
+-------------
+If you use `pip`_, you can easily install nymphemeral with::
+
+    sudo pip install nymphemeral
+
+You should at least read `news server`_ to make sure you have one
+running and configured so that your nyms can receive messages.
+
 Documentation
 -------------
 You can find `installation`_ and `usage`_ instructions (with
@@ -56,7 +65,9 @@ Acknowledgements
 .. _`github issue tracker`: https://github.com/felipedau/nymphemeral/issues
 .. _`installation`: http://nymphemeral.readthedocs.org/en/latest/install/dependencies.html
 .. _`mixmaster`: http://www.zen19351.zen.co.uk/mixmaster302
+.. _`news server`: http://nymphemeral.readthedocs.org/en/latest/install/newsserver.html
 .. _`new nymserv`: https://github.com/rxcomm/nymserv
+.. _`pip`: https://pypi.python.org/pypi/pip
 .. _`pyaxo`: https://github.com/rxcomm/pyaxo
 .. _`python-gnupg`: https://pypi.python.org/pypi/python-gnupg
 .. _`rxcomm`: https://github.com/rxcomm
