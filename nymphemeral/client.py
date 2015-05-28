@@ -42,7 +42,7 @@ def create_directory(directory):
 
 
 def create_dictionary(string):
-    return dict(t.split() for t in string.strip().split('\n'))
+    return dict(t.split() for t in string.strip().splitlines())
 
 
 def search_block(data, beginning, end):
@@ -55,7 +55,7 @@ def search_block(data, beginning, end):
     """
 
     msg = ''
-    for line in data.split('\n'):
+    for line in data.splitlines():
         if msg:
             msg += line + '\n'
             if line == end:
@@ -887,7 +887,7 @@ class Client:
         if result.ok:
             self.debug('End-to-end layer decrypted')
 
-            lines = result.stderr.split('\n')
+            lines = result.stderr.splitlines()
 
             # filter what should be displayed to the user
             for i, line in enumerate(lines):
