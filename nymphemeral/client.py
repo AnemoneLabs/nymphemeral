@@ -623,7 +623,12 @@ class Client:
         recipient = 'config@' + self.nym.server
         pubkey, fingerprint = generate_key(self.gpg, name, self.nym.address, self.nym.passphrase, duration)
         generate_db(self.directory_db, fingerprint, ephemeral, self.nym.passphrase)
-        data = 'ephemeral: ' + ephemeral + '\nhsub: ' + hsub + '\n' + pubkey
+
+        lines = []
+        lines.append('ephemeral: ' + ephemeral)
+        lines.append('hsub: ' + hsub)
+        lines.append(pubkey)
+        data = '\n'.join(lines)
 
         self.nym.fingerprint = fingerprint
         self.nym.hsub = hsub
@@ -654,29 +659,26 @@ class Client:
         self.axolotl.saveState()
 
         lines = [ciphertext[i:i + 64] for i in xrange(0, len(ciphertext), 64)]
-        pgp_message = '-----BEGIN PGP MESSAGE-----\n\n'
-        for line in lines:
-            pgp_message += line + '\n'
-        pgp_message += '-----END PGP MESSAGE-----\n'
+        lines.insert(0, '-----BEGIN PGP MESSAGE-----\n')
+        lines.append('-----END PGP MESSAGE-----\n')
+        pgp_message = '\n'.join(lines)
 
         return self.encrypt_and_send(pgp_message, recipient, self.nym)
 
     def send_config(self, ephemeral='', hsub='', name=''):
         db_file = self.directory_db + '/' + self.nym.fingerprint + '.db'
         recipient = 'config@' + self.nym.server
-        ephemeral_line = ''
-        hsub_line = ''
-        name_line = ''
 
+        lines = []
         if ephemeral:
-            ephemeral_line = 'ephemeral: ' + str(ephemeral) + '\n'
+            lines.append('ephemeral: ' + str(ephemeral))
         if hsub:
-            hsub_line = 'hsub: ' + str(hsub) + '\n'
+            lines.append('hsub: ' + str(hsub))
         if name:
-            name_line = 'name: ' + str(name) + '\n'
+            lines.append('name: ' + str(name))
+        data = '\n'.join(lines) + '\n'
 
         success = info = ciphertext = None
-        data = ephemeral_line + hsub_line + name_line
         if data != '':
             success, info, ciphertext = self.encrypt_and_send(data, recipient, self.nym)
             if success:
