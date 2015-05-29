@@ -64,9 +64,11 @@ class Message(object):
 
         if 'From' in message:
             sender = message.get('From')
-            self._sender = re.search('[^( |<)]+@[^( |>)]+', sender).group(0)
-            title += self.sender + ': '
-        else:
+            address = re.search(r'\b\S+@\S+\b', sender)
+            if address:
+                self._sender = address.group(0)
+                title += self.sender + ': '
+        if not self.sender:
             title = 'Unknown sender: '
 
         if 'Subject' in message:
