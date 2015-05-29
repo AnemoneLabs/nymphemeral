@@ -17,9 +17,12 @@
 from hashlib import sha256
 from os import urandom
 
-HSUBLEN = 48
 
-def hash(text, iv = None, hsublen = HSUBLEN):
+MINIMUM_LENGTH = 48
+MAXIMUM_LENGTH = 80
+
+
+def hash(text, iv = None, hsublen = MINIMUM_LENGTH):
     """Create an hSub (Hashed Subject). This is constructed as:
     --------------------------------------
     | 64bit iv | 256bit SHA2 'iv + text' |
@@ -40,7 +43,7 @@ def check(text, hsub):
     hsublen = len(hsub)
     # 48 digits = 192 bit hsub, the smallest we allow.
     # 80 digits = 320 bit hsub, the full length of SHA256 + 64 bit IV
-    if hsublen < 48 or hsublen > 80: return False
+    if hsublen < MINIMUM_LENGTH or hsublen > MAXIMUM_LENGTH: return False
     iv = hexiv(hsub)
     if not iv: return False
     # Return True if our generated hSub collides with the supplied
