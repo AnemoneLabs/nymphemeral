@@ -133,19 +133,22 @@ class AAMpy(object):
                 pass
             else:
                 message = email.message_from_string(string.join(text, '\n'))
-                for nick, passphrase in temp_hsubs.items():
-                    for label, item in message.items():
-                        if label == 'Subject':
-                            match = hsub.check(passphrase, item)
-                            # if match: write message to file
-                            if match:
-                                if self._is_debugging:
-                                    print 'Found a message for nickname ' + nick
-                                file_name = 'message_' + nick + '_' + message_id[1:6] + '.txt'
-                                with open(self._directory + '/' + file_name, 'w') as f:
-                                    f.write(message.as_string()+'\n')
+                subject = message.get('Subject')
+                if subject:
+                    subject_length = len(subject)
+                    if hsub.MINIMUM_LENGTH <= subject_length <= hsub.MAXIMUM_LENGTH:
+                        iv = hsub.hexiv(subject)
+                        if iv:
+                            for nick, passphrase in temp_hsubs.items():
+                                # if match: write message to file
+                                if hsub.hash(passphrase, iv, subject_length) == subject:
                                     if self._is_debugging:
-                                        print 'Encrypted message stored in ' + file_name
+                                        print 'Found a message for nickname ' + nick
+                                    file_name = 'message_' + nick + '_' + message_id[1:6] + '.txt'
+                                    with open(self._directory + '/' + file_name, 'w') as f:
+                                        f.write(message.as_string()+'\n')
+                                        if self._is_debugging:
+                                            print 'Encrypted message stored in ' + file_name
                 date = parser.parse(message.get('Date'))
                 if date:
                     self._timestamp = float(calendar.timegm(date.astimezone(tz.tzutc()).timetuple()))
