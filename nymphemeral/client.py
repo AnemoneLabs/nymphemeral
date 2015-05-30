@@ -448,8 +448,7 @@ class Client:
             if len(item['uids']) == 1:
                 search = re.search(r'\b(\S+@(\S+))\b', item['uids'][0])
                 if search and search.group(2) in servers:
-                    address = search.group(1)
-                    nym = Nym(address,
+                    nym = Nym(address=search.group(1),
                               fingerprint=item['fingerprint'])
                     nyms.append(nym)
         return nyms
