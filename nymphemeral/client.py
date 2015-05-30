@@ -443,7 +443,7 @@ class Client:
     def retrieve_nyms(self):
         servers = self.retrieve_servers()
         nyms = []
-        keys = self.gpg.list_keys()
+        keys = self.gpg.list_keys(secret=True)
         for item in keys:
             if len(item['uids']) == 1:
                 search = re.search(r'\b(\S+@(\S+))\b', item['uids'][0])
