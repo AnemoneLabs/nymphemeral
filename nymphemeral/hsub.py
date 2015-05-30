@@ -2,7 +2,8 @@
 #
 # vim: tabstop=4 expandtab shiftwidth=4 autoindent
 #
-# Copyright (C) 2010 Steve Crook 
+# Copyright (C) 2015 Felipe Dau
+#           (C) 2010 Steve Crook
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by the
