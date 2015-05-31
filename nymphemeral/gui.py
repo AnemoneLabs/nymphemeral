@@ -30,21 +30,21 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 For more information, see https://github.com/felipedau/nymphemeral
 """
-import operator
 
 __author__ = 'Felipe Dau and David R. Andersen'
 __license__ = 'GPL'
 __version__ = '1.3.2.1'
 __status__ = 'Beta'
 
-import Tkinter as tk
-import ttk
+import operator
 import os
+import Tkinter as tk
 import tkMessageBox
 import tkSimpleDialog
+import ttk
 
-from client import OUTPUT_METHOD, search_pgp_message, retrieve_keyids, retrieve_key, format_key_info, Client
 import errors
+from client import OUTPUT_METHOD, search_pgp_message, retrieve_keyids, retrieve_key, format_key_info, Client
 from nym import Nym
 
 

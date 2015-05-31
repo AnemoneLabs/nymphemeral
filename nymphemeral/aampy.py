@@ -24,14 +24,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 For more information, https://github.com/felipedau/nymphemeral
 """
-import calendar
-import copy
-import email
 import nntplib
 import socket
 import string
-import threading
 import time
+from calendar import timegm
+from copy import deepcopy
+from email import message_from_string
+from threading import Event
 
 from dateutil import parser, tz
 
@@ -73,7 +73,7 @@ class AAMpy(object):
         return self._progress_ratio
 
     def reset(self):
-        self._event = threading.Event()
+        self._event = Event()
         self._is_running = None
         self._server_found = None
         self._timestamp = None
@@ -102,7 +102,7 @@ class AAMpy(object):
         else:
             self._server_found = True
 
-        temp_hsubs = copy.deepcopy(hsubs)
+        temp_hsubs = deepcopy(hsubs)
         try:
             timestamp = float(temp_hsubs['time'])
         except KeyError:
@@ -132,7 +132,7 @@ class AAMpy(object):
                 # no such message (maybe it was deleted?)
                 pass
             else:
-                message = email.message_from_string(string.join(text, '\n'))
+                message = message_from_string(string.join(text, '\n'))
                 subject = message.get('Subject')
                 if subject:
                     subject_length = len(subject)
@@ -151,7 +151,7 @@ class AAMpy(object):
                                             print 'Encrypted message stored in ' + file_name
                 date = parser.parse(message.get('Date'))
                 if date:
-                    self._timestamp = float(calendar.timegm(date.astimezone(tz.tzutc()).timetuple()))
+                    self._timestamp = float(timegm(date.astimezone(tz.tzutc()).timetuple()))
                 messages_checked += 1
                 self._progress_ratio = float(messages_checked) / float(total_messages)
 

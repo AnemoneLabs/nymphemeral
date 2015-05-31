@@ -1,5 +1,5 @@
-import email
 import re
+from email import message_from_string
 
 from dateutil import parser
 
@@ -19,7 +19,7 @@ class Message(object):
         self.identifier = identifier
 
         # process the string
-        message = email.message_from_string(string)
+        message = message_from_string(string)
         title = ''
 
         self._id = message.get('Message-ID')

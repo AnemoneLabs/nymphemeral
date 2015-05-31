@@ -1,23 +1,23 @@
+import hashlib
 import os
 import re
 import subprocess
-import hashlib
 import sys
-import shutil
-import threading
-import ConfigParser
-import email
+import time
 from binascii import b2a_base64, a2b_base64
-import Tkinter
+from ConfigParser import ConfigParser
+from email import message_from_string
+from shutil import copyfile
+from threading import Thread
+from Tkinter import Tk
 
 import gnupg
 from passlib.utils.pbkdf2 import pbkdf2
-import time
-
 from pyaxo import Axolotl
-import aampy
-import message
+
 import errors
+from aampy import AAMpy
+from message import Message
 from nym import Nym
 
 
@@ -230,7 +230,7 @@ def decrypt_data(gpg, data, passphrase):
 
 
 def copy_to_clipboard(data):
-    t = Tkinter.Tk()
+    t = Tk()
     t.withdraw()
     t.clipboard_clear()
     t.clipboard_append(data)
@@ -282,7 +282,7 @@ def generate_db(directory, fingerprint, mkey, passphrase):
 
 class Client:
     def __init__(self):
-        self.cfg = ConfigParser.ConfigParser()
+        self.cfg = ConfigParser()
 
         self.use_agent = None
         self.directory_base = None
@@ -319,7 +319,7 @@ class Client:
         try:
             self.load_configs()
             create_directory(self.directory_db)
-            shutil.copyfile(BASE_FILES_PATH + '/db/generic.db', self.directory_db + '/generic.db')
+            copyfile(BASE_FILES_PATH + '/db/generic.db', self.directory_db + '/generic.db')
             create_directory(self.directory_read_messages)
             create_directory(self.directory_unread_messages)
         except IOError:
@@ -354,7 +354,7 @@ class Client:
             # parse existing configs in case new versions modify them
             # or the user modifies the file inappropriately
             if os.path.exists(CONFIG_FILE):
-                saved_cfg = ConfigParser.ConfigParser()
+                saved_cfg = ConfigParser()
                 saved_cfg.read(CONFIG_FILE)
                 for section in saved_cfg.sections():
                     try:
@@ -396,7 +396,7 @@ class Client:
         group = self.cfg.get('newsgroup', 'group')
         server = self.cfg.get('newsgroup', 'server')
         port = self.cfg.get('newsgroup', 'port')
-        return aampy.AAMpy(self.directory_unread_messages, group, server, port, self.is_debugging)
+        return AAMpy(self.directory_unread_messages, group, server, port, self.is_debugging)
 
     def retrieve_mix_chain(self):
         chain = None
@@ -603,7 +603,7 @@ class Client:
                         if encrypted_data:
                             save_data(encrypted_data, file_path)
                             self.debug(file_path.split('/')[-1] + ' is now encrypted')
-                new_message = message.Message(not read_messages, data, file_path)
+                new_message = Message(not read_messages, data, file_path)
                 if new_message.date:
                     messages.append(new_message)
                 else:
@@ -651,7 +651,7 @@ class Client:
         lines.append('')
         lines.append(body)
         content = '\n'.join(lines)
-        msg = email.message_from_string(content).as_string().strip()
+        msg = message_from_string(content).as_string().strip()
 
         self.axolotl.loadState(self.nym.fingerprint, 'a')
         ciphertext = b2a_base64(self.axolotl.encrypt(msg)).strip()
@@ -755,9 +755,9 @@ class Client:
     def start_aampy(self):
         self.aampy.reset()
 
-        self.thread_aampy_wait = threading.Thread(target=self.wait_for_aampy)
+        self.thread_aampy_wait = Thread(target=self.wait_for_aampy)
         self.thread_aampy_wait.daemon = True
-        self.thread_aampy = threading.Thread(target=self.aampy.retrieve_messages, args=(self.hsubs,))
+        self.thread_aampy = Thread(target=self.aampy.retrieve_messages, args=(self.hsubs,))
         self.thread_aampy.daemon = True
 
         self.thread_aampy_wait.start()
@@ -807,7 +807,7 @@ class Client:
                 if search_pgp_message(ciphertext):
                     self.debug('Asymmetric layer not decrypted')
                     plaintext = 'The asymmetric layer encrypted by the server could not be decrypted:\n\n' + ciphertext
-            return message.Message(False, plaintext, msg.identifier)
+            return Message(False, plaintext, msg.identifier)
         else:
             raise errors.UndecipherableMessageError()
 
@@ -915,7 +915,7 @@ class Client:
             headers = str(msg.processed_message).split(data)[0]
             full_msg = headers + gpg_info + result.data
 
-            return message.Message(False, full_msg, msg.identifier)
+            return Message(False, full_msg, msg.identifier)
         else:
             self.debug('End-to-end layer not decrypted')
             raise errors.UndecipherableMessageError()
