@@ -38,7 +38,7 @@ __status__ = 'Beta'
 
 import operator
 import os
-import Tkinter as tk
+import Tkinter as Tk
 import tkMessageBox
 import tkSimpleDialog
 import ttk
@@ -50,11 +50,11 @@ from nym import Nym
 
 def write_on_text(text, content, clear=True):
     state = text.cget('state')
-    text.config(state=tk.NORMAL)
+    text.config(state=Tk.NORMAL)
     if clear:
-        text.delete(1.0, tk.END)
+        text.delete(1.0, Tk.END)
     for c in content:
-        text.insert(tk.INSERT, c)
+        text.insert(Tk.INSERT, c)
     text.config(state=state)
 
 
@@ -82,69 +82,69 @@ class Gui:
         self.window_login = LoginWindow(self, self.client)
 
 
-class LoginWindow(tk.Tk, object):
+class LoginWindow(Tk.Tk, object):
     def __init__(self, gui, client):
         super(LoginWindow, self).__init__()
 
         self.gui = gui
         self.client = client
         self.var_output_method = None
-        self.var_use_agent = tk.BooleanVar()
+        self.var_use_agent = Tk.BooleanVar()
 
         self.title(self.gui.title)
-        frame_login = tk.Frame(self)
+        frame_login = Tk.Frame(self)
         frame_login.grid(sticky='w', padx=15, pady=15)
 
         # title
-        label_title = tk.Label(frame_login, text='nymphemeral', font=('Helvetica', 26))
+        label_title = Tk.Label(frame_login, text='nymphemeral', font=('Helvetica', 26))
         label_title.grid(sticky='n')
 
         # address
-        label_address = tk.Label(frame_login, text='Address')
+        label_address = Tk.Label(frame_login, text='Address')
         label_address.grid(sticky='w', pady=(15, 0))
-        entry_address_login = tk.Entry(frame_login)
+        entry_address_login = Tk.Entry(frame_login)
         entry_address_login.grid(sticky='we')
 
         # passphrase
-        label_passphrase = tk.Label(frame_login, text='Passphrase')
+        label_passphrase = Tk.Label(frame_login, text='Passphrase')
         label_passphrase.grid(sticky='w', pady=(10, 0))
-        entry_passphrase_login = tk.Entry(frame_login, show='*')
+        entry_passphrase_login = Tk.Entry(frame_login, show='*')
         entry_passphrase_login.grid(sticky='we')
 
         # servers
-        button_servers = tk.Button(frame_login, text='Manage Servers', command=lambda: ServersWindow(self.gui,
+        button_servers = Tk.Button(frame_login, text='Manage Servers', command=lambda: ServersWindow(self.gui,
                                                                                                      self.client))
         button_servers.grid(pady=(5, 0))
 
         # GPG agent checkbox
-        check_agent = tk.Checkbutton(frame_login, text='Use GPG Agent', variable=self.var_use_agent)
+        check_agent = Tk.Checkbutton(frame_login, text='Use GPG Agent', variable=self.var_use_agent)
         check_agent.grid(sticky='w', padx=0, pady=(10, 0))
         self.var_use_agent.set(self.client.use_agent)
 
         # output radio buttons
-        frame_radio = tk.LabelFrame(frame_login, text='Output Method')
+        frame_radio = Tk.LabelFrame(frame_login, text='Output Method')
         frame_radio.grid(pady=(10, 0), ipadx=5, ipady=5, sticky='we')
-        self.var_output_method = tk.IntVar()
-        radio_mix = tk.Radiobutton(frame_radio, text='Send via Mixmaster', variable=self.var_output_method,
+        self.var_output_method = Tk.IntVar()
+        radio_mix = Tk.Radiobutton(frame_radio, text='Send via Mixmaster', variable=self.var_output_method,
                                    value=OUTPUT_METHOD['mixmaster'])
         radio_mix.grid(pady=(5, 0), sticky='w')
         chain = self.client.chain
         if not chain:
-            radio_mix.config(state=tk.DISABLED)
+            radio_mix.config(state=Tk.DISABLED)
             chain = 'Error while manipulating mix.cfg'
-        label_chain = tk.Label(frame_radio, text=chain)
+        label_chain = Tk.Label(frame_radio, text=chain)
         label_chain.grid(sticky='w', padx=(25, 0))
-        radio_email = tk.Radiobutton(frame_radio, text='Send via Email', variable=self.var_output_method,
+        radio_email = Tk.Radiobutton(frame_radio, text='Send via Email', variable=self.var_output_method,
                                      value=OUTPUT_METHOD['sendmail'])
         radio_email.grid(sticky='w')
-        radio_text = tk.Radiobutton(frame_radio, text='Display Output in Message Window',
+        radio_text = Tk.Radiobutton(frame_radio, text='Display Output in Message Window',
                                     variable=self.var_output_method,
                                     value=OUTPUT_METHOD['manual'])
         radio_text.grid(sticky='w')
         self.var_output_method.set(OUTPUT_METHOD[self.client.output_method])
 
         # start button
-        button_start = tk.Button(frame_login, text='Start Session',
+        button_start = Tk.Button(frame_login, text='Start Session',
                                  command=lambda: self.start_session(entry_address_login.get(),
                                                                     entry_passphrase_login.get()))
         button_start.grid(pady=(15, 0))
@@ -179,7 +179,7 @@ class LoginWindow(tk.Tk, object):
             self.gui.start_session(creating_nym)
 
 
-class ServersWindow(tk.Tk, object):
+class ServersWindow(Tk.Tk, object):
     def __init__(self, gui, client):
         super(ServersWindow, self).__init__()
 
@@ -187,15 +187,15 @@ class ServersWindow(tk.Tk, object):
         self.client = client
 
         self.title('Nym Servers')
-        frame_servers = tk.Frame(self)
+        frame_servers = Tk.Frame(self)
         frame_servers.grid(sticky='w', padx=15, pady=15)
 
         # servers list box
-        frame_list = tk.LabelFrame(frame_servers, text='Nym Servers')
+        frame_list = Tk.LabelFrame(frame_servers, text='Nym Servers')
         frame_list.grid(sticky='we')
-        self.list_servers = tk.Listbox(frame_list, height=11, width=40)
+        self.list_servers = Tk.Listbox(frame_list, height=11, width=40)
         self.list_servers.grid(row=0, column=0, sticky='we')
-        scrollbar_list = tk.Scrollbar(frame_list, command=self.list_servers.yview)
+        scrollbar_list = Tk.Scrollbar(frame_list, command=self.list_servers.yview)
         scrollbar_list.grid(row=0, column=1, sticky='nsew')
         self.list_servers['yscrollcommand'] = scrollbar_list.set
         self.list_servers.bind('<<ListboxSelect>>', self.toggle_servers_interface)
@@ -203,39 +203,39 @@ class ServersWindow(tk.Tk, object):
         buttons_row = frame_servers.grid_size()[1] + 1
 
         # new button
-        button_new_servers = tk.Button(frame_servers, text='New', command=lambda: KeyWindow(self.gui, self.client,
+        button_new_servers = Tk.Button(frame_servers, text='New', command=lambda: KeyWindow(self.gui, self.client,
                                                                                             self))
         button_new_servers.grid(row=buttons_row, sticky='w', pady=(10, 0))
 
         # modify button
-        self.button_modify_servers = tk.Button(frame_servers, text='Modify',
+        self.button_modify_servers = Tk.Button(frame_servers, text='Modify',
                                                command=lambda: KeyWindow(self.gui, self.client, self,
                                                                          self.list_servers.get(
                                                                              self.list_servers.curselection())),
-                                               state=tk.DISABLED)
+                                               state=Tk.DISABLED)
         self.button_modify_servers.grid(row=buttons_row, pady=(10, 0))
 
         # delete button
-        self.button_delete_servers = tk.Button(frame_servers, text='Delete',
+        self.button_delete_servers = Tk.Button(frame_servers, text='Delete',
                                                command=lambda: self.delete_key(self.list_servers.get(
                                                    self.list_servers.curselection())),
-                                               state=tk.DISABLED)
+                                               state=Tk.DISABLED)
         self.button_delete_servers.grid(row=buttons_row, sticky='e', pady=(10, 0))
 
         self.update_servers_list()
 
     def toggle_servers_interface(self, event=None):
         if event:
-            self.button_modify_servers.config(state=tk.NORMAL)
-            self.button_delete_servers.config(state=tk.NORMAL)
+            self.button_modify_servers.config(state=Tk.NORMAL)
+            self.button_delete_servers.config(state=Tk.NORMAL)
         else:
-            self.button_modify_servers.config(state=tk.DISABLED)
-            self.button_delete_servers.config(state=tk.DISABLED)
+            self.button_modify_servers.config(state=Tk.DISABLED)
+            self.button_delete_servers.config(state=Tk.DISABLED)
 
     def update_servers_list(self):
-        self.list_servers.delete(0, tk.END)
+        self.list_servers.delete(0, Tk.END)
         for s in self.client.retrieve_servers().keys():
-            self.list_servers.insert(tk.END, s)
+            self.list_servers.insert(Tk.END, s)
         self.toggle_servers_interface()
 
     def delete_key(self, server):
@@ -244,7 +244,7 @@ class ServersWindow(tk.Tk, object):
             self.update_servers_list()
 
 
-class KeyWindow(tk.Tk, object):
+class KeyWindow(Tk.Tk, object):
     def __init__(self, gui, client, parent=None, server=None):
         super(KeyWindow, self).__init__()
 
@@ -254,30 +254,30 @@ class KeyWindow(tk.Tk, object):
 
         self.title('Public Key Manager')
 
-        frame_key = tk.Frame(self)
+        frame_key = Tk.Frame(self)
         frame_key.grid(sticky='w', padx=15, pady=15)
 
         # key text box
         key = ''
         if server:
-            frame_list = tk.LabelFrame(frame_key, text=server + "'s Public Key")
+            frame_list = Tk.LabelFrame(frame_key, text=server + "'s Public Key")
             key = self.client.gpg.export_keys(self.client.retrieve_servers()[server])
         else:
-            frame_list = tk.LabelFrame(frame_key, text='New Server Public Key')
+            frame_list = Tk.LabelFrame(frame_key, text='New Server Public Key')
         frame_list.grid(sticky='we')
-        text_key = tk.Text(frame_list, height=22, width=66)
+        text_key = Tk.Text(frame_list, height=22, width=66)
         text_key.grid(row=0, column=0, sticky='we')
-        scrollbar_text = tk.Scrollbar(frame_list, command=text_key.yview)
+        scrollbar_text = Tk.Scrollbar(frame_list, command=text_key.yview)
         scrollbar_text.grid(row=0, column=1, sticky='nsew')
         text_key['yscrollcommand'] = scrollbar_text.set
-        text_key.insert(tk.INSERT, key)
+        text_key.insert(Tk.INSERT, key)
 
         # save button
-        button_save_key = tk.Button(frame_key, text='Save',
-                                    command=lambda: self.save_key(text_key.get(1.0, tk.END), server))
+        button_save_key = Tk.Button(frame_key, text='Save',
+                                    command=lambda: self.save_key(text_key.get(1.0, Tk.END), server))
         button_save_key.grid(pady=(10, 0))
 
-        text_key.mark_set(tk.INSERT, 1.0)
+        text_key.mark_set(Tk.INSERT, 1.0)
         text_key.focus_set()
 
     def save_key(self, key, server):
@@ -287,7 +287,7 @@ class KeyWindow(tk.Tk, object):
         self.destroy()
 
 
-class MainWindow(tk.Tk, object):
+class MainWindow(Tk.Tk, object):
     def __init__(self, gui, client, creating_nym=False):
         super(MainWindow, self).__init__()
 
@@ -305,7 +305,7 @@ class MainWindow(tk.Tk, object):
         self.title(self.gui.title)
 
         # frame inside root window
-        frame_tab = tk.Frame(self)
+        frame_tab = Tk.Frame(self)
         frame_tab.pack()
 
         # tabs
@@ -335,25 +335,25 @@ class MainWindow(tk.Tk, object):
             self.notebook.add(self.tab_create, text='Create Nym')
             self.set_creation_interface(True)
 
-        self.notebook.pack(fill=tk.BOTH, expand=True)
+        self.notebook.pack(fill=Tk.BOTH, expand=True)
 
         # footer
-        frame_footer = tk.Frame(frame_tab)
-        frame_footer.pack(fill=tk.X, expand=True, padx=5, pady=5)
+        frame_footer = Tk.Frame(frame_tab)
+        frame_footer.pack(fill=Tk.X, expand=True, padx=5, pady=5)
 
-        frame_left = tk.Frame(frame_footer)
-        frame_left.pack(side=tk.LEFT)
-        frame_address = tk.Frame(frame_left)
-        frame_address.pack(fill=tk.X, expand=True)
-        label_address = tk.Label(frame_address, text=self.client.nym.address)
-        label_address.pack(side=tk.LEFT)
+        frame_left = Tk.Frame(frame_footer)
+        frame_left.pack(side=Tk.LEFT)
+        frame_address = Tk.Frame(frame_left)
+        frame_address.pack(fill=Tk.X, expand=True)
+        label_address = Tk.Label(frame_address, text=self.client.nym.address)
+        label_address.pack(side=Tk.LEFT)
         if self.client.output_method == 'mixmaster':
-            frame_chain = tk.Frame(frame_left)
-            frame_chain.pack(fill=tk.X, expand=True)
-            label_chain = tk.Label(frame_chain, text=self.client.chain)
-            label_chain.pack(side=tk.LEFT)
-        button_change_nym = tk.Button(frame_footer, text='Change Nym', command=self.gui.end_session)
-        button_change_nym.pack(side=tk.RIGHT)
+            frame_chain = Tk.Frame(frame_left)
+            frame_chain.pack(fill=Tk.X, expand=True)
+            label_chain = Tk.Label(frame_chain, text=self.client.chain)
+            label_chain.pack(side=Tk.LEFT)
+        button_change_nym = Tk.Button(frame_footer, text='Change Nym', command=self.gui.end_session)
+        button_change_nym.pack(side=Tk.RIGHT)
 
         # move window to the center
         self.update_idletasks()
@@ -363,9 +363,9 @@ class MainWindow(tk.Tk, object):
 
     def set_tab_state(self, tab, enabled):
         if enabled:
-            state = tk.NORMAL
+            state = Tk.NORMAL
         else:
-            state = tk.DISABLED
+            state = Tk.DISABLED
         self.notebook.tab(tab, state=state)
 
     def set_all_tabs_state(self, enabled, exceptions=[]):
@@ -389,42 +389,42 @@ class MainWindow(tk.Tk, object):
         self.notebook.select(tab)
 
 
-class CreationTab(tk.Frame, object):
+class CreationTab(Tk.Frame, object):
     def __init__(self, gui, client, parent):
         super(CreationTab, self).__init__(parent)
 
         self.gui = gui
         self.client = client
 
-        frame_tab = tk.Frame(self)
+        frame_tab = Tk.Frame(self)
         frame_tab.grid(sticky='nswe', padx=15, pady=15)
 
         # ephemeral
-        label_ephemeral = tk.Label(frame_tab, text='Ephemeral Key')
+        label_ephemeral = Tk.Label(frame_tab, text='Ephemeral Key')
         label_ephemeral.grid(sticky='w')
-        self.entry_ephemeral_create = tk.Entry(frame_tab)
+        self.entry_ephemeral_create = Tk.Entry(frame_tab)
         self.entry_ephemeral_create.grid(sticky='we')
 
         # hSub
-        label_hsub = tk.Label(frame_tab, text='hSub Passphrase')
-        label_hsub.grid(sticky=tk.W, pady=(10, 0))
-        self.entry_hsub_create = tk.Entry(frame_tab)
+        label_hsub = Tk.Label(frame_tab, text='hSub Passphrase')
+        label_hsub.grid(sticky=Tk.W, pady=(10, 0))
+        self.entry_hsub_create = Tk.Entry(frame_tab)
         self.entry_hsub_create.grid(sticky='we')
 
         # name
-        label_name = tk.Label(frame_tab, text='Name')
-        label_name.grid(sticky=tk.W, pady=(10, 0))
-        self.entry_name_create = tk.Entry(frame_tab)
+        label_name = Tk.Label(frame_tab, text='Name')
+        label_name.grid(sticky=Tk.W, pady=(10, 0))
+        self.entry_name_create = Tk.Entry(frame_tab)
         self.entry_name_create.grid(sticky='we')
 
         # duration
-        label_duration = tk.Label(frame_tab, text='Duration')
-        label_duration.grid(sticky=tk.W, pady=(10, 0))
-        self.entry_duration_create = tk.Entry(frame_tab)
+        label_duration = Tk.Label(frame_tab, text='Duration')
+        label_duration.grid(sticky=Tk.W, pady=(10, 0))
+        self.entry_duration_create = Tk.Entry(frame_tab)
         self.entry_duration_create.grid(sticky='we')
 
         # create button
-        self.button_create = tk.Button(frame_tab, text='Create Nym',
+        self.button_create = Tk.Button(frame_tab, text='Create Nym',
                                        command=lambda: self.create(self.entry_ephemeral_create.get().strip(),
                                                                    self.entry_hsub_create.get().strip(),
                                                                    self.entry_name_create.get().strip(),
@@ -432,22 +432,22 @@ class CreationTab(tk.Frame, object):
         self.button_create.grid(pady=(10, 0))
 
         # message box
-        frame_text = tk.LabelFrame(frame_tab, text='Nym Creation Headers and Configuration')
+        frame_text = Tk.LabelFrame(frame_tab, text='Nym Creation Headers and Configuration')
         frame_text.grid(sticky='we', pady=10)
-        self.text_create = tk.Text(frame_text, height=25)
+        self.text_create = Tk.Text(frame_text, height=25)
         self.text_create.grid(row=0, column=0)
-        scrollbar = tk.Scrollbar(frame_text, command=self.text_create.yview)
+        scrollbar = Tk.Scrollbar(frame_text, command=self.text_create.yview)
         scrollbar.grid(row=0, column=1, sticky='ns')
         self.text_create['yscrollcommand'] = scrollbar.set
-        self.text_create.insert(tk.INSERT,
+        self.text_create.insert(Tk.INSERT,
                                 'Key generation may take a long time after you click the "Create Nym" button.'
                                 '\nBe prepared to wait...')
 
     def set_interface(self, enabled):
         if enabled:
-            state = tk.NORMAL
+            state = Tk.NORMAL
         else:
-            state = tk.DISABLED
+            state = Tk.DISABLED
         self.entry_ephemeral_create.config(state=state)
         self.entry_hsub_create.config(state=state)
         self.entry_name_create.config(state=state)
@@ -470,7 +470,7 @@ class CreationTab(tk.Frame, object):
                 self.gui.window_main.set_creation_interface(False)
 
 
-class InboxTab(tk.Frame, object):
+class InboxTab(Tk.Frame, object):
     def __init__(self, gui, client, tab_send, tab_unread, parent):
         super(InboxTab, self).__init__(parent)
 
@@ -481,14 +481,14 @@ class InboxTab(tk.Frame, object):
         self.messages = None
         self.current_message_index = None
 
-        frame_tab = tk.Frame(self)
+        frame_tab = Tk.Frame(self)
         frame_tab.grid(sticky='nswe', padx=15, pady=15)
 
-        frame_retrieve = tk.Frame(frame_tab)
+        frame_retrieve = Tk.Frame(frame_tab)
         frame_retrieve.grid(sticky='w', pady=(0, 10))
 
         # retrieve button
-        self.button_aampy_inbox = tk.Button(frame_retrieve, width=14, text='Retrieve Messages',
+        self.button_aampy_inbox = Tk.Button(frame_retrieve, width=14, text='Retrieve Messages',
                                             command=self.start_retrieving_messages)
         self.button_aampy_inbox.grid(row=0, sticky='w')
 
@@ -496,63 +496,63 @@ class InboxTab(tk.Frame, object):
         self.progress_bar_inbox = ttk.Progressbar(frame_retrieve, mode='indeterminate', length=427)
 
         # messages list box
-        frame_list = tk.LabelFrame(frame_tab, text='Messages')
+        frame_list = Tk.LabelFrame(frame_tab, text='Messages')
         frame_list.grid(sticky='we')
-        self.list_messages_inbox = tk.Listbox(frame_list, height=11, width=70)
+        self.list_messages_inbox = Tk.Listbox(frame_list, height=11, width=70)
         self.list_messages_inbox.grid(row=0, column=0, sticky='we')
-        scrollbar_list = tk.Scrollbar(frame_list, command=self.list_messages_inbox.yview)
+        scrollbar_list = Tk.Scrollbar(frame_list, command=self.list_messages_inbox.yview)
         scrollbar_list.grid(row=0, column=1, sticky='nsew')
         self.list_messages_inbox['yscrollcommand'] = scrollbar_list.set
         self.list_messages_inbox.bind('<<ListboxSelect>>', self.select_message)
 
         # message contents
-        frame_content = tk.Frame(frame_tab)
+        frame_content = Tk.Frame(frame_tab)
         frame_content.grid(pady=10, sticky='we')
         notebook = ttk.Notebook(frame_content)
         notebook.pack()
 
-        frame_body = tk.Frame(notebook)
-        frame_headers = tk.Frame(notebook)
+        frame_body = Tk.Frame(notebook)
+        frame_headers = Tk.Frame(notebook)
 
         # body tab
-        self.text_body_inbox = tk.Text(frame_body, height=22, state=tk.DISABLED)
-        scrollbar_body = tk.Scrollbar(frame_body, command=self.text_body_inbox.yview)
+        self.text_body_inbox = Tk.Text(frame_body, height=22, state=Tk.DISABLED)
+        scrollbar_body = Tk.Scrollbar(frame_body, command=self.text_body_inbox.yview)
         scrollbar_body.grid(row=0, column=1, sticky='nsew')
         self.text_body_inbox['yscrollcommand'] = scrollbar_body.set
         self.text_body_inbox.grid(row=0, column=0, sticky='we')
 
         # headers tab
-        self.text_headers_inbox = tk.Text(frame_headers, height=22, state=tk.DISABLED)
-        scrollbar_headers = tk.Scrollbar(frame_headers, command=self.text_headers_inbox.yview)
+        self.text_headers_inbox = Tk.Text(frame_headers, height=22, state=Tk.DISABLED)
+        scrollbar_headers = Tk.Scrollbar(frame_headers, command=self.text_headers_inbox.yview)
         scrollbar_headers.grid(row=0, column=1, sticky='nsew')
         self.text_headers_inbox['yscrollcommand'] = scrollbar_headers.set
         self.text_headers_inbox.grid(row=0, column=0, sticky='we')
 
         notebook.add(frame_body, text='Body')
         notebook.add(frame_headers, text='Headers')
-        notebook.pack(fill=tk.BOTH, expand=True)
+        notebook.pack(fill=Tk.BOTH, expand=True)
 
         buttons_row = frame_tab.grid_size()[1] + 1
 
         # save/delete button
-        self.button_save_del_inbox = tk.Button(frame_tab, text='Save to Disk', command=self.save_and_update_interface)
+        self.button_save_del_inbox = Tk.Button(frame_tab, text='Save to Disk', command=self.save_and_update_interface)
         self.button_save_del_inbox.grid(row=buttons_row, sticky='w', pady=(10, 0))
 
         # reply button
-        self.button_reply_inbox = tk.Button(frame_tab, text='Reply Message', command=self.reply_message)
+        self.button_reply_inbox = Tk.Button(frame_tab, text='Reply Message', command=self.reply_message)
         self.button_reply_inbox.grid(row=buttons_row, sticky='e', pady=(10, 0))
 
         # notification label
-        self.label_save_del_inbox = tk.Label(frame_tab)
+        self.label_save_del_inbox = Tk.Label(frame_tab)
         self.label_save_del_inbox.grid(row=buttons_row, pady=(10, 0))
 
         self.load_messages()
 
     def update_messages_list(self):
         self.toggle_interface(False)
-        self.list_messages_inbox.delete(0, tk.END)
+        self.list_messages_inbox.delete(0, Tk.END)
         for m in self.messages:
-            self.list_messages_inbox.insert(tk.END, m.title)
+            self.list_messages_inbox.insert(Tk.END, m.title)
         try:
             self.tab_unread.update_unread_counter()
         except AttributeError:
@@ -587,16 +587,16 @@ class InboxTab(tk.Frame, object):
             self.gui.window_main.id_after = self.gui.window_main.after(1000, lambda: self.wait_for_retrieval())
 
     def toggle_interface(self, retrieving_messages):
-        self.button_save_del_inbox.config(state=tk.DISABLED)
-        self.button_reply_inbox.config(state=tk.DISABLED)
+        self.button_save_del_inbox.config(state=Tk.DISABLED)
+        self.button_reply_inbox.config(state=Tk.DISABLED)
         if retrieving_messages:
-            self.list_messages_inbox.config(state=tk.DISABLED)
+            self.list_messages_inbox.config(state=Tk.DISABLED)
             self.progress_bar_inbox.grid(row=0, column=1, sticky='nswe', padx=(15, 0))
             self.progress_bar_inbox.config(mode='indeterminate')
             self.progress_bar_inbox.start(25)
             self.button_aampy_inbox.config(text='Stop', command=self.stop_retrieving_messages)
         else:
-            self.list_messages_inbox.config(state=tk.NORMAL)
+            self.list_messages_inbox.config(state=Tk.NORMAL)
             self.progress_bar_inbox.stop()
             self.progress_bar_inbox.grid_forget()
             self.button_aampy_inbox.config(text='Retrieve Messages', command=self.start_retrieving_messages)
@@ -640,8 +640,8 @@ class InboxTab(tk.Frame, object):
             self.current_message_index = index
 
             if self.messages[index].is_unread:
-                self.button_save_del_inbox.config(state=tk.DISABLED)
-                self.button_reply_inbox.config(state=tk.DISABLED)
+                self.button_save_del_inbox.config(state=Tk.DISABLED)
+                self.button_reply_inbox.config(state=Tk.DISABLED)
 
                 try:
                     self.messages[index] = self.client.decrypt_ephemeral_message(self.messages[index])
@@ -669,8 +669,8 @@ class InboxTab(tk.Frame, object):
             self.toggle_save_del_button(False)
         else:
             self.toggle_save_del_button(True)
-        self.button_save_del_inbox.config(state=tk.NORMAL)
-        self.button_reply_inbox.config(state=tk.NORMAL)
+        self.button_save_del_inbox.config(state=Tk.NORMAL)
+        self.button_reply_inbox.config(state=Tk.NORMAL)
 
     def toggle_save_del_button(self, toggle_save):
         if toggle_save:
@@ -696,86 +696,86 @@ class InboxTab(tk.Frame, object):
         self.tab_send.compose_message(self.messages[self.current_message_index])
 
 
-class SendTab(tk.Frame, object):
+class SendTab(Tk.Frame, object):
     def __init__(self, gui, client, parent):
         super(SendTab, self).__init__(parent)
 
         self.gui = gui
         self.client = client
-        self.var_throw_keyids = tk.BooleanVar()
+        self.var_throw_keyids = Tk.BooleanVar()
 
-        frame_tab = tk.Frame(self)
+        frame_tab = Tk.Frame(self)
         frame_tab.grid(sticky='nswe', padx=15, pady=15)
 
         # target
-        label_target = tk.Label(frame_tab, text='Target Email Address')
-        label_target.grid(sticky=tk.W)
-        self.entry_target_send = tk.Entry(frame_tab)
+        label_target = Tk.Label(frame_tab, text='Target Email Address')
+        label_target.grid(sticky=Tk.W)
+        self.entry_target_send = Tk.Entry(frame_tab)
         self.entry_target_send.grid(sticky='we')
 
         # subject
-        label_subject = tk.Label(frame_tab, text='Subject')
-        label_subject.grid(sticky=tk.W, pady=(10, 0))
-        self.entry_subject_send = tk.Entry(frame_tab)
+        label_subject = Tk.Label(frame_tab, text='Subject')
+        label_subject.grid(sticky=Tk.W, pady=(10, 0))
+        self.entry_subject_send = Tk.Entry(frame_tab)
         self.entry_subject_send.grid(sticky='we')
 
         # header box
-        frame_header = tk.LabelFrame(frame_tab, text='Headers (Optional)')
+        frame_header = Tk.LabelFrame(frame_tab, text='Headers (Optional)')
         frame_header.grid(pady=(10, 0))
-        self.text_header = tk.Text(frame_header, height=4)
+        self.text_header = Tk.Text(frame_header, height=4)
         self.text_header.grid(row=0, column=0)
-        scrollbar_header = tk.Scrollbar(frame_header, command=self.text_header.yview)
+        scrollbar_header = Tk.Scrollbar(frame_header, command=self.text_header.yview)
         scrollbar_header.grid(row=0, column=1, sticky='ns')
         self.text_header['yscrollcommand'] = scrollbar_header.set
 
         # body box
-        frame_body = tk.LabelFrame(frame_tab, text='Message')
+        frame_body = Tk.LabelFrame(frame_tab, text='Message')
         frame_body.grid(pady=(10, 0))
-        self.text_body = tk.Text(frame_body, height=20)
+        self.text_body = Tk.Text(frame_body, height=20)
         self.text_body.grid(row=0, column=0)
-        scrollbar_body = tk.Scrollbar(frame_body, command=self.text_body.yview)
+        scrollbar_body = Tk.Scrollbar(frame_body, command=self.text_body.yview)
         scrollbar_body.grid(row=0, column=1, sticky='ns')
         self.text_body['yscrollcommand'] = scrollbar_body.set
 
         # e2ee
-        frame_e2ee = tk.LabelFrame(frame_tab, text='End-to-End Encryption (Recommended)')
+        frame_e2ee = Tk.LabelFrame(frame_tab, text='End-to-End Encryption (Recommended)')
         frame_e2ee.grid(sticky='we', ipady=5, pady=(10, 0))
 
         # e2ee target
-        label_e2ee_target = tk.Label(frame_e2ee, text='Target')
-        label_e2ee_target.grid(row=0, sticky=tk.W, padx=12)
-        self.entry_e2ee_target_send = tk.Entry(frame_e2ee, width=33)
+        label_e2ee_target = Tk.Label(frame_e2ee, text='Target')
+        label_e2ee_target.grid(row=0, sticky=Tk.W, padx=12)
+        self.entry_e2ee_target_send = Tk.Entry(frame_e2ee, width=33)
         self.entry_e2ee_target_send.grid(row=1, sticky='w', padx=(12, 284))
 
         # e2ee signer
-        label_e2ee_signer = tk.Label(frame_e2ee, text='Signer')
-        label_e2ee_signer.grid(row=0, sticky=tk.E)
-        self.entry_e2ee_signer_send = tk.Entry(frame_e2ee, width=33)
+        label_e2ee_signer = Tk.Label(frame_e2ee, text='Signer')
+        label_e2ee_signer.grid(row=0, sticky=Tk.E)
+        self.entry_e2ee_signer_send = Tk.Entry(frame_e2ee, width=33)
         self.entry_e2ee_signer_send.grid(row=1, sticky='e')
 
         # e2ee tip
-        label_tip = tk.Label(frame_e2ee, text='(UIDs or Fingerprints)')
+        label_tip = Tk.Label(frame_e2ee, text='(UIDs or Fingerprints)')
         label_tip.grid(row=0)
 
         # throw key IDs checkbox
-        check_throw_keyids = tk.Checkbutton(frame_e2ee, text='Throw Key IDs', variable=self.var_throw_keyids)
+        check_throw_keyids = Tk.Checkbutton(frame_e2ee, text='Throw Key IDs', variable=self.var_throw_keyids)
         check_throw_keyids.grid(sticky='w', padx=(5, 0))
 
         # send button
-        button_send = tk.Button(frame_tab, text='Send',
+        button_send = Tk.Button(frame_tab, text='Send',
                                 command=lambda: self.send_message(self.entry_target_send.get().strip(),
                                                                   self.entry_subject_send.get().strip(),
-                                                                  self.text_header.get(1.0, tk.END).strip(),
-                                                                  self.text_body.get(1.0, tk.END).strip(),
+                                                                  self.text_header.get(1.0, Tk.END).strip(),
+                                                                  self.text_body.get(1.0, Tk.END).strip(),
                                                                   self.entry_e2ee_target_send.get().strip(),
                                                                   self.entry_e2ee_signer_send.get().strip()))
         button_send.grid(pady=(10, 0))
 
     def compose_message(self, msg):
-        self.entry_target_send.delete(0, tk.END)
+        self.entry_target_send.delete(0, Tk.END)
         if msg.sender:
             self.entry_target_send.insert(0, msg.sender.lower())
-        self.entry_subject_send.delete(0, tk.END)
+        self.entry_subject_send.delete(0, Tk.END)
         if msg.subject:
             self.entry_subject_send.insert(0, msg.subject)
             if not msg.subject.startswith('Re: '):
@@ -788,7 +788,7 @@ class SendTab(tk.Frame, object):
             write_on_text(self.text_header, [header])
         write_on_text(self.text_body, [content])
         cursor_position = 1.0
-        self.text_body.mark_set(tk.INSERT, cursor_position)
+        self.text_body.mark_set(Tk.INSERT, cursor_position)
         self.gui.window_main.select_tab(self)
         self.text_body.focus_set()
 
@@ -843,63 +843,63 @@ class SendTab(tk.Frame, object):
             write_on_text(self.text_body, [info, e2ee_target_info, ciphertext])
 
 
-class ConfigTab(tk.Frame, object):
+class ConfigTab(Tk.Frame, object):
     def __init__(self, gui, client, parent):
         super(ConfigTab, self).__init__(parent)
 
         self.gui = gui
         self.client = client
 
-        frame_tab = tk.Frame(self)
+        frame_tab = Tk.Frame(self)
         frame_tab.grid(sticky='nswe', padx=15, pady=15)
 
         # ephemeral
-        label_ephemeral = tk.Label(frame_tab, text='Ephemeral Key')
+        label_ephemeral = Tk.Label(frame_tab, text='Ephemeral Key')
         label_ephemeral.grid(sticky='w')
-        self.entry_ephemeral_config = tk.Entry(frame_tab)
+        self.entry_ephemeral_config = Tk.Entry(frame_tab)
         self.entry_ephemeral_config.grid(sticky='we')
 
         # hSub
-        label_hsub = tk.Label(frame_tab, text='hSub Key')
-        label_hsub.grid(sticky=tk.W, pady=(10, 0))
-        self.entry_hsub_config = tk.Entry(frame_tab)
+        label_hsub = Tk.Label(frame_tab, text='hSub Key')
+        label_hsub.grid(sticky=Tk.W, pady=(10, 0))
+        self.entry_hsub_config = Tk.Entry(frame_tab)
         self.entry_hsub_config.grid(sticky='we')
 
         # name
-        label_name = tk.Label(frame_tab, text='Name')
-        label_name.grid(sticky=tk.W, pady=(10, 0))
-        self.entry_name_config = tk.Entry(frame_tab)
+        label_name = Tk.Label(frame_tab, text='Name')
+        label_name.grid(sticky=Tk.W, pady=(10, 0))
+        self.entry_name_config = Tk.Entry(frame_tab)
         self.entry_name_config.grid(sticky='we')
 
         buttons_row = frame_tab.grid_size()[1] + 1
 
         # config button
-        self.button_config = tk.Button(frame_tab, text='Configure',
+        self.button_config = Tk.Button(frame_tab, text='Configure',
                                        command=lambda: self.send_config(self.entry_ephemeral_config.get().strip(),
                                                                         self.entry_hsub_config.get().strip(),
                                                                         self.entry_name_config.get().strip()))
         self.button_config.grid(row=buttons_row, sticky='w', pady=(10, 0))
 
         # delete button
-        self.button_delete_config = tk.Button(frame_tab, text='Delete Nym', command=self.send_delete)
+        self.button_delete_config = Tk.Button(frame_tab, text='Delete Nym', command=self.send_delete)
         self.button_delete_config.grid(row=buttons_row, sticky='e', pady=(10, 0))
 
         # message box
-        frame_text = tk.LabelFrame(frame_tab, text='Nym Configuration Headers')
+        frame_text = Tk.LabelFrame(frame_tab, text='Nym Configuration Headers')
         frame_text.grid(sticky='we', pady=(10, 0))
-        self.text_config = tk.Text(frame_text, height=29)
+        self.text_config = Tk.Text(frame_text, height=29)
         self.text_config.grid(row=0, column=0)
-        scrollbar = tk.Scrollbar(frame_text, command=self.text_config.yview)
+        scrollbar = Tk.Scrollbar(frame_text, command=self.text_config.yview)
         scrollbar.grid(row=0, column=1, sticky='ns')
         self.text_config['yscrollcommand'] = scrollbar.set
 
     def set_deleted_interface(self):
         self.gui.window_main.set_all_tabs_state(False, [self])
-        self.entry_ephemeral_config.config(state=tk.DISABLED)
-        self.entry_hsub_config.config(state=tk.DISABLED)
-        self.entry_name_config.config(state=tk.DISABLED)
-        self.button_config.config(state=tk.DISABLED)
-        self.button_delete_config.config(state=tk.DISABLED)
+        self.entry_ephemeral_config.config(state=Tk.DISABLED)
+        self.entry_hsub_config.config(state=Tk.DISABLED)
+        self.entry_name_config.config(state=Tk.DISABLED)
+        self.button_config.config(state=Tk.DISABLED)
+        self.button_delete_config.config(state=Tk.DISABLED)
 
     def send_config(self, ephemeral, hsub, name):
         if ephemeral or hsub or name:
@@ -917,24 +917,24 @@ class ConfigTab(tk.Frame, object):
                 self.set_deleted_interface()
 
 
-class UnreadCounterTab(tk.Frame, object):
+class UnreadCounterTab(Tk.Frame, object):
     def __init__(self, gui, client, parent):
         super(UnreadCounterTab, self).__init__(parent)
 
         self.gui = gui
         self.client = client
 
-        frame_tab = tk.Frame(self)
+        frame_tab = Tk.Frame(self)
         frame_tab.grid(sticky='nswe', padx=15, pady=15)
 
-        frame_retrieve = tk.Frame(frame_tab)
+        frame_retrieve = Tk.Frame(frame_tab)
         frame_retrieve.grid(sticky='w')
 
-        frame_list = tk.LabelFrame(frame_tab, text='Nyms With Unread Messages')
+        frame_list = Tk.LabelFrame(frame_tab, text='Nyms With Unread Messages')
         frame_list.grid(sticky='we')
-        self.list_unread = tk.Listbox(frame_list, height=39, width=70)
+        self.list_unread = Tk.Listbox(frame_list, height=39, width=70)
         self.list_unread.grid(row=0, column=0, sticky='we')
-        scrollbar_list = tk.Scrollbar(frame_list, command=self.list_unread.yview)
+        scrollbar_list = Tk.Scrollbar(frame_list, command=self.list_unread.yview)
         scrollbar_list.grid(row=0, column=1, sticky='nsew')
         self.list_unread['yscrollcommand'] = scrollbar_list.set
 
@@ -942,12 +942,12 @@ class UnreadCounterTab(tk.Frame, object):
 
     def update_unread_counter(self):
         counter = sorted(self.client.count_unread_messages().items(), key=operator.itemgetter(0))
-        self.list_unread.delete(0, tk.END)
+        self.list_unread.delete(0, Tk.END)
         if counter:
             for nym, count in counter:
-                self.list_unread.insert(tk.END, nym + '(' + str(count) + ')')
+                self.list_unread.insert(Tk.END, nym + '(' + str(count) + ')')
         else:
-            self.list_unread.insert(tk.END, 'No messages found')
+            self.list_unread.insert(Tk.END, 'No messages found')
 
 if __name__ == '__main__':
     Gui().window_login.mainloop()
