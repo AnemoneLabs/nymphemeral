@@ -7,7 +7,6 @@ import time
 from binascii import b2a_base64, a2b_base64
 from ConfigParser import ConfigParser
 from email import message_from_string
-from shutil import copyfile
 from threading import Thread
 from Tkinter import Tk
 
@@ -306,7 +305,6 @@ class Client:
         try:
             self.load_configs()
             create_directory(self.directory_db)
-            copyfile(BASE_FILES_PATH + '/db/generic.db', self.directory_db + '/generic.db')
             create_directory(self.directory_read_messages)
             create_directory(self.directory_unread_messages)
         except IOError:

@@ -67,7 +67,6 @@ setup(
     data_files=[
         (BASE_DIRECTORY, ['COPYING']),
         (BASE_DIRECTORY, ['README.rst']),
-        (BASE_DIRECTORY + '/db', glob('db/generic.db')),
         (BASE_DIRECTORY + '/connections', glob('connections/*')),
     ],
 )
