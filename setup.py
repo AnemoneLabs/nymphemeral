@@ -60,14 +60,13 @@ setup(
         'scripts/nymphemeral',
     ],
     install_requires=[
-        'pyaxo>=0.3.5',
+        'pyaxo>=0.4.1',
         'python-gnupg>=0.3.5',
         'python-dateutil>=2.2',
     ],
     data_files=[
         (BASE_DIRECTORY, ['COPYING']),
         (BASE_DIRECTORY, ['README.rst']),
-        (BASE_DIRECTORY + '/db', glob('db/generic.db')),
         (BASE_DIRECTORY + '/connections', glob('connections/*')),
     ],
 )

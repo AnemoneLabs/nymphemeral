@@ -7,12 +7,10 @@ import time
 from binascii import b2a_base64, a2b_base64
 from ConfigParser import ConfigParser
 from email import message_from_string
-from shutil import copyfile
 from threading import Thread
 from Tkinter import Tk
 
 import gnupg
-from passlib.utils.pbkdf2 import pbkdf2
 from pyaxo import Axolotl
 
 import errors
@@ -237,47 +235,35 @@ def copy_to_clipboard(data):
     t.destroy()
 
 
-def generate_db(directory, fingerprint, mkey, passphrase):
-    mkey = hashlib.sha256(mkey).digest()
-    dbname = directory + '/generic.db'
-    a = Axolotl('b', dbname, None)
-    a.loadState('b', 'a')
-    a.dbname = directory + '/' + fingerprint + '.db'
-    a.dbpassphrase = passphrase
-    if a.mode:  # alice mode
-        RK = pbkdf2(mkey, b'\x00', 10, prf='hmac-sha256')
-        HKs = pbkdf2(mkey, b'\x01', 10, prf='hmac-sha256')
-        HKr = pbkdf2(mkey, b'\x02', 10, prf='hmac-sha256')
-        NHKs = pbkdf2(mkey, b'\x03', 10, prf='hmac-sha256')
-        NHKr = pbkdf2(mkey, b'\x04', 10, prf='hmac-sha256')
-        CKs = pbkdf2(mkey, b'\x05', 10, prf='hmac-sha256')
-        CKr = pbkdf2(mkey, b'\x06', 10, prf='hmac-sha256')
-        CONVid = pbkdf2(mkey, b'\x07', 10, prf='hmac-sha256')
-    else:  # bob mode
-        RK = pbkdf2(mkey, b'\x00', 10, prf='hmac-sha256')
-        HKs = pbkdf2(mkey, b'\x02', 10, prf='hmac-sha256')
-        HKr = pbkdf2(mkey, b'\x01', 10, prf='hmac-sha256')
-        NHKs = pbkdf2(mkey, b'\x04', 10, prf='hmac-sha256')
-        NHKr = pbkdf2(mkey, b'\x03', 10, prf='hmac-sha256')
-        CKs = pbkdf2(mkey, b'\x06', 10, prf='hmac-sha256')
-        CKr = pbkdf2(mkey, b'\x05', 10, prf='hmac-sha256')
-        CONVid = pbkdf2(mkey, b'\x07', 10, prf='hmac-sha256')
+def create_axolotl(nym, directory):
+    # workaround to suppress prints by pyaxo
+    sys.stdout = open(os.devnull, 'w')
+    try:
+        axolotl = Axolotl(name=nym.fingerprint,
+                          dbname=os.path.join(directory, nym.fingerprint + '.db'),
+                          dbpassphrase=nym.passphrase)
+    except SystemExit:
+        sys.stdout = sys.__stdout__
+        raise errors.IncorrectPassphraseError()
+    else:
+        sys.stdout = sys.__stdout__
+        return axolotl
 
-    a.state['RK'] = RK
-    a.state['HKs'] = HKs
-    a.state['HKr'] = HKr
-    a.state['NHKs'] = NHKs
-    a.state['NHKr'] = NHKr
-    a.state['CKs'] = CKs
-    a.state['CKr'] = CKr
-    a.state['CONVid'] = CONVid
-    a.state['name'] = fingerprint
-    a.state['other_name'] = 'a'
 
-    with a.db:
-        cur = a.db.cursor()
-        cur.execute('DELETE FROM conversations WHERE my_identity = "b"')
-        a.saveState()
+def create_state(axolotl, other_name, mkey):
+    if os.path.exists(axolotl.dbname):
+        os.unlink(axolotl.dbname)
+    # Based on the latest protocol specification (Oct/2014), Alice is
+    # the one that starts ratcheting the keys. Therefore, she needs
+    # needs Bob's Diffie-Hellman Ratchet Key (DHR). Since the nym
+    # already sends the master key to the nym server to be created,
+    # it makes more sense to assign mode Bob (False) to the nym and
+    # Alice (True) to the nym server, so that the ratchet key is also
+    # sent in the same message.
+    axolotl.createState(other_name=other_name,
+                        mkey=hashlib.sha256(mkey).digest(),
+                        mode=False)
+    axolotl.saveState()
 
 
 class Client:
@@ -319,7 +305,6 @@ class Client:
         try:
             self.load_configs()
             create_directory(self.directory_db)
-            copyfile(BASE_FILES_PATH + '/db/generic.db', self.directory_db + '/generic.db')
             create_directory(self.directory_read_messages)
             create_directory(self.directory_unread_messages)
         except IOError:
@@ -464,15 +449,7 @@ class Client:
             nym.fingerprint = result[0].fingerprint
             if not nym.fingerprint:
                 raise errors.FingerprintNotFoundError(nym.address)
-            db_name = self.directory_db + '/' + nym.fingerprint + '.db'
-            try:
-                # workaround to suppress prints by pyaxo
-                sys.stdout = open(os.devnull, 'w')
-                self.axolotl = Axolotl(nym.fingerprint, db_name, nym.passphrase)
-                sys.stdout = sys.__stdout__
-            except SystemExit:
-                sys.stdout = sys.__stdout__
-                raise errors.IncorrectPassphraseError()
+            self.axolotl = create_axolotl(nym, self.directory_db)
         self.nym = nym
         self.hsubs = self.retrieve_hsubs()
         if not creating_nym:
@@ -621,20 +598,23 @@ class Client:
     def send_create(self, ephemeral, hsub, name, duration):
         recipient = 'config@' + self.nym.server
         pubkey, fingerprint = generate_key(self.gpg, name, self.nym.address, self.nym.passphrase, duration)
-        generate_db(self.directory_db, fingerprint, ephemeral, self.nym.passphrase)
+        nym = Nym(self.nym.address, self.nym.passphrase, fingerprint, hsub)
+        axolotl = create_axolotl(nym, self.directory_db)
 
         lines = []
         lines.append('ephemeral: ' + ephemeral)
+        lines.append('ratchet: ' + b2a_base64(axolotl.state['DHRs']).strip())
         lines.append('hsub: ' + hsub)
         lines.append(pubkey)
         data = '\n'.join(lines)
 
-        self.nym.fingerprint = fingerprint
-        self.nym.hsub = hsub
         success, info, ciphertext = self.encrypt_and_send(data, recipient, self.nym)
         if success:
-            db_name = self.directory_db + '/' + self.nym.fingerprint + '.db'
-            self.axolotl = Axolotl(self.nym.fingerprint, db_name, self.nym.passphrase)
+            create_state(axolotl=axolotl,
+                         other_name=self.nym.server,
+                         mkey=ephemeral)
+            self.axolotl = axolotl
+            self.nym = nym
             self.add_hsub(self.nym)
         return success, info, ciphertext
 
@@ -653,7 +633,7 @@ class Client:
         content = '\n'.join(lines)
         msg = message_from_string(content).as_string().strip()
 
-        self.axolotl.loadState(self.nym.fingerprint, 'a')
+        self.axolotl.loadState(self.nym.fingerprint, self.nym.server)
         ciphertext = b2a_base64(self.axolotl.encrypt(msg)).strip()
         self.axolotl.saveState()
 
@@ -665,12 +645,13 @@ class Client:
         return self.encrypt_and_send(pgp_message, recipient, self.nym)
 
     def send_config(self, ephemeral='', hsub='', name=''):
-        db_file = self.directory_db + '/' + self.nym.fingerprint + '.db'
+        axolotl = create_axolotl(self.nym, self.directory_base)
         recipient = 'config@' + self.nym.server
 
         lines = []
         if ephemeral:
             lines.append('ephemeral: ' + str(ephemeral))
+            lines.append('ratchet: ' + b2a_base64(axolotl.state['DHRs']).strip())
         if hsub:
             lines.append('hsub: ' + str(hsub))
         if name:
@@ -682,9 +663,9 @@ class Client:
             success, info, ciphertext = self.encrypt_and_send(data, recipient, self.nym)
             if success:
                 if ephemeral:
-                    if os.path.exists(db_file):
-                        os.unlink(db_file)
-                    generate_db(self.directory_db, self.nym.fingerprint, ephemeral, self.nym.passphrase)
+                    create_state(axolotl=axolotl,
+                                 other_name=self.nym.server,
+                                 mkey=ephemeral)
                 if hsub:
                     self.nym.hsub = hsub
                     self.add_hsub(self.nym)
@@ -774,7 +755,7 @@ class Client:
 
     def decrypt_ephemeral_data(self, data):
         ciphertext = None
-        self.axolotl.loadState(self.nym.fingerprint, 'a')
+        self.axolotl.loadState(self.nym.fingerprint, self.nym.server)
         # workaround to suppress prints by pyaxo
         sys.stdout = open(os.devnull, 'w')
         try:
