@@ -53,9 +53,6 @@ setup(
     packages=[
         'nymphemeral',
     ],
-    py_modules=[
-        'hsub',
-    ],
     scripts=[
         'scripts/nymphemeral',
     ],
