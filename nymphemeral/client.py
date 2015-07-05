@@ -52,14 +52,14 @@ def search_block(data, beginning, end):
     Return None if beginning or end are not found
     """
 
-    msg = ''
+    block = ''
     for line in data.splitlines():
-        if msg:
-            msg += line + '\n'
+        if block:
+            block += line + '\n'
             if line == end:
-                return msg
+                return block
         elif line == beginning:
-            msg = line + '\n'
+            block = line + '\n'
     return None
 
 
