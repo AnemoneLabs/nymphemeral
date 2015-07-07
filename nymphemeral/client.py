@@ -5,7 +5,7 @@ import subprocess
 import sys
 import time
 from binascii import b2a_base64, a2b_base64
-from ConfigParser import ConfigParser
+from ConfigParser import ConfigParser, MissingSectionHeaderError, NoOptionError, NoSectionError
 from email import message_from_string
 from threading import Thread
 from Tkinter import Tk
@@ -336,20 +336,27 @@ class Client:
             self.cfg.set('newsgroup', 'server', 'localhost')
             self.cfg.set('newsgroup', 'port', '119')
 
-            # parse existing configs in case new versions modify them
-            # or the user modifies the file inappropriately
+            # parse existing configs in case:
+            #   - new versions add/remove sections/options
+            #   - user modifies the file inappropriately
+            # a working config file will be written to disk after the process,
+            # overwriting the existing one
             if os.path.exists(CONFIG_FILE):
                 saved_cfg = ConfigParser()
-                saved_cfg.read(CONFIG_FILE)
-                for section in saved_cfg.sections():
-                    try:
+                try:
+                    saved_cfg.read(CONFIG_FILE)
+                except MissingSectionHeaderError:
+                    pass
+                else:
+                    for section in self.cfg.sections():
                         for option in self.cfg.options(section):
                             try:
-                                self.cfg.set(section, option, saved_cfg.get(section, option))
-                            except:
+                                self.cfg.set(section, option,
+                                             saved_cfg.get(section, option))
+                            except NoSectionError:
+                                break
+                            except NoOptionError:
                                 pass
-                    except:
-                        pass
             else:
                 create_directory(NYMPHEMERAL_PATH)
             self.save_configs()
