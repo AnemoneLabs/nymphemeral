@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import os
 import re
 import subprocess
@@ -14,6 +15,7 @@ import gnupg
 from pyaxo import Axolotl
 
 import errors
+from __init__ import logger
 from aampy import AAMpy
 from message import Message
 from nym import Nym
@@ -28,6 +30,16 @@ OUTPUT_METHOD = {
     'sendmail': 2,
     'manual': 3,
 }
+LOGGER_LEVEL = {
+    'debug': logging.DEBUG,
+    'info': logging.INFO,
+    'warning': logging.WARNING,
+    'error': logging.ERROR,
+    'critical': logging.CRITICAL,
+}
+
+
+log = logging.getLogger(__name__)
 
 
 def files_in_path(path):
@@ -74,7 +86,7 @@ def read_data(identifier):
         with open(identifier, 'r') as f:
             return f.read()
     except IOError:
-        print 'Error while reading ' + identifier
+        log.error('IOError while reading ' + identifier)
     return None
 
 
@@ -84,7 +96,7 @@ def save_data(data, identifier):
             f.write(data)
             return True
     except IOError:
-        print 'Error while writing to ' + identifier
+        log.error('IOError while writing to ' + identifier)
     return False
 
 
@@ -297,9 +309,7 @@ class Client:
 
         self.chain = self.retrieve_mix_chain()
 
-    def debug(self, info):
-        if self.is_debugging:
-            print info
+        log.debug('Initialized')
 
     def check_base_files(self):
         try:
@@ -308,7 +318,7 @@ class Client:
             create_directory(self.directory_read_messages)
             create_directory(self.directory_unread_messages)
         except IOError:
-            print 'Error while creating the base files'
+            log.error('IOError while creating base files')
             raise
 
     def load_configs(self):
@@ -324,7 +334,7 @@ class Client:
             self.cfg.set('main', 'unread_folder', '%(messages_folder)s/unread')
             self.cfg.set('main', 'hsub_file', '%(base_folder)s/hsubs.txt')
             self.cfg.set('main', 'encrypted_hsub_file', '%(base_folder)s/encrypted_hsubs.txt')
-            self.cfg.set('main', 'debug_switch', 'False')
+            self.cfg.set('main', 'logger_level', 'warning')
             self.cfg.set('main', 'output_method', 'manual')
             self.cfg.add_section('mixmaster')
             self.cfg.set('mixmaster', 'base_folder', USER_PATH + '/Mix')
@@ -368,12 +378,23 @@ class Client:
             self.directory_unread_messages = self.cfg.get('main', 'unread_folder')
             self.file_hsub = self.cfg.get('main', 'hsub_file')
             self.file_encrypted_hsub = self.cfg.get('main', 'encrypted_hsub_file')
-            self.is_debugging = self.cfg.getboolean('main', 'debug_switch')
             self.output_method = self.cfg.get('main', 'output_method')
             self.file_mix_binary = self.cfg.get('mixmaster', 'binary')
             self.file_mix_cfg = self.cfg.get('mixmaster', 'cfg')
+
+            try:
+                level = LOGGER_LEVEL[self.cfg.get('main', 'logger_level')]
+            except KeyError:
+                level = logging.WARNING
+                log.warn('Option logger_level from [main] section of %s is '
+                         'incorrect. Should be: %s. Using the default: warning'
+                         % (CONFIG_FILE, ', '.join(LOGGER_LEVEL.keys())))
+            logger.setLevel(level)
+
+            log.debug('Configs have been loaded')
         except IOError:
-            print 'Error while opening ' + str(CONFIG_FILE).split('/')[-1]
+            log.error('Configs could not be loaded. IOError while reading ' +
+                      CONFIG_FILE)
             raise
 
     def save_configs(self):
@@ -388,7 +409,7 @@ class Client:
         group = self.cfg.get('newsgroup', 'group')
         server = self.cfg.get('newsgroup', 'server')
         port = self.cfg.get('newsgroup', 'port')
-        return AAMpy(self.directory_unread_messages, group, server, port, self.is_debugging)
+        return AAMpy(self.directory_unread_messages, group, server, port)
 
     def retrieve_mix_chain(self):
         chain = None
@@ -401,7 +422,8 @@ class Client:
                         chain = 'Mix Chain: ' + s.group(2)
                         break
         except IOError:
-            self.debug('Error while manipulating ' + self.file_mix_cfg.split('/')[-1])
+            log.error('IOError while manipulating ' +
+                      self.file_mix_cfg.split('/')[-1])
         return chain
 
     def save_key(self, key, server=None):
@@ -488,7 +510,8 @@ class Client:
             encrypted_data = read_data(self.file_encrypted_hsub)
             return decrypt_data(self.gpg, encrypted_data, self.nym.passphrase)
         else:
-            self.debug('Decryption of ' + self.file_encrypted_hsub + ' failed. It does not exist')
+            log.info('Decryption of ' + self.file_encrypted_hsub + ' failed. '
+                     'It does not exist')
         return None
 
     def save_hsubs(self, hsubs):
@@ -510,7 +533,8 @@ class Client:
             if output_file == self.file_encrypted_hsub:
                 if os.path.exists(self.file_hsub):
                     os.unlink(self.file_hsub)
-                self.debug('The hsubs were encrypted and saved to ' + self.file_encrypted_hsub)
+                log.info('hSub passphrases were encrypted and saved to ' +
+                         self.file_encrypted_hsub)
             return True
         else:
             return False
@@ -530,7 +554,8 @@ class Client:
             try:
                 os.unlink(hsub_file)
             except IOError:
-                print 'Error while manipulating ' + hsub_file.split('/')[-1]
+                log.error('IOError while manipulating ' +
+                          hsub_file.split('/')[-1])
                 return False
         else:
             return self.save_hsubs(self.hsubs)
@@ -586,7 +611,8 @@ class Client:
                                                       self.nym.passphrase)
                         if encrypted_data:
                             save_data(encrypted_data, file_path)
-                            self.debug(file_path.split('/')[-1] + ' is now encrypted')
+                            log.debug(file_path.split('/')[-1] + ' is now'
+                                      'encrypted')
                 new_message = Message(not read_messages, data, file_path)
                 if new_message.date:
                     messages.append(new_message)
@@ -720,7 +746,7 @@ class Client:
         elif self.output_method == 'sendmail':
             p = subprocess.Popen(['sendmail', '-t'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         else:
-            self.debug('Invalid send choice')
+            log.error('Invalid send choice: ' + self.output_method)
             return False
         output, output_error = p.communicate(data)
         if output_error:
@@ -769,7 +795,7 @@ class Client:
             ciphertext = self.axolotl.decrypt(a2b_base64(data)).strip()
         except SystemExit:
             sys.stdout = sys.__stdout__
-            self.debug('Error while decrypting message')
+            log.info('Error while decrypting message')
         else:
             sys.stdout = sys.__stdout__
             self.axolotl.saveState()
@@ -786,14 +812,14 @@ class Client:
         ciphertext = self.decrypt_ephemeral_data(data)
         self.delete_message_from_disk(msg)
         if ciphertext:
-            self.debug('Ephemeral layer decrypted')
+            log.debug('Ephemeral layer decrypted')
             plaintext = decrypt_data(self.gpg, ciphertext, self.nym.passphrase)
             if plaintext:
-                self.debug('Asymmetric layer decrypted')
+                log.debug('Asymmetric layer decrypted')
             else:
                 plaintext = ciphertext
                 if search_pgp_message(ciphertext):
-                    self.debug('Asymmetric layer not decrypted')
+                    log.debug('Asymmetric layer not decrypted')
                     plaintext = 'The asymmetric layer encrypted by the server could not be decrypted:\n\n' + ciphertext
             return Message(False, plaintext, msg.identifier)
         else:
@@ -864,7 +890,7 @@ class Client:
 
         data = search_pgp_message(msg.content)
         if not data:
-            self.debug('Not a PGP message to be decrypted')
+            log.debug('Not a PGP message to be decrypted')
             raise errors.UndecipherableMessageError()
 
         gpg = new_gpg(self.directory_base, self.use_agent)
@@ -872,7 +898,7 @@ class Client:
         gpg_info = ''
 
         if result.ok:
-            self.debug('End-to-end layer decrypted')
+            log.debug('End-to-end layer decrypted')
 
             lines = result.stderr.splitlines()
 
@@ -905,7 +931,7 @@ class Client:
 
             return Message(False, full_msg, msg.identifier)
         else:
-            self.debug('End-to-end layer not decrypted')
+            log.debug('End-to-end layer not decrypted')
             raise errors.UndecipherableMessageError()
 
     def save_message_to_disk(self, msg):
@@ -916,23 +942,24 @@ class Client:
             if ciphertext:
                 data = ciphertext
             else:
-                self.debug('Message encryption failed. Will be saved as plain text')
+                log.warn('Message encryption failed. Will be saved as plain'
+                         'text')
             if save_data(data, new_identifier):
-                self.debug('Message saved to disk')
+                log.info('Message saved to disk')
                 msg.identifier = new_identifier
                 return True
             else:
-                self.debug('Message could not be saved')
+                log.error('Message could not be saved')
         except IOError:
-            print 'Error while saving to disk' + ':', sys.exc_info()[0]
+            log.error('IOError while saving message to disk')
         return False
 
     def delete_message_from_disk(self, msg):
         try:
             if os.path.exists(msg.identifier):
                 os.unlink(msg.identifier)
-                self.debug('Message deleted from disk')
+                log.info('Message deleted from disk')
             return True
         except IOError:
-            print 'Error while deleting from disk' + ':', sys.exc_info()[0]
+            log.error('IOError while deleting from disk')
         return False

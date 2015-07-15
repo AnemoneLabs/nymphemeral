@@ -32,5 +32,18 @@ For more information, see https://github.com/felipedau/nymphemeral
 
 __author__ = 'Felipe Dau and David R. Andersen'
 __license__ = 'GPL'
-__version__ = '1.3.2.5'
+__version__ = '1.3.2.6'
 __status__ = 'Beta'
+
+import logging
+
+FORMAT = '%(levelname)s - %(name)s: %(message)s'
+
+handler = logging.StreamHandler()
+handler.setFormatter(logging.Formatter(FORMAT))
+
+logger = logging.getLogger()
+logger.addHandler(handler)
+
+# let gnupg log only errors
+logging.getLogger('gnupg').setLevel(logging.ERROR)

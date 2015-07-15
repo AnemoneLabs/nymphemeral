@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 For more information, https://github.com/felipedau/nymphemeral
 """
+import logging
 import nntplib
 import socket
 import string
@@ -38,19 +39,23 @@ from dateutil import parser, tz
 import hsub
 
 
+log = logging.getLogger(__name__)
+
+
 class AAMpy(object):
-    def __init__(self, directory, group, server, port, is_debugging=False):
+    def __init__(self, directory, group, server, port):
         self._directory = directory
         self._group = group
         self._server = server
         self._port = port
-        self._is_debugging = is_debugging
 
         self._event = None
         self._is_running = None
         self._server_found = None
         self._timestamp = None
         self._progress_ratio = None
+
+        log.debug('Initialized')
 
     @property
     def event(self):
@@ -84,9 +89,6 @@ class AAMpy(object):
         self._event.set()
 
     def retrieve_messages(self, hsubs):
-        if self._is_debugging:
-            print 'aampy is running'
-
         self._server_found = False
         self._timestamp = None
         self._progress_ratio = None
@@ -95,8 +97,7 @@ class AAMpy(object):
         try:
             server = nntplib.NNTP(self._server, self._port)
         except socket.error:
-            if self._is_debugging:
-                print 'The news server cannot be found'
+            log.warn('The news server cannot be found')
             self.stop()
             return
         else:
@@ -107,13 +108,15 @@ class AAMpy(object):
             timestamp = float(temp_hsubs['time'])
         except KeyError:
             timestamp = time.time() - 3600.0
-            if self._is_debugging:
-                print 'Timestamp not found, aampy will download messages from last hour'
+            log.info('Timestamp not found. Set to the last hour')
         else:
             del temp_hsubs['time']
 
         YYMMDD = time.strftime('%y%m%d', time.gmtime(timestamp))
         HHMMSS = time.strftime('%H%M%S', time.gmtime(timestamp))
+
+        log.info('Retrieving new messages since ' +
+                 time.strftime('%Y-%m-%d %H:%M:%S %z', time.gmtime(timestamp)))
 
         # download messages
         response, articles = server.newnews(self._group, YYMMDD, HHMMSS)
@@ -123,8 +126,7 @@ class AAMpy(object):
 
         for msg_id in articles:
             if self._event.is_set():
-                if self._is_debugging:
-                    print 'aampy was interrupted'
+                log.info('Message retrieval was interrupted')
                 return
             try:
                 resp, id, message_id, text = server.article(msg_id)
@@ -142,13 +144,13 @@ class AAMpy(object):
                             for nick, passphrase in temp_hsubs.items():
                                 # if match: write message to file
                                 if hsub.hash(passphrase, iv, subject_length) == subject:
-                                    if self._is_debugging:
-                                        print 'Found a message for nickname ' + nick
+                                    log.info('Found a message for nickname ' +
+                                             nick)
                                     file_name = 'message_' + nick + '_' + message_id[1:6] + '.txt'
                                     with open(self._directory + '/' + file_name, 'w') as f:
                                         f.write(message.as_string()+'\n')
-                                        if self._is_debugging:
-                                            print 'Encrypted message stored in ' + file_name
+                                        log.info('Encrypted message stored in '
+                                                 + file_name)
                 date = parser.parse(message.get('Date'))
                 if date:
                     self._timestamp = float(timegm(date.astimezone(tz.tzutc()).timetuple()))
@@ -158,6 +160,5 @@ class AAMpy(object):
         if self._timestamp == timestamp:
             self._timestamp = None
 
-        if self._is_debugging:
-            print 'aampy is done'
+        log.info('Message retrieval is done')
         self.stop()

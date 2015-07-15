@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import logging
 import operator
 import os
 import Tkinter as Tk
@@ -11,6 +12,9 @@ from client import OUTPUT_METHOD, search_pgp_message, retrieve_keyids, retrieve_
 from nym import Nym
 
 from __init__ import __version__
+
+
+log = logging.getLogger(__name__)
 
 
 def write_on_text(text, content, clear=True):
@@ -32,6 +36,8 @@ class Gui:
 
         self.window_login = LoginWindow(self, self.client)
         self.window_main = None
+
+        log.debug('Initialized')
 
     def start_session(self, creating_nym):
         self.window_login.destroy()
