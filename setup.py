@@ -4,7 +4,6 @@ except ImportError:
     from distutils.core import setup
 
 import platform
-from glob import glob
 from subprocess import call
 
 distro = platform.linux_distribution()[0].lower()
@@ -27,14 +26,14 @@ if distro in manager:
     packages_string = ' '.join(packages_list)
 
 if not_installed:
-    print 'Cannot verify if all/some of these packages are installed: ' + packages_string + '.You might have to do ' \
-                                                                                            'it manually'
+    print 'Cannot verify if all/some of these packages are installed: ' + \
+          packages_string + '.You might have to do it manually'
 
-BASE_DIRECTORY = '/usr/share/nymphemeral'
+BASE_DIRECTORY = '/nymphemeral'
 
 setup(
     name='nymphemeral',
-    version='1.3.2.0.3',
+    version='1.3.2.0.4',
     description='An ephemeral nym GUI client',
     url='https://github.com/felipedau/nymphemeral',
     author='Felipe Dau',
@@ -65,9 +64,9 @@ setup(
         'python-dateutil>=2.2',
     ],
     data_files=[
-        (BASE_DIRECTORY, ['COPYING']),
-        (BASE_DIRECTORY, ['README.rst']),
-        (BASE_DIRECTORY + '/db', glob('db/generic.db')),
-        (BASE_DIRECTORY + '/connections', glob('connections/*')),
+        (BASE_DIRECTORY + '/db', ['db/generic.db']),
+        (BASE_DIRECTORY + '/connections', ['connections/socnews.sh']),
+        (BASE_DIRECTORY + '/connections', ['connections/socsmtp.sh']),
+        (BASE_DIRECTORY + '/connections', ['connections/stunnel.conf']),
     ],
 )

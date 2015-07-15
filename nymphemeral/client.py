@@ -2,6 +2,7 @@ import os
 import re
 import subprocess
 import hashlib
+import site
 import sys
 import shutil
 import threading
@@ -21,7 +22,7 @@ import errors
 from nym import Nym
 
 
-BASE_FILES_PATH = '/usr/share/nymphemeral'
+BASE_FILES_PATH = os.path.join(site.getsitepackages()[0], 'nymphemeral')
 USER_PATH = os.path.expanduser('~')
 NYMPHEMERAL_PATH = USER_PATH + '/.config/nymphemeral'
 CONFIG_FILE = NYMPHEMERAL_PATH + '/nymphemeral.cfg'
@@ -319,7 +320,8 @@ class Client:
         try:
             self.load_configs()
             create_directory(self.directory_db)
-            shutil.copyfile(BASE_FILES_PATH + '/db/generic.db', self.directory_db + '/generic.db')
+            shutil.copyfile(os.path.join(BASE_FILES_PATH, 'db', 'generic.db'),
+                            os.path.join(self.directory_db, 'generic.db'))
             create_directory(self.directory_read_messages)
             create_directory(self.directory_unread_messages)
         except IOError:
