@@ -34,7 +34,7 @@ BASE_DIRECTORY = '/usr/share/nymphemeral'
 
 setup(
     name='nymphemeral',
-    version='1.3.2.0.2',
+    version='1.3.2.0.3',
     description='An ephemeral nym GUI client',
     url='https://github.com/felipedau/nymphemeral',
     author='Felipe Dau',
@@ -60,7 +60,7 @@ setup(
         'scripts/nymphemeral',
     ],
     install_requires=[
-        'pyaxo>=0.3.5',
+        'pyaxo>=0.3.5, <=0.3.8',
         'python-gnupg>=0.3.5',
         'python-dateutil>=2.2',
     ],
