@@ -21,7 +21,6 @@ from message import Message
 from nym import Nym
 
 
-BASE_FILES_PATH = '/usr/share/nymphemeral'
 USER_PATH = os.path.expanduser('~')
 NYMPHEMERAL_PATH = USER_PATH + '/.config/nymphemeral'
 CONFIG_FILE = NYMPHEMERAL_PATH + '/nymphemeral.cfg'
