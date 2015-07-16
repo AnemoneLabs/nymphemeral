@@ -29,11 +29,9 @@ if not_installed:
     print 'Cannot verify if all/some of these packages are installed: ' + \
           packages_string + '.You might have to do it manually'
 
-BASE_DIRECTORY = '/nymphemeral'
-
 setup(
     name='nymphemeral',
-    version='1.3.2.0.4',
+    version='1.3.2.0.5',
     description='An ephemeral nym GUI client',
     url='https://github.com/felipedau/nymphemeral',
     author='Felipe Dau',
@@ -52,6 +50,9 @@ setup(
     packages=[
         'nymphemeral',
     ],
+    package_data={
+        'nymphemeral': ['generic.db'],
+    },
     py_modules=[
         'hsub',
     ],
@@ -62,11 +63,5 @@ setup(
         'pyaxo>=0.3.5, <=0.3.8',
         'python-gnupg>=0.3.5',
         'python-dateutil>=2.2',
-    ],
-    data_files=[
-        (BASE_DIRECTORY + '/db', ['db/generic.db']),
-        (BASE_DIRECTORY + '/connections', ['connections/socnews.sh']),
-        (BASE_DIRECTORY + '/connections', ['connections/socsmtp.sh']),
-        (BASE_DIRECTORY + '/connections', ['connections/stunnel.conf']),
     ],
 )

@@ -34,7 +34,7 @@ import operator
 
 __author__ = 'Felipe Dau and David R. Andersen'
 __license__ = 'GPL'
-__version__ = '1.3.2.0.4'
+__version__ = '1.3.2.0.5'
 __status__ = 'Beta'
 
 import Tkinter as tk

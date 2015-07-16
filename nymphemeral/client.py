@@ -320,7 +320,7 @@ class Client:
         try:
             self.load_configs()
             create_directory(self.directory_db)
-            shutil.copyfile(os.path.join(BASE_FILES_PATH, 'db', 'generic.db'),
+            shutil.copyfile(os.path.join(BASE_FILES_PATH, 'generic.db'),
                             os.path.join(self.directory_db, 'generic.db'))
             create_directory(self.directory_read_messages)
             create_directory(self.directory_unread_messages)
