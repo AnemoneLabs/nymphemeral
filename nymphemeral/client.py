@@ -655,7 +655,8 @@ class Client:
 
         lines = []
         lines.append('To: ' + target_address)
-        lines.append('Subject: ' + subject)
+        if len(subject):
+            lines.append('Subject: ' + subject)
         for header in headers.splitlines():
             h = header.strip()
             if len(h):
