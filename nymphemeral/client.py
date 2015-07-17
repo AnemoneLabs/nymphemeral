@@ -689,6 +689,13 @@ class Client:
         return self.encrypt_and_send(pgp_message, recipient, self.nym)
 
     def send_config(self, ephemeral='', hsub='', name=''):
+        ephemeral = ephemeral.strip()
+        hsub = hsub.strip()
+        name = name.strip()
+
+        if not (ephemeral or hsub or name):
+            raise errors.EmptyChangesError()
+
         axolotl = create_axolotl(self.nym, self.directory_base)
         recipient = 'config@' + self.nym.server
 

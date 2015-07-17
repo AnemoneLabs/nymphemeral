@@ -878,12 +878,17 @@ class ConfigTab(Tk.Frame, object):
         self.button_delete_config.config(state=Tk.DISABLED)
 
     def send_config(self, ephemeral, hsub, name):
-        if ephemeral or hsub or name:
-            if tkMessageBox.askyesno('Confirm', 'Are you sure you want to configure the nym?'):
-                success, info, ciphertext = self.client.send_config(ephemeral, hsub, name)
+        if tkMessageBox.askyesno('Confirm',
+                                 'Are you sure you want to reconfigure the '
+                                 'nym?'):
+            try:
+                success, info, ciphertext = self.client.send_config(ephemeral,
+                                                                    hsub,
+                                                                    name)
+            except errors.EmptyChangesError as e:
+                tkMessageBox.showerror(e.title, e.message)
+            else:
                 write_on_text(self.text_config, [info, ciphertext])
-        else:
-            tkMessageBox.showinfo('Input Error', 'No changes provided')
 
     def send_delete(self):
         if tkMessageBox.askyesno('Confirm', 'Are you sure you want to delete the nym?'):

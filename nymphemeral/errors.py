@@ -98,3 +98,10 @@ class EmptyBodyError(NymphemeralError):
     def __init__(self):
         self.title = 'Empty Body'
         self.message = 'The message must have a body.'
+
+
+class EmptyChangesError(NymphemeralError):
+    def __init__(self):
+        self.title = 'Empty Changes'
+        self.message = 'The configuration message must have at least one ' + \
+                       'change.'
