@@ -86,3 +86,15 @@ class UndecipherableMessageError(NymphemeralError):
     def __init__(self):
         self.title = 'Undecipherable Message'
         self.message = 'The message could not be deciphered.'
+
+
+class EmptyTargetError(NymphemeralError):
+    def __init__(self):
+        self.title = 'Empty Target'
+        self.message = 'The message must have a target.'
+
+
+class EmptyBodyError(NymphemeralError):
+    def __init__(self):
+        self.title = 'Empty Body'
+        self.message = 'The message must have a body.'

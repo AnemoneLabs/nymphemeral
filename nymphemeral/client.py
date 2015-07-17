@@ -650,7 +650,17 @@ class Client:
             self.add_hsub(self.nym)
         return success, info, ciphertext
 
-    def send_message(self, target_address, subject, headers, body):
+    def send_message(self, target_address, body, subject='', headers=''):
+        target_address = target_address.strip()
+        body = body.strip()
+        subject = subject.strip()
+        headers = headers.strip()
+
+        if not len(target_address):
+            raise errors.EmptyTargetError()
+        if not len(body):
+            raise errors.EmptyBodyError()
+
         recipient = 'send@' + self.nym.server
 
         lines = []
@@ -663,6 +673,7 @@ class Client:
                 lines.append(h)
         lines.append('')
         lines.append(body)
+        lines.append('')
         content = '\n'.join(lines)
         msg = message_from_string(content).as_string().strip()
 

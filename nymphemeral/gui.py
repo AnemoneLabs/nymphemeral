@@ -734,12 +734,12 @@ class SendTab(Tk.Frame, object):
 
         # send button
         button_send = Tk.Button(frame_tab, text='Send',
-                                command=lambda: self.send_message(self.entry_target_send.get().strip(),
-                                                                  self.entry_subject_send.get().strip(),
-                                                                  self.text_header.get(1.0, Tk.END).strip(),
-                                                                  self.text_body.get(1.0, Tk.END).strip(),
-                                                                  self.entry_e2ee_target_send.get().strip(),
-                                                                  self.entry_e2ee_signer_send.get().strip()))
+                                command=lambda: self.send_message(self.entry_target_send.get(),
+                                                                  self.entry_subject_send.get(),
+                                                                  self.text_header.get(1.0, Tk.END),
+                                                                  self.text_body.get(1.0, Tk.END),
+                                                                  self.entry_e2ee_target_send.get(),
+                                                                  self.entry_e2ee_signer_send.get()))
         button_send.grid(pady=(10, 0))
 
     def compose_message(self, msg):
@@ -763,9 +763,10 @@ class SendTab(Tk.Frame, object):
         self.gui.window_main.select_tab(self)
         self.text_body.focus_set()
 
-    def send_message(self, target_address, subject, headers, body, e2ee_target='', e2ee_signer=''):
-        if not body.endswith('\n'):
-            body += '\n'
+    def send_message(self, target_address, subject, headers, body,
+                     e2ee_target='', e2ee_signer=''):
+        e2ee_target = e2ee_target.strip()
+        e2ee_signer = e2ee_signer.strip()
         try:
             e2ee_target_info = ''
             # check if end-to-end encryption is intended
@@ -807,10 +808,14 @@ class SendTab(Tk.Frame, object):
                     body = self.client.encrypt_e2ee_data(body,
                                                          target_key,
                                                          throw_keyids=throw_keyids)
+            success, info, ciphertext = \
+                self.client.send_message(target_address,
+                                         body,
+                                         subject,
+                                         headers)
         except errors.NymphemeralError as e:
             tkMessageBox.showerror(e.title, e.message)
         else:
-            success, info, ciphertext = self.client.send_message(target_address, subject, headers, body)
             write_on_text(self.text_body, [info, e2ee_target_info, ciphertext])
 
 
