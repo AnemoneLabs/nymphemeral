@@ -728,7 +728,7 @@ class Client:
                 copy_to_clipboard(ciphertext)
                 info += '\nIt has been copied to the clipboard'
             else:
-                data = 'To: ' + recipient + '\nSubject: test\n\n' + ciphertext
+                data = 'To: ' + recipient + '\n\n' + ciphertext
                 if self.send_data(data):
                     info = 'The following message was successfully sent to ' + recipient
                 else:
