@@ -7,7 +7,8 @@ class NymphemeralError(Exception):
 class AmbiguousUidError(NymphemeralError):
     def __init__(self, uid):
         self.title = 'Ambiguous UID'
-        self.message = '"' + uid + '" has multiple fingerprints. Be more specific.'
+        self.message = '"' + uid + \
+                       '" has multiple fingerprints. Be more specific.'
 
 
 class InvalidEmailAddressError(NymphemeralError):
@@ -25,7 +26,8 @@ class InvalidPassphraseError(NymphemeralError):
 class NymservNotFoundError(NymphemeralError):
     def __init__(self, nymserv):
         self.title = 'Nym Server Not Found'
-        self.message = '"' + nymserv + '" public key could not be found in the keyring.'
+        self.message = '"' + nymserv + \
+                       '" public key could not be found in the keyring.'
 
 
 class NymNotFoundError(NymphemeralError):
@@ -37,25 +39,29 @@ class NymNotFoundError(NymphemeralError):
 class NewsserverNotFoundError(NymphemeralError):
     def __init__(self, server, port):
         self.title = 'Socket Error'
-        self.message = 'The server running on ' + server + ':' + str(port) + ' could not be found.'
+        self.message = 'The server running on ' + \
+                       server + ':' + str(port) + ' could not be found.'
 
 
 class FingerprintNotFoundError(NymphemeralError):
     def __init__(self, query):
         self.title = 'Fingerprint Not Found'
-        self.message = 'The fingerprint for "' + query + '" could not be found in the keyring.'
+        self.message = 'The fingerprint for "' + query + \
+                       '" could not be found in the keyring.'
 
 
 class KeyNotFoundError(NymphemeralError):
     def __init__(self, query):
         self.title = 'Key Not Found'
-        self.message = 'The key for "' + query + '" could not be found in the keyring.'
+        self.message = 'The key for "' + query + \
+                       '" could not be found in the keyring.'
 
 
 class SecretKeyNotFoundError(NymphemeralError):
     def __init__(self, query):
         self.title = 'Scret Key Not Found'
-        self.message = 'The secret key for "' + query + '" could not be found in the keyring.'
+        self.message = 'The secret key for "' + query + \
+                       '" could not be found in the keyring.'
 
 
 class IncorrectPassphraseError(NymphemeralError):
