@@ -69,10 +69,32 @@ by Python's logging module. You can choose from:
 every message will be logged from ``debug`` to ``critical``.
 (Default: ``warning``)
 
+.. _cfg_mix:
+
 [mixmaster]
 '''''''''''
-You can set ``base_folder`` to point to your *Mixmaster* installation.
-(Default: ``~/Mix``).
+This section defines the paths nymphemeral searches for *Mixmaster's*
+binary and config file. Values defined on this section will be checked
+before the default paths *Mixmaster* usually uses for both compiled
+(as instructed on :ref:`mixmaster`) and installed (with the package
+manager) versions:
+
++--------+-------------------+------------------+
+| Option | Compiled          | Installed        |
++========+===================+==================+
+| binary | `~/Mix/mixmaster` | `mixmaster`      |
++--------+-------------------+------------------+
+| cfg    | `~/Mix/mix.cfg`   | `~/.Mix/mix.cfg` |
++--------+-------------------+------------------+
+
+If your *Mixmaster* installation is different from these values, you
+must change the ``binary`` and ``cfg`` options accordingly.
+nymphemeral calls ``--version`` on the binary and checks for the
+existence of the config file. Only after checking that *Mixmaster* is
+some derivative of **Mixmaster 3** and the config file is found, it
+assumes it is installed and working. Finally it searches for the
+*mix chain* to be displayed on the GUI, but will not prevent
+*Mixmaster* to be used if it is not found.
 
 [newsgroup]
 '''''''''''

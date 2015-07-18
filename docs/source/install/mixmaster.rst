@@ -5,7 +5,7 @@ Mixmaster
 =========
 This article describes how to compile the new large-key version of
 *Mixmaster* on a *Debian Wheezy* system. If you already have it
-installed and configured, you can skip this section.
+installed and configured, you can to :ref:`installed_mixmaster`.
 
 Most of its content was taken from `this post`_ by the `Jeremy
 Bentham Remailer`_ Admin. The instructions should be helpful for
@@ -191,6 +191,15 @@ port ``2525`` to reach an SMTP server. Using the options
 specific connection. Finally, as part of the protocol you need to
 provide a ``HELONAME`` and a ``REMAILERADDR``. As we want to be
 anonymous, we provide an invalid address.
+
+.. _installed_mixmaster:
+
+Pre-installed Mixmaster
+-----------------------
+If *Mixmaster* is already installed in your system, you just need to
+make sure it is **Mixmaster 3** and that nymphemeral is able to find
+both the binary and config file. Configuring these paths is explained
+on :ref:`cfg_mix`.
 
 **nymphemeral should be ready to tunnel via Tor messages sent
 using Mixmaster!**
