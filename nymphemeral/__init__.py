@@ -1,5 +1,9 @@
 """
-nymphemeral - an ephemeral nymserver GUI client
+nymphemeral - an ephemeral nym GUI client
+
+Encryption is done using python-gnupg and pyaxo from
+https://pypi.python.org/pypi/python-gnupg/
+https://github.com/rxcomm/pyaxo
 
 Messages are retrieved from a.a.m using aampy.py and hsub.py
 from https://github.com/rxcomm/aampy
@@ -7,11 +11,7 @@ from https://github.com/rxcomm/aampy
 Messages dates are parsed using python-dateutil 2.2 from
 https://pypi.python.org/pypi/python-dateutil
 
-Encryption is done using python-gnupg and pyaxo from
-https://pypi.python.org/pypi/python-gnupg/
-https://github.com/rxcomm/pyaxo
-
-Copyright (C) 2014 by Felipe Dau <dau.felipe@gmail.com> and
+Copyright (C) 2014-2015 by Felipe Dau <dau.felipe@gmail.com> and
 David R. Andersen <k0rx@RXcomm.net>
 
 This program is free software: you can redistribute it and/or modify
