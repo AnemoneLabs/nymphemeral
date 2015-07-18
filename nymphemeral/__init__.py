@@ -32,7 +32,7 @@ For more information, see https://github.com/felipedau/nymphemeral
 
 __author__ = 'Felipe Dau and David R. Andersen'
 __license__ = 'GPL'
-__version__ = '1.3.2.8'
+__version__ = '1.3.2.9'
 __status__ = 'Beta'
 
 import logging
