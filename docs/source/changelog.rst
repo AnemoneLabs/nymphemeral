@@ -2,8 +2,8 @@
 Changelog
 =========
 
-nymphemeral 1.3.3
-=================
+nymphemeral 1.3.3, released 2015-07-18
+======================================
 
 - Use pyaxo 0.4
 
