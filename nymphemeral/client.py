@@ -37,8 +37,53 @@ LOGGER_LEVEL = {
     'critical': logging.CRITICAL,
 }
 
+MIX_VERSION = 'Mixmaster 3'
+MIX_BINS = [
+    os.path.join(USER_PATH, 'Mix', 'mixmaster'),
+    'mixmaster',
+]
+MIX_CONFIGS = [
+    os.path.join(USER_PATH, 'Mix', 'mix.cfg'),
+    os.path.join(USER_PATH, '.Mix', 'mix.cfg'),
+]
+
 
 log = logging.getLogger(__name__)
+
+
+def add_to_head(element, elements):
+    """Add an element to the head of a list, removing duplicates of it"""
+    l = [element]
+    for e in elements:
+        if e != element:
+            l.append(e)
+    return l
+
+
+def versions_match(binary, version):
+    """Call --version on the binary. Return if starts with the version given"""
+    try:
+        v = subprocess.check_output([binary, '--version']).strip()
+    except (OSError, AttributeError):
+        return False
+    else:
+        return v.startswith(version)
+
+
+def working_binary(binaries):
+    """From a list of binaries, return the first to match with MIX_VERSION"""
+    for b in binaries:
+        if versions_match(b, MIX_VERSION):
+            return b
+    return None
+
+
+def existing_path(paths):
+    """From a list of file paths, return the first one that exists"""
+    for p in paths:
+        if os.path.exists(p):
+            return p
+    return None
 
 
 def files_in_path(path):
@@ -292,6 +337,7 @@ class Client:
         self.output_method = None
         self.file_mix_binary = None
         self.file_mix_cfg = None
+        self.chain = None
         self.check_base_files()
 
         # create a GPG instance using nymphemeral's base directory as home
@@ -305,8 +351,6 @@ class Client:
         self.aampy = self.initialize_aampy()
         self.thread_aampy = None
         self.thread_aampy_wait = None
-
-        self.chain = self.retrieve_mix_chain()
 
         log.debug('Initialized')
 
@@ -336,9 +380,8 @@ class Client:
             self.cfg.set('main', 'logger_level', 'warning')
             self.cfg.set('main', 'output_method', 'manual')
             self.cfg.add_section('mixmaster')
-            self.cfg.set('mixmaster', 'base_folder', USER_PATH + '/Mix')
-            self.cfg.set('mixmaster', 'binary', '%(base_folder)s/mixmaster')
-            self.cfg.set('mixmaster', 'cfg', '%(base_folder)s/mix.cfg')
+            self.cfg.set('mixmaster', 'binary', MIX_BINS[0])
+            self.cfg.set('mixmaster', 'cfg', MIX_CONFIGS[0])
             self.cfg.add_section('newsgroup')
             self.cfg.set('newsgroup', 'base_folder', NYMPHEMERAL_PATH)
             self.cfg.set('newsgroup', 'group', 'alt.anonymous.messages')
@@ -368,6 +411,18 @@ class Client:
                                 pass
             else:
                 create_directory(NYMPHEMERAL_PATH)
+
+            self.check_mixmaster()
+
+            # make sure to enable Mixmaster only if the the binary and config
+            # file have been found
+            output_method = self.cfg.get('main', 'output_method')
+            if output_method == 'mixmaster' and not (self.file_mix_binary or
+                                                     self.file_mix_cfg):
+                output_method = 'manual'
+                self.cfg.set('main', 'output_method', output_method)
+            self.output_method = output_method
+
             self.save_configs()
 
             self.use_agent = self.cfg.getboolean('gpg', 'use_agent')
@@ -377,9 +432,6 @@ class Client:
             self.directory_unread_messages = self.cfg.get('main', 'unread_folder')
             self.file_hsub = self.cfg.get('main', 'hsub_file')
             self.file_encrypted_hsub = self.cfg.get('main', 'encrypted_hsub_file')
-            self.output_method = self.cfg.get('main', 'output_method')
-            self.file_mix_binary = self.cfg.get('mixmaster', 'binary')
-            self.file_mix_cfg = self.cfg.get('mixmaster', 'cfg')
 
             try:
                 level = LOGGER_LEVEL[self.cfg.get('main', 'logger_level')]
@@ -410,20 +462,43 @@ class Client:
         port = self.cfg.get('newsgroup', 'port')
         return AAMpy(self.directory_unread_messages, group, server, port)
 
-    def retrieve_mix_chain(self):
-        chain = None
-        try:
-            with open(self.file_mix_cfg, 'r') as config:
-                lines = config.readlines()
-                for line in lines:
-                    s = re.match('(CHAIN )(.*)', line)
-                    if s:
-                        chain = 'Mix Chain: ' + s.group(2)
-                        break
-        except IOError:
-            log.error('IOError while manipulating ' +
-                      self.file_mix_cfg.split('/')[-1])
-        return chain
+    def check_mixmaster(self):
+        self.file_mix_cfg = None
+        self.chain = None
+
+        # check Mixmaster binary
+        binary = self.cfg.get('mixmaster', 'binary')
+        binaries = add_to_head(binary, MIX_BINS)
+        self.file_mix_binary = working_binary(binaries)
+        if self.file_mix_binary:
+            log.info('Mixmaster binary works')
+            self.cfg.set('mixmaster', 'binary', self.file_mix_binary)
+
+            # check Mixmaster configs and chain
+            cfg = self.cfg.get('mixmaster', 'cfg')
+            cfgs = add_to_head(cfg, MIX_CONFIGS)
+            self.file_mix_cfg = existing_path(cfgs)
+            if self.file_mix_cfg:
+                log.info('Mixmaster config file found at ' + self.file_mix_cfg)
+                self.cfg.set('mixmaster', 'cfg', self.file_mix_cfg)
+                try:
+                    with open(self.file_mix_cfg, 'r') as config:
+                        lines = config.readlines()
+                        for line in lines:
+                            s = re.match(r'CHAIN (.+)', line)
+                            if s:
+                                self.chain = s.group(1)
+                                log.info('Mix chain in use: ' + self.chain)
+                                break
+                        else:
+                            log.info('Mix chain was not found')
+                except IOError:
+                    log.error('IOError when reading ' + self.file_mix_cfg)
+                    self.file_mix_cfg = None
+            else:
+                log.info('Mixmaster config file was not found')
+        else:
+            log.info('Mixmaster binary was not found or is not appropriate')
 
     def save_key(self, key, server=None):
         # also used to update an identity

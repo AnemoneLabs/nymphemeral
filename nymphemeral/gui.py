@@ -96,15 +96,25 @@ class LoginWindow(Tk.Tk, object):
         frame_radio = Tk.LabelFrame(frame_login, text='Output Method')
         frame_radio.grid(pady=(10, 0), ipadx=5, ipady=5, sticky='we')
         self.var_output_method = Tk.IntVar()
-        radio_mix = Tk.Radiobutton(frame_radio, text='Send via Mixmaster', variable=self.var_output_method,
-                                   value=OUTPUT_METHOD['mixmaster'])
+        radio_mix = Tk.Radiobutton(frame_radio,
+                                   text='Send via Mixmaster',
+                                   variable=self.var_output_method,
+                                   value=OUTPUT_METHOD['mixmaster'],
+                                   state=Tk.DISABLED)
         radio_mix.grid(pady=(5, 0), sticky='w')
-        chain = self.client.chain
-        if not chain:
-            radio_mix.config(state=Tk.DISABLED)
-            chain = 'Error while manipulating mix.cfg'
-        label_chain = Tk.Label(frame_radio, text=chain)
-        label_chain.grid(sticky='w', padx=(25, 0))
+        if not self.client.file_mix_binary:
+            text = 'Binary Not Found or Inappropriate'
+        elif not self.client.file_mix_cfg:
+            text = 'Config File Not Found'
+        else:
+            chain = self.client.chain
+            if not chain:
+                text = 'Unknown Mix Chain'
+            else:
+                text = 'Mix Chain: ' + chain
+            radio_mix.config(state=Tk.NORMAL)
+        label_mix = Tk.Label(frame_radio, text=text)
+        label_mix.grid(sticky='w', padx=(25, 0))
         radio_email = Tk.Radiobutton(frame_radio, text='Send via Email', variable=self.var_output_method,
                                      value=OUTPUT_METHOD['sendmail'])
         radio_email.grid(sticky='w')
@@ -321,7 +331,8 @@ class MainWindow(Tk.Tk, object):
         if self.client.output_method == 'mixmaster':
             frame_chain = Tk.Frame(frame_left)
             frame_chain.pack(fill=Tk.X, expand=True)
-            label_chain = Tk.Label(frame_chain, text=self.client.chain)
+            label_chain = Tk.Label(frame_chain,
+                                   text='Mix chain: ' + self.client.chain)
             label_chain.pack(side=Tk.LEFT)
         button_change_nym = Tk.Button(frame_footer, text='Change Nym', command=self.gui.end_session)
         button_change_nym.pack(side=Tk.RIGHT)
