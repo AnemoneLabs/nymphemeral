@@ -49,8 +49,25 @@ signing/decrypting messages. (Default: ``True``)
 
 [main]
 ''''''
-Toggle ``debug_switch`` between ``True``/``False`` to log information
-regarding operations performed by the client. (Default: ``False``)
+The value of ``logger_level`` can be modified to control what
+nymphemeral logs on the console. These values are the same ones used
+by Python's logging module. You can choose from:
+
++----------+
+| debug    |
++----------+
+| info     |
++----------+
+| warning  |
++----------+
+| error    |
++----------+
+| critical |
++----------+
+
+**Example:** ``debug`` is the most sensitive level. When it is set,
+every message will be logged from ``debug`` to ``critical``.
+(Default: ``warning``)
 
 [mixmaster]
 '''''''''''
