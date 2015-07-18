@@ -82,6 +82,23 @@ class InvalidEphemeralKeyError(NymphemeralError):
         self.message = 'The ephemeral key provided (empty) is not valid.'
 
 
+class InvalidNameError(NymphemeralError):
+    def __init__(self):
+        self.title = 'Invalid Name'
+        self.message = 'The name provided (empty) is not valid.'
+
+
+class InvalidDurationError(NymphemeralError):
+    def __init__(self):
+        self.title = 'Invalid Duration'
+        self.message = ('The duration provided should be in the format:\n\n'
+                        '0 = key does not expire\n'
+                        '<n> = key expires in n days\n'
+                        '<n>w = key expires in n weeks\n'
+                        '<n>m = key expires in n months\n'
+                        '<n>y = key expires in n years')
+
+
 class UndecipherableMessageError(NymphemeralError):
     def __init__(self):
         self.title = 'Undecipherable Message'

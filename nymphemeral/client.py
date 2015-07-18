@@ -628,6 +628,20 @@ class Client:
         return messages
 
     def send_create(self, ephemeral, hsub, name, duration):
+        ephemeral = ephemeral.strip()
+        hsub = hsub.strip()
+        name = name.strip()
+        duration = duration.strip()
+
+        if not ephemeral:
+            raise errors.InvalidEphemeralKeyError()
+        if not hsub:
+            raise errors.InvalidHsubError()
+        if not name:
+            raise errors.InvalidNameError()
+        if not re.match(r'\d+[dwmy]{0,1}$', duration, flags=re.IGNORECASE):
+            raise errors.InvalidDurationError()
+
         recipient = 'config@' + self.nym.server
         pubkey, fingerprint = generate_key(self.gpg, name, self.nym.address, self.nym.passphrase, duration)
         nym = Nym(self.nym.address, self.nym.passphrase, fingerprint, hsub)

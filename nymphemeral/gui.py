@@ -396,10 +396,10 @@ class CreationTab(Tk.Frame, object):
 
         # create button
         self.button_create = Tk.Button(frame_tab, text='Create Nym',
-                                       command=lambda: self.create(self.entry_ephemeral_create.get().strip(),
-                                                                   self.entry_hsub_create.get().strip(),
-                                                                   self.entry_name_create.get().strip(),
-                                                                   self.entry_duration_create.get().strip()))
+                                       command=lambda: self.create(self.entry_ephemeral_create.get(),
+                                                                   self.entry_hsub_create.get(),
+                                                                   self.entry_name_create.get(),
+                                                                   self.entry_duration_create.get()))
         self.button_create.grid(pady=(10, 0))
 
         # message box
@@ -427,14 +427,13 @@ class CreationTab(Tk.Frame, object):
 
     def create(self, ephemeral, hsub, name, duration):
         try:
-            if not len(ephemeral):
-                raise errors.InvalidEphemeralKeyError()
-            if not len(hsub):
-                raise errors.InvalidHsubError()
-        except (errors.InvalidHsubError, errors.InvalidEphemeralKeyError) as e:
+            success, info, ciphertext = self.client.send_create(ephemeral,
+                                                                hsub,
+                                                                name,
+                                                                duration)
+        except errors.NymphemeralError as e:
             tkMessageBox.showerror(e.title, e.message)
         else:
-            success, info, ciphertext = self.client.send_create(ephemeral, hsub, name, duration)
             write_on_text(self.text_create, [info, ciphertext])
             if success:
                 self.set_interface(False)
