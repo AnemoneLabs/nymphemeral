@@ -2,6 +2,21 @@
 Changelog
 =========
 
+nymphemeral 1.3.3
+=================
+
+- Use pyaxo 0.4
+
+- Use Python's logging module
+
+- Slightly improve aampy's performance
+
+- Improve parsing of the config file
+
+- Improve and add more input validation
+
+- Bug fixes and code improvements
+
 nymphemeral 1.3.2, released 2015-05-13
 ======================================
 
