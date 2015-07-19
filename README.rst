@@ -5,13 +5,16 @@ anonymous communication on the internet.
 
 It is a GUI client that relies on a pseudonymous remailer that
 communicates to its users by posting messages to a shared mailbox,
-a **Zax-type** nym server. Both the server and the client apply an
+a `Zax-type`_ nym server. Both the server and the client apply an
 ephemeral encryption layer on their messages based on the `Axolotl
 Ratchet protocol`_, providing forward and future secrecy to the
 conversation.
 
 Features
 --------
+- Manages pseudonymous actions: creation, configuration and
+  deletion, as well as message dispatch and retrieval
+
 - Communicates with the `new nymserv`_, a *Zax-type* nym server with
   forward secrecy
 
@@ -23,6 +26,25 @@ Features
   resulting ciphertexts to be sent manually
 
 - Supports End-to-End Encryption
+
+Limitations
+-----------
+
+Regular Zax-type
+''''''''''''''''
+nymphemeral does not support the regular `Zax-type`_ nym server. It
+only supports the `new nymserv`_, adding or expecting an ephemeral
+encryption layer in its messages.
+
+Mixmaster
+'''''''''
+Although it is supported (and the use is encouraged), nymphemeral is
+not a *Mixmaster* GUI. It does enable the users to send their
+messages to the nym server automatically via *Mixmaster*, but it
+cannot be used to send regular email. nymphemeral is a **nym client**
+and the only way to exchange messages is to send every message to the
+nym server, to be processed and then remailed to the recipient.
+*Mixmaster* is just one of the output methods.
 
 Current Release
 ---------------
@@ -83,3 +105,4 @@ Acknowledgements
 .. _`rxcomm`: https://github.com/rxcomm
 .. _`tych0`: https://github.com/tych0
 .. _`usage`: http://nymphemeral.readthedocs.org/en/latest/use/login.html
+.. _`zax-type`: https://github.com/crooks/nymserv
