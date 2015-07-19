@@ -72,3 +72,53 @@ will prompt you for a passphrase to unlock the secret key:
 
 **Note:** You should read the :ref:`keyring` section to add the keys
 involved in the End-to-End Encryption to nymphemeral's keyring.
+
+Message Structure
+-----------------
+It is important to know how the contents of your message are handled.
+For example, if you composed the following message::
+
+    To: recipient@domain
+    Subject: Foo
+
+    Bar
+
+It would be encrypted to the server (with both asymmetric and
+ephemeral encryption layers) and would become the following
+message to be transmitted::
+
+    To: send@server
+
+    -----BEGIN PGP MESSAGE-----
+    <ciphertext>
+    -----END PGP MESSAGE-----
+
+If someone intercepted the message, they would only learn that
+you sent a message to ``send@server``, which would remail it to
+someone else. However, they learn nothing about the original message,
+because it is encrypted to the server. Now, when the server receives
+and decrypt it, the original message is accessed::
+
+    To: recipient@domain
+    Subject: Foo
+
+    Bar
+
+That is the reason that another layer (end-to-end encryption) should
+be added. That way, when the server removes its encryption layer, it
+would only have access to the headers::
+
+    To: recipient@domain
+    Subject: Foo
+
+    -----BEGIN PGP MESSAGE-----
+    <ciphertext>
+    -----END PGP MESSAGE-----
+
+It is called "end-to-end" because only the ends of the transmission
+(you and the recipient) can access the data. That last encryption
+layer must be removed by the recipient, to finally obtain the
+plaintext of the message.  The last thing you should know is that the
+headers cannot be encrypted. Therefore, make sure to use non
+sensitive information for the **subject** and **optional headers**
+you might add.
