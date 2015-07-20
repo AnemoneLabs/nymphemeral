@@ -3,14 +3,16 @@
 =========
 Mixmaster
 =========
-This article describes how to compile the new large-key version of
-*Mixmaster* on a *Debian Wheezy* system. If you already have it
-installed and configured, you can to :ref:`installed_mixmaster`.
+This section describes how to compile the new large-key version of
+*Mixmaster* on a *Debian Wheezy* system. If you already have
+**Mixmaster 3** installed and configured you can go to
+:ref:`installed_mixmaster`. If you are a `Whonix`_ user, you should
+go to :ref:`mixmaster-whonix`.
 
-Most of its content was taken from `this post`_ by the `Jeremy
-Bentham Remailer`_ Admin. The instructions should be helpful for
-building *Mixmaster* on other flavors of linux as well. See
-:ref:`ubuntu-loader` for a change if using *Ubuntu*.
+Most of the content of this section was taken from `this post`_ by
+the `Jeremy Bentham Remailer`_ Admin. The instructions should be
+helpful for building *Mixmaster* on other flavors of linux as well.
+See :ref:`ubuntu-loader` for a change if using *Ubuntu*.
 
 Preliminaries
 -------------
@@ -196,10 +198,12 @@ anonymous, we provide an invalid address.
 
 Pre-installed Mixmaster
 -----------------------
-If *Mixmaster* is already installed in your system, you just need to
-make sure it is **Mixmaster 3** and that nymphemeral is able to find
-both the binary and config file. Configuring these paths is explained
-on :ref:`cfg_mix`.
+Although we encorage the use of the *Mixmaster* version installed
+with this section, improved with **4096-bit RSA** (and other
+features), you are allowed to use any derivative of **Mixmaster 3**.
+As long as you use that version and nymphemeral is able to find both
+paths to the binary and config file, you are fine. Configuring these
+paths is explained later on :ref:`cfg_mix`.
 
 **nymphemeral should be ready to tunnel via Tor messages sent
 using Mixmaster!**
@@ -210,3 +214,4 @@ using Mixmaster!**
 .. _`socat`: http://www.dest-unreach.org/socat
 .. _`this post`: http://anemone.mooo.com/mixmaster.html
 .. _`tor`: https://www.torproject.org
+.. _`whonix`: https://whonix.org

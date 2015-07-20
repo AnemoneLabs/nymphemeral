@@ -3,7 +3,8 @@
 Connections
 ===========
 We recommend using `stunnel`_, `Tor`_ and `socat`_ along with
-nymphemeral when downloading and sending messages.
+nymphemeral when downloading and sending messages. If you are a
+`Whonix`_ user, you should go to :ref:`connections-whonix`. 
 
 Stunnel
 -------
@@ -131,3 +132,4 @@ wish to use nymphemeral.
 .. _`stunnel`: https://www.stunnel.org
 .. _`this option`: https://www.torproject.org/docs/debian.html.en#ubuntu
 .. _`tor`: https://www.torproject.org
+.. _`whonix`: https://whonix.org
