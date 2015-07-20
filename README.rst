@@ -89,12 +89,17 @@ Acknowledgements
 
 - Thanks to `tych0`_ for assisting on fixes and improvements
 
+- Thanks to `HulaHoopWhonix`_ (from the `Whonix`_ team) for testing
+  and providing awesome feedback, such as bug reports, feature
+  requests and suggestions
+
 .. _`aampy`: https://github.com/rxcomm/aampy
 .. _`alt.anonymous.messages`: https://groups.google.com/forum/#!forum/alt.anonymous.messages
 .. _`axolotl ratchet protocol`: https://github.com/trevp/axolotl/wiki
 .. _`crooks`: https://github.com/crooks
 .. _`documentation`: http://nymphemeral.readthedocs.org/
 .. _`github issue tracker`: https://github.com/felipedau/nymphemeral/issues
+.. _`hulahoopwhonix`: https://github.com/HulaHoopWhonix
 .. _`installation`: http://nymphemeral.readthedocs.org/en/latest/install/dependencies.html
 .. _`mixmaster`: http://www.zen19351.zen.co.uk/mixmaster302
 .. _`news server`: http://nymphemeral.readthedocs.org/en/latest/install/newsserver.html
@@ -106,3 +111,4 @@ Acknowledgements
 .. _`tych0`: https://github.com/tych0
 .. _`usage`: http://nymphemeral.readthedocs.org/en/latest/use/login.html
 .. _`zax-type`: https://github.com/crooks/nymserv
+.. _`whonix`: https://whonix.org

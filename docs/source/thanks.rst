@@ -8,6 +8,12 @@ Acknowledgements
 
 - Thanks to `tych0`_ for assisting on fixes and improvements
 
+- Thanks to `HulaHoopWhonix`_ (from the `Whonix`_ team) for testing
+  and providing awesome feedback, such as bug reports, feature
+  requests and suggestions
+
 .. _`crooks`: https://github.com/crooks
 .. _`rxcomm`: https://github.com/rxcomm
 .. _`tych0`: https://github.com/tych0
+.. _`hulahoopwhonix`: https://github.com/HulaHoopWhonix
+.. _`whonix`: https://whonix.org
