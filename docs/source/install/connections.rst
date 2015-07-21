@@ -15,7 +15,7 @@ To configure *stunnel*, you can use the ``.conf`` file we provide
 with nymphemeral. Copy that file to the directory where *stunnel*
 looks for config files (which is usually ``/etc/stunnel``)::
 
-    sudo cp /usr/share/nymphemeral/connections/stunnel.conf /etc/stunnel
+    sudo curl https://raw.githubusercontent.com/felipedau/nymphemeral/master/connections/stunnel.conf -o /etc/stunnel/stunnel.conf
 
 Open ``/etc/default/stunnel4`` and enable *stunnel* automatic startup
 by switching ``ENABLE`` to ``1``::
@@ -74,7 +74,8 @@ install it with::
 A script should be used to make the connection itself. Copy both
 *socat* scripts we provide with nymphemeral::
 
-    cp /usr/share/nymphemeral/connections/socsmtp.sh /usr/share/nymphemeral/connections/socnews.sh ~
+    sudo curl https://raw.githubusercontent.com/felipedau/nymphemeral/master/connections/socnews.sh -o ~/socnews.sh
+    sudo curl https://raw.githubusercontent.com/felipedau/nymphemeral/master/connections/socsmtp.sh -o ~/socsmtp.sh
 
 And enable them to be executed::
 
