@@ -5,7 +5,7 @@ Mixmaster (Whonix)
 ==================
 Although we highly recommend following the instructions on
 :ref:`mixmaster` to compile the large-key version of `Mixmaster`_, you
-can use the one that comes installed with `Whonix`_, which is bit
+can use the one that comes installed with `Whonix`_, which is a bit
 outdated.
 
 You should know that compiling *Mixmaster* (i.e., following
@@ -19,7 +19,7 @@ anything (as explained on :ref:`cfg_mix`).
 
 Config File
 -----------
-*Mixmaster* just need to be configured through the ``~/.Mix/mix.cfg``
+*Mixmaster* just needs to be configured through the ``~/.Mix/mix.cfg``
 file. A very simple config file could be written as follows::
 
     CHAIN *,*,*,*,*
