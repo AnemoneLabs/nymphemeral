@@ -74,8 +74,8 @@ install it with::
 A script should be used to make the connection itself. Copy both
 *socat* scripts we provide with nymphemeral::
 
-    sudo curl https://raw.githubusercontent.com/felipedau/nymphemeral/master/connections/socnews.sh -o ~/socnews.sh
-    sudo curl https://raw.githubusercontent.com/felipedau/nymphemeral/master/connections/socsmtp.sh -o ~/socsmtp.sh
+    curl https://raw.githubusercontent.com/felipedau/nymphemeral/master/connections/socnews.sh -o ~/socnews.sh
+    curl https://raw.githubusercontent.com/felipedau/nymphemeral/master/connections/socsmtp.sh -o ~/socsmtp.sh
 
 And enable them to be executed::
 
