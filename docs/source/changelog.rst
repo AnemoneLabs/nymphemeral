@@ -2,8 +2,8 @@
 Changelog
 =========
 
-nymphemeral 1.3.4
-=================
+nymphemeral 1.3.4, released 2015-07-22
+======================================
 
 - Improve recognition of the Mixmaster installation
 

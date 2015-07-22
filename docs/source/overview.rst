@@ -49,8 +49,8 @@ nym server, to be processed and then remailed to the recipient.
 
 Current Release
 ---------------
-The current version of nymphemeral is 1.3.3, a beta, released
-2015-07-18.
+The current version of nymphemeral is 1.3.4, a beta, released
+2015-07-22.
 
 Protocol Update
 ---------------
