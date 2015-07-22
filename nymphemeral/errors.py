@@ -85,7 +85,7 @@ class InvalidEphemeralKeyError(NymphemeralError):
 class InvalidNameError(NymphemeralError):
     def __init__(self):
         self.title = 'Invalid Name'
-        self.message = 'The name provided (empty) is not valid.'
+        self.message = 'The pseudonymous provided (empty) is not valid.'
 
 
 class InvalidDurationError(NymphemeralError):
