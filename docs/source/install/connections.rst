@@ -59,8 +59,8 @@ Note that:
 Tor
 ---
 *Tor* is a low-latency communication system used to hide your
-traffic. If you wish to have the most recent version you can use
-`this option`_, or simply install it with::
+traffic. If you wish to have the latest stable version you should use
+`this option`_. If that is not the case, simply install it with::
 
     sudo apt-get install tor
 
