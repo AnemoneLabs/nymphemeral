@@ -370,20 +370,20 @@ class Client:
             self.cfg.add_section('gpg')
             self.cfg.set('gpg', 'use_agent', 'True')
             self.cfg.add_section('main')
-            self.cfg.set('main', 'base_folder', NYMPHEMERAL_PATH)
-            self.cfg.set('main', 'db_folder', '%(base_folder)s/db')
-            self.cfg.set('main', 'messages_folder', '%(base_folder)s/messages')
-            self.cfg.set('main', 'read_folder', '%(messages_folder)s/read')
-            self.cfg.set('main', 'unread_folder', '%(messages_folder)s/unread')
-            self.cfg.set('main', 'hsub_file', '%(base_folder)s/hsubs.txt')
-            self.cfg.set('main', 'encrypted_hsub_file', '%(base_folder)s/encrypted_hsubs.txt')
+            self.cfg.set('main', 'base_dir', NYMPHEMERAL_PATH)
+            self.cfg.set('main', 'db_dir', '%(base_dir)s/db')
+            self.cfg.set('main', 'messages_dir', '%(base_dir)s/messages')
+            self.cfg.set('main', 'read_dir', '%(messages_dir)s/read')
+            self.cfg.set('main', 'unread_dir', '%(messages_dir)s/unread')
+            self.cfg.set('main', 'hsub_file', '%(base_dir)s/hsubs.txt')
+            self.cfg.set('main', 'encrypted_hsub_file', '%(base_dir)s/encrypted_hsubs.txt')
             self.cfg.set('main', 'logger_level', 'warning')
             self.cfg.set('main', 'output_method', 'manual')
             self.cfg.add_section('mixmaster')
             self.cfg.set('mixmaster', 'binary', MIX_BINS[0])
             self.cfg.set('mixmaster', 'cfg', MIX_CONFIGS[0])
             self.cfg.add_section('newsgroup')
-            self.cfg.set('newsgroup', 'base_folder', NYMPHEMERAL_PATH)
+            self.cfg.set('newsgroup', 'base_dir', NYMPHEMERAL_PATH)
             self.cfg.set('newsgroup', 'group', 'alt.anonymous.messages')
             self.cfg.set('newsgroup', 'server', 'localhost')
             self.cfg.set('newsgroup', 'port', '119')
@@ -426,10 +426,10 @@ class Client:
             self.save_configs()
 
             self.use_agent = self.cfg.getboolean('gpg', 'use_agent')
-            self.directory_base = self.cfg.get('main', 'base_folder')
-            self.directory_db = self.cfg.get('main', 'db_folder')
-            self.directory_read_messages = self.cfg.get('main', 'read_folder')
-            self.directory_unread_messages = self.cfg.get('main', 'unread_folder')
+            self.directory_base = self.cfg.get('main', 'base_dir')
+            self.directory_db = self.cfg.get('main', 'db_dir')
+            self.directory_read_messages = self.cfg.get('main', 'read_dir')
+            self.directory_unread_messages = self.cfg.get('main', 'unread_dir')
             self.file_hsub = self.cfg.get('main', 'hsub_file')
             self.file_encrypted_hsub = self.cfg.get('main', 'encrypted_hsub_file')
 
@@ -666,7 +666,7 @@ class Client:
         return hsubs
 
     def append_messages_to_list(self, read_messages, messages, messages_without_date):
-        # check which folder to read the files from
+        # check which directory to read the files from
         if read_messages:
             path = self.directory_read_messages
         else:
