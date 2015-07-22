@@ -1,3 +1,5 @@
+.. _sec-configuration:
+
 ===================
 Configuring the Nym
 ===================

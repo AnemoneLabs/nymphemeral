@@ -58,8 +58,8 @@ the latest (Oct 1, 2014) version of the protocol, which changed the
 order of the ratcheting. For that reason, old conversations (created
 with **nymphemeral < 1.3.3**) might not work properly after the
 update. We suggest that users update nymphemeral and restart their
-conversations by changing their nyms' **ephemeral keys** under the
-``Configure Nym`` tab.
+conversations by changing their nyms' **ephemeral keys**. The
+`Configuring the Nym`_ section explains how that can be done.
 
 Quick Install
 -------------
@@ -96,6 +96,7 @@ Acknowledgements
 .. _`aampy`: https://github.com/rxcomm/aampy
 .. _`alt.anonymous.messages`: https://groups.google.com/forum/#!forum/alt.anonymous.messages
 .. _`axolotl ratchet protocol`: https://github.com/trevp/axolotl/wiki
+.. _`configuring the nym`: http://nymphemeral.readthedocs.org/en/latest/use/configuration.html
 .. _`crooks`: https://github.com/crooks
 .. _`documentation`: http://nymphemeral.readthedocs.org/
 .. _`github issue tracker`: https://github.com/felipedau/nymphemeral/issues
