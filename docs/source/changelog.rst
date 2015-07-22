@@ -2,6 +2,15 @@
 Changelog
 =========
 
+nymphemeral 1.3.4
+=================
+
+- Improve recognition of the Mixmaster installation
+
+- Clarify nymphemeral's features and limitations
+
+- Add instructions for Whonix
+
 nymphemeral 1.3.3, released 2015-07-18
 ======================================
 
