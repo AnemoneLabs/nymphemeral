@@ -8,7 +8,13 @@ import tkSimpleDialog
 import ttk
 
 import errors
-from client import OUTPUT_METHOD, search_pgp_message, retrieve_keyids, retrieve_key, format_key_info, Client
+from client import OUTPUT_METHOD
+from client import DEBUG_LOGGER_LEVEL
+from client import search_pgp_message
+from client import retrieve_keyids
+from client import retrieve_key
+from client import format_key_info
+from client import Client
 from nym import Nym
 
 from __init__ import __version__
@@ -31,7 +37,7 @@ class Gui:
     def __init__(self):
         self.client = Client()
         self.title = 'nymphemeral'
-        if self.client.is_debugging:
+        if self.client.logger_level == DEBUG_LOGGER_LEVEL:
             self.title += ' ' + __version__
 
         self.window_login = LoginWindow(self, self.client)

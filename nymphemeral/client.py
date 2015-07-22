@@ -29,10 +29,12 @@ OUTPUT_METHOD = {
     'sendmail': 2,
     'manual': 3,
 }
+DEBUG_LOGGER_LEVEL = 'debug'
+DEFAULT_LOGGER_LEVEL = 'warning'
 LOGGER_LEVEL = {
-    'debug': logging.DEBUG,
+    DEBUG_LOGGER_LEVEL: logging.DEBUG,
     'info': logging.INFO,
-    'warning': logging.WARNING,
+    DEFAULT_LOGGER_LEVEL: logging.WARNING,
     'error': logging.ERROR,
     'critical': logging.CRITICAL,
 }
@@ -333,7 +335,7 @@ class Client:
         self.directory_unread_messages = None
         self.file_hsub = None
         self.file_encrypted_hsub = None
-        self.is_debugging = None
+        self.logger_level = None
         self.output_method = None
         self.file_mix_binary = None
         self.file_mix_cfg = None
@@ -412,6 +414,27 @@ class Client:
             else:
                 create_directory(NYMPHEMERAL_PATH)
 
+            # make sure to use a valid level for the logger
+            log_sec = 'main'
+            log_opt = 'logger_level'
+            log_cfg_str = self.cfg.get(log_sec, log_opt).lower()
+            valid_level = log_cfg_str in LOGGER_LEVEL
+
+            if valid_level:
+                self.logger_level = log_cfg_str
+            else:
+                self.logger_level = DEFAULT_LOGGER_LEVEL
+            log_cfg_int = LOGGER_LEVEL[self.logger_level]
+            if logger.getEffectiveLevel() != log_cfg_int:
+                logger.setLevel(log_cfg_int)
+
+            if not valid_level:
+                log.warn('The value "%s" for %s from [%s] section of %s is '
+                         'incorrect. Should be: %s. Using the default: %s'
+                         % (log_cfg_str, log_opt, log_sec, CONFIG_FILE,
+                            '/'.join(LOGGER_LEVEL.keys()),
+                            self.logger_level))
+
             self.check_mixmaster()
 
             # make sure to enable Mixmaster only if the the binary and config
@@ -432,15 +455,6 @@ class Client:
             self.directory_unread_messages = self.cfg.get('main', 'unread_dir')
             self.file_hsub = self.cfg.get('main', 'hsub_file')
             self.file_encrypted_hsub = self.cfg.get('main', 'encrypted_hsub_file')
-
-            try:
-                level = LOGGER_LEVEL[self.cfg.get('main', 'logger_level')]
-            except KeyError:
-                level = logging.WARNING
-                log.warn('Option logger_level from [main] section of %s is '
-                         'incorrect. Should be: %s. Using the default: warning'
-                         % (CONFIG_FILE, ', '.join(LOGGER_LEVEL.keys())))
-            logger.setLevel(level)
 
             log.debug('Configs have been loaded')
         except IOError:
