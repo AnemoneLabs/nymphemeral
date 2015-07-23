@@ -12,7 +12,9 @@ connection between ``localhost:119`` and your actual news server,
 exactly what was done on :ref:`Connections`. If you followed that
 section, you do not need to configure anything.
 
-**nymphemeral should be ready to tunnel your news feed via Tor!**
+.. note::
+
+    nymphemeral should be ready to tunnel your news feed via Tor!
 
 If you want to connect directly to the news server, you should edit
 ``nymphemeral.cfg`` and change the address and port of the news

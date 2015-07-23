@@ -52,15 +52,16 @@ Current Release
 The current version of nymphemeral is 1.3.4, a beta, released
 2015-07-22.
 
-Protocol Update
----------------
-**nymphemeral 1.3.3** was updated to use **pyaxo 0.4** that follows
-the latest (Oct 1, 2014) version of the protocol, which changed the
-order of the ratcheting. For that reason, old conversations (created
-with **nymphemeral < 1.3.3**) might not work properly after the
-update. We suggest that users update nymphemeral and restart their
-conversations by changing their nyms' **ephemeral keys**. The
-:ref:`sec-configuration` section explains how that can be done.
+.. important::
+
+    **nymphemeral 1.3.3** was updated to use **pyaxo 0.4** that
+    follows the latest (Oct 1, 2014) version of the protocol, which
+    changed the order of the ratcheting. For that reason, old
+    conversations (created with **nymphemeral < 1.3.3**) might not
+    work properly after the update. We suggest that users update
+    nymphemeral and restart their conversations by changing their
+    nyms' **ephemeral keys**. The :ref:`sec-configuration` section
+    explains how that can be done.
 
 .. _`aampy`: https://github.com/rxcomm/aampy
 .. _`alt.anonymous.messages`: https://groups.google.com/forum/#!forum/alt.anonymous.messages

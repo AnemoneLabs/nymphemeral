@@ -45,8 +45,10 @@ If you followed :ref:`connections-whonix`, you remember that we will
 use ``127.0.0.1:25`` to reach an SMTP server. Using the option
 ``SMTPRELAY`` will tell *Mixmaster* to use that specific connection.
 
-**nymphemeral should be ready to tunnel via Tor messages sent
-using Mixmaster!**
+.. note::
+
+    nymphemeral should be ready to tunnel via Tor messages sent using
+    Mixmaster!
 
 You can go to :ref:`newsserver`.
 

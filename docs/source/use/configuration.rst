@@ -15,6 +15,8 @@ On the ``Configure Nym`` tab you can modify the ``Ephemeral Key``,
 create the message that will be sent to the server. If you wish to
 not use your nym anymore, click ``Delete Nym``.
 
-**Tip:** If you believe that the server is not processing your
-messages, try to change the ``Ephemeral Key`` so that the databases
-will be synced.
+.. tip::
+
+    If you believe that the server is not processing your
+    messages, try to change the ``Ephemeral Key`` so that the
+    databases will be synced.

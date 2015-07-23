@@ -70,8 +70,10 @@ will prompt you for a passphrase to unlock the secret key:
 
    GPG Agent
 
-**Note:** You should read the :ref:`keyring` section to add the keys
-involved in the End-to-End Encryption to nymphemeral's keyring.
+.. note::
+
+    You should read the :ref:`keyring` section to add the keys
+    involved in the End-to-End Encryption to nymphemeral's keyring.
 
 Message Structure
 -----------------

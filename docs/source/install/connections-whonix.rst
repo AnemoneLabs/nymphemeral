@@ -68,11 +68,11 @@ Note that:
     mapaddress 1.1.1.1 k54ids7luh523dbi.onion
     mapaddress 2.2.2.2 gbhpq7eihle4btsn.onion
 
-Servers
--------
-You can use whatever NNTP/SMTP servers you would like. We chose to
-use those for convenience, but you are totally free to configure
-other ones or setup your own.
+.. note::
+
+    You can use whatever NNTP/SMTP servers you would like. We chose to
+    use those for convenience, but you are totally free to configure
+    other ones or setup your own.
 
 You can go to :ref:`mixmaster-whonix`.
 

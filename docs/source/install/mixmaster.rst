@@ -194,6 +194,11 @@ specific connection. Finally, as part of the protocol you need to
 provide a ``HELONAME`` and a ``REMAILERADDR``. As we want to be
 anonymous, we provide an invalid address.
 
+.. note::
+
+    nymphemeral should be ready to tunnel via Tor messages sent using
+    Mixmaster!
+
 .. _installed_mixmaster:
 
 Pre-installed Mixmaster
@@ -204,9 +209,6 @@ features), you are allowed to use any derivative of **Mixmaster 3**.
 As long as you use that version and nymphemeral is able to find both
 paths to the binary and config file, you are fine. Configuring these
 paths is explained later on :ref:`cfg_mix`.
-
-**nymphemeral should be ready to tunnel via Tor messages sent
-using Mixmaster!**
 
 .. _`jeremy bentham remailer`: http://anemone.mooo.com/stats/
 .. _`mixmaster 3.0.3`: http://www.zen19351.zen.co.uk/mixmaster303

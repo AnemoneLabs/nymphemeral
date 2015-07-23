@@ -115,17 +115,17 @@ You could also use other SMTP servers, such as these ones::
     mail.mixmin.net
     mail.allpingers.net
 
-Servers
-```````
-You can use whatever NNTP/SMTP servers you would like. We chose to
-use those for convenience, but you are totally free to configure
-other ones or setup your own.
+.. note::
 
-Running the Scripts
--------------------
-You do not need to start *stunnel* or *Tor* again, but the scripts
-have to be executed every time the system starts up or whenever you
-wish to use nymphemeral.
+    You can use whatever NNTP/SMTP servers you would like. We chose to
+    use those for convenience, but you are totally free to configure
+    other ones or setup your own.
+
+.. important::
+
+    You do not need to start *stunnel* or *Tor* again, but the scripts
+    have to be executed every time the system starts up or whenever
+    you wish to use nymphemeral.
 
 .. _`jeremy bentham remailer`: http://anemone.mooo.com/stats/
 .. _`socat`: http://www.dest-unreach.org/socat

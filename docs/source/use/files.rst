@@ -103,5 +103,7 @@ If you already have a news server running, replace ``group``,
 :ref:`newsserver` to find out how to create one using *socat*
 and *stunnel*.
 
-**Important:** Changes made to ``nymphemeral.cfg`` will only take
-effect by restarting the client.
+.. important::
+
+    Changes made to ``nymphemeral.cfg`` will only take effect by
+    restarting the client.
