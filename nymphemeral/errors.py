@@ -29,6 +29,14 @@ class InvalidPassphraseError(NymphemeralError):
         )
 
 
+class InvalidSearchQueryError(NymphemeralError):
+    def __init__(self):
+        super(InvalidSearchQueryError, self).__init__(
+            title='Invalid Search Query',
+            message='The search query provided must be a string.'
+        )
+
+
 class NymservNotFoundError(NymphemeralError):
     def __init__(self, nymserv):
         super(NymservNotFoundError, self).__init__(

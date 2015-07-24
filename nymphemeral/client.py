@@ -177,39 +177,55 @@ def generate_key(gpg, name, address, passphrase, duration):
     return gpg.export_keys(keyids=address), fingerprint
 
 
-def retrieve_key(gpg, query):
-    """Return the ONLY key found for the query specified"""
+def retrieve_key(gpg, search_query):
+    """Find the ONLY key in the keyring for the search query
 
-    query = query.lower()
-    results = []
-    keys = gpg.list_keys()
+    :param gpg: The object that might have the data being searched
+    :type gpg: gnupg.GPG
+    :param str search_query: The search query
+    :rtype: dict
+    """
+    try:
+        search_query = search_query.lower()
+    except AttributeError:
+        raise errors.InvalidSearchQueryError()
+    else:
+        results = []
+        keys = gpg.list_keys()
 
-    for k in keys:
-        if k['keyid'].lower().endswith(query) or k['fingerprint'].lower().endswith(query):
-            results.append(k)
-        else:
-            for sub in k['subkeys']:
-                if sub[0].lower().endswith(query):
-                    results.append(k)
-                    break
+        for k in keys:
+            if (k['keyid'].lower().endswith(search_query)
+                    or k['fingerprint'].lower().endswith(search_query)):
+                results.append(k)
             else:
-                for uid in k['uids']:
-                    if re.search(r'\b' + query + r'\b', uid, flags=re.IGNORECASE):
+                for sub in k['subkeys']:
+                    if sub[0].lower().endswith(search_query):
                         results.append(k)
                         break
-    if results:
-        for r in results[1:]:
-            if r['fingerprint'] != results[0]['fingerprint']:
-                raise errors.AmbiguousUidError(query)
-        return results[0]
-    else:
-        raise errors.KeyNotFoundError(query)
+                else:
+                    for uid in k['uids']:
+                        if re.search(r'\b' + search_query + r'\b', uid,
+                                     flags=re.IGNORECASE):
+                            results.append(k)
+                            break
+        if results:
+            for r in results[1:]:
+                if r['fingerprint'] != results[0]['fingerprint']:
+                    raise errors.AmbiguousUidError(search_query)
+            return results[0]
+        else:
+            raise errors.KeyNotFoundError(search_query)
 
 
-def retrieve_fingerprint(gpg, query):
-    """Return the ONLY fingerprint found for the query specified"""
+def retrieve_fingerprint(gpg, search_query):
+    """Find the ONLY fingerprint in the keyring for the search query
 
-    return retrieve_key(gpg, query)['fingerprint']
+    :param gpg: The object that might have the data being searched
+    :type gpg: gnupg.GPG
+    :param str search_query: The search query
+    :rtype: str
+    """
+    return retrieve_key(gpg, search_query)['fingerprint']
 
 
 def format_key_info(key):
