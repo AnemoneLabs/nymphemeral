@@ -372,6 +372,55 @@ class Client:
 
         log.debug('Initialized')
 
+    def _encrypt_e2ee_data(self, data, target,
+                           signer=None, passphrase=None, throw_keyids=False):
+        """Return ciphertext of end-to-end encrypted data
+
+        :param str data: The data to be encrypted
+        :param str target: The fingerprint of the target
+        :param str signer: The fingerprint of the signer
+        :param str passphrase: The passphrase of the signer
+        :param bool throw_keyids: Flag used to throw the target's key ID
+        :rtype: str
+        """
+        gpg = new_gpg(self.directory_base, self.use_agent, throw_keyids)
+        ciphertext = gpg.encrypt(data,
+                                 target,
+                                 sign=signer,
+                                 passphrase=passphrase,
+                                 always_trust=True)
+        if ciphertext:
+            return str(ciphertext)
+        else:
+            text = ciphertext.status.capitalize()
+            if not text:
+                text = 'Unknown error'
+            raise errors.NymphemeralError('GPG Error', text + '!')
+
+    def _sign_data(self, data, signer, passphrase=None):
+        """Return data signed by the fingerprint given
+
+        :param str data: The data to be signed
+        :param str signer: The fingerprint of the signer
+        :param str passphrase: The passphrase of the signer
+        :rtype: str
+        """
+        gpg = new_gpg(self.directory_base, self.use_agent)
+        result = gpg.sign(data, keyid=signer, passphrase=passphrase)
+        if result:
+            return str(result)
+        else:
+            error = result.stderr.lower()
+            bad_pass_error = 'bad passphrase'
+            need_pass_error = 'need_passphrase'
+            skey_error = 'secret key not available'
+            if bad_pass_error in error or need_pass_error in error:
+                raise errors.IncorrectPassphraseError()
+            elif skey_error in error:
+                raise errors.SecretKeyNotFoundError(signer)
+            else:
+                raise errors.NymphemeralError('GPG Error', result.stderr)
+
     def check_base_files(self):
         try:
             self.load_configs()
@@ -769,16 +818,54 @@ class Client:
             self.add_hsub(self.nym)
         return success, info, ciphertext
 
-    def send_message(self, target_address, body, subject='', headers=''):
+    def send_message(self, target_address, body,
+                     subject='', headers='',
+                     e2ee_target='',
+                     e2ee_signer='', passphrase=None,
+                     throw_keyids=False):
         target_address = target_address.strip()
         body = body.strip()
         subject = subject.strip()
         headers = headers.strip()
+        e2ee_target = e2ee_target.strip()
+        e2ee_signer = e2ee_signer.strip()
 
         if not len(target_address):
             raise errors.EmptyTargetError()
         if not len(body):
             raise errors.EmptyBodyError()
+
+        # check if end-to-end encryption is intended
+        e2ee_target_info = ''
+        if e2ee_target or e2ee_signer:
+            if e2ee_target:
+                e2ee_target_key = retrieve_key(self.gpg, e2ee_target)
+                e2ee_target_fp = e2ee_target_key['fingerprint']
+                e2ee_target_info = ('End-to-End Encryption to:\n' +
+                                    format_key_info(e2ee_target_key) + '\n')
+                if e2ee_signer:
+                    # encrypt and sign
+                    body = self._encrypt_e2ee_data(
+                        data=body,
+                        target=e2ee_target_fp,
+                        signer=retrieve_fingerprint(self.gpg, e2ee_signer),
+                        passphrase=passphrase,
+                        throw_keyids=throw_keyids
+                    )
+                else:
+                    # encrypt only
+                    body = self._encrypt_e2ee_data(
+                        data=body,
+                        target=e2ee_target_fp,
+                        throw_keyids=throw_keyids
+                    )
+            else:
+                # sign only
+                body = self._sign_data(
+                    data=body,
+                    signer=retrieve_fingerprint(self.gpg, e2ee_signer),
+                    passphrase=passphrase
+                )
 
         recipient = 'send@' + self.nym.server
 
@@ -805,7 +892,10 @@ class Client:
         lines.append('-----END PGP MESSAGE-----\n')
         pgp_message = '\n'.join(lines)
 
-        return self.encrypt_and_send(pgp_message, recipient, self.nym)
+        success, info, ciphertext = self.encrypt_and_send(pgp_message,
+                                                          recipient,
+                                                          self.nym)
+        return success, e2ee_target_info + info, ciphertext
 
     def send_config(self, ephemeral='', hsub='', name=''):
         ephemeral = ephemeral.strip()
@@ -961,66 +1051,6 @@ class Client:
             return Message(False, plaintext, msg.identifier)
         else:
             raise errors.UndecipherableMessageError()
-
-    def sign_data(self, data, signer, passphrase=None):
-        """
-        Return data signed by the fingerprint given
-
-        signer is expected to be a fingerprint (string) or a dictionary with the same format as the one returned by
-        gpg.list_keys()
-        """
-
-        try:
-            signer = signer['fingerprint']
-        except TypeError:
-            # it might be a string with the fingerprint
-            pass
-
-        gpg = new_gpg(self.directory_base, self.use_agent)
-        result = gpg.sign(data, keyid=signer, passphrase=passphrase)
-        if result:
-            return str(result)
-        else:
-            bad_pass_error = 'bad passphrase'
-            skey_error = 'secret key not available'
-            if bad_pass_error in result.stderr:
-                raise errors.IncorrectPassphraseError()
-            elif skey_error in result.stderr:
-                raise errors.SecretKeyNotFoundError(signer)
-            else:
-                raise errors.NymphemeralError('GPG Error', result.stderr)
-
-    def encrypt_e2ee_data(self, data, recipient, signer=None, passphrase=None, throw_keyids=False):
-        """
-        Return ciphertext of end-to-end encrypted data using nymphemeral's keyring
-
-        recipient and signer are expected to be fingerprints (strings) or a dictionary with the same format as the one
-        returned by gpg.list_keys()
-
-        signer is optional, in case signing is not intended
-        """
-
-        try:
-            recipient = recipient['fingerprint']
-        except TypeError:
-            # it might be a string with the fingerprint
-            pass
-
-        try:
-            signer = signer['fingerprint']
-        except TypeError:
-            # it might be a string with the fingerprint
-            pass
-
-        gpg = new_gpg(self.directory_base, self.use_agent, throw_keyids)
-        ciphertext = gpg.encrypt(data, recipient, sign=signer, passphrase=passphrase, always_trust=True)
-        if ciphertext:
-            return str(ciphertext)
-        else:
-            text = ciphertext.status.capitalize()
-            if not text:
-                text = 'Unknown error'
-            raise errors.NymphemeralError('GPG Error', text + '!')
 
     def decrypt_e2ee_message(self, msg, passphrase=None):
         """Return plaintext of end-to-end encrypted message using nymphemeral's keyring"""

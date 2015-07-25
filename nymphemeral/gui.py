@@ -781,58 +781,42 @@ class SendTab(Tk.Frame, object):
 
     def send_message(self, target_address, subject, headers, body,
                      e2ee_target='', e2ee_signer=''):
-        e2ee_target = e2ee_target.strip()
         e2ee_signer = e2ee_signer.strip()
+        passphrase = None
+        throw_keyids = bool(self.var_throw_keyids.get())
         try:
-            e2ee_target_info = ''
-            # check if end-to-end encryption is intended
-            if e2ee_target or e2ee_signer:
-                target_key = None
-                throw_keyids = bool(self.var_throw_keyids.get())
-                if len(e2ee_target):
-                    target_key = retrieve_key(self.client.gpg, e2ee_target)
-                    e2ee_target_info = 'End-to-End Encryption to:\n' + format_key_info(target_key) + '\n'
-
-                signer_key = None
-                passphrase = None
-                if len(e2ee_signer):
-                    signer_key = retrieve_key(self.client.gpg, e2ee_signer)
-                    if not self.client.use_agent:
-                        prompt = 'Signing with:\n' \
-                                 + format_key_info(signer_key) \
-                                 + 'Provide a passphrase to unlock the secret key:'
-                        passphrase = tkSimpleDialog.askstring('Passphrase Required',
-                                                              prompt,
-                                                              parent=self,
-                                                              show='*')
-                        if passphrase is None:
-                            # cancel
-                            return
-
-                if not target_key:
-                    # sign only
-                    body = self.client.sign_data(body, signer_key, passphrase)
-                elif signer_key:
-                    # encrypt and sign
-                    body = self.client.encrypt_e2ee_data(body,
-                                                         target_key,
-                                                         signer_key,
-                                                         passphrase,
-                                                         throw_keyids)
-                else:
-                    # encrypt only
-                    body = self.client.encrypt_e2ee_data(body,
-                                                         target_key,
-                                                         throw_keyids=throw_keyids)
-            success, info, ciphertext = \
-                self.client.send_message(target_address,
-                                         body,
-                                         subject,
-                                         headers)
+            # if signing, nymphemeral's own dialog will prompt for a passphrase
+            # in case the user chose not to use the GPG agent
+            if e2ee_signer and not self.client.use_agent:
+                e2ee_signer_key = retrieve_key(self.client.gpg, e2ee_signer)
+                prompt = (
+                    'Signing with:\n' +
+                    format_key_info(e2ee_signer_key) +
+                    'Provide a passphrase to unlock the secret key:'
+                )
+                passphrase = tkSimpleDialog.askstring(
+                    title='Passphrase Required',
+                    prompt=prompt,
+                    parent=self,
+                    show='*'
+                )
+                if passphrase is None:
+                    # the user has canceled
+                    return
+            success, info, ciphertext = self.client.send_message(
+                target_address,
+                body,
+                subject,
+                headers,
+                e2ee_target,
+                e2ee_signer,
+                passphrase,
+                throw_keyids
+            )
         except errors.NymphemeralError as e:
             tkMessageBox.showerror(e.title, e.message)
         else:
-            write_on_text(self.text_body, [info, e2ee_target_info, ciphertext])
+            write_on_text(self.text_body, [info, ciphertext])
 
 
 class ConfigTab(Tk.Frame, object):
