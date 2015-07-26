@@ -26,6 +26,7 @@ For more information, https://github.com/felipedau/nymphemeral
 """
 import logging
 import nntplib
+import os
 import socket
 import time
 from calendar import timegm
@@ -147,7 +148,10 @@ class AAMpy(object):
                                     log.info('Found a message for nickname ' +
                                              nick)
                                     file_name = 'message_' + nick + '_' + message_id[1:6] + '.txt'
-                                    with open(self._directory + '/' + file_name, 'w') as f:
+                                    file_path = os.path.join(
+                                        self._directory, file_name
+                                    )
+                                    with open(file_path, 'w') as f:
                                         f.write(message.as_string() + LINESEP)
                                         log.info('Encrypted message stored in '
                                                  + file_name)

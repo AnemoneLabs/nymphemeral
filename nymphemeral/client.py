@@ -16,6 +16,7 @@ from pyaxo import Axolotl
 
 import errors
 from __init__ import LINESEP
+from __init__ import PATHSEP
 from __init__ import logger
 from aampy import AAMpy
 from message import Message
@@ -23,8 +24,8 @@ from nym import Nym
 
 
 USER_PATH = os.path.expanduser('~')
-NYMPHEMERAL_PATH = USER_PATH + '/.config/nymphemeral'
-CONFIG_FILE = NYMPHEMERAL_PATH + '/nymphemeral.cfg'
+NYMPHEMERAL_PATH = os.path.join(USER_PATH, '.config', 'nymphemeral')
+CONFIG_FILE = os.path.join(NYMPHEMERAL_PATH, 'nymphemeral.cfg')
 OUTPUT_METHOD = {
     'mixmaster': 1,
     'sendmail': 2,
@@ -439,12 +440,18 @@ class Client:
             self.cfg.set('gpg', 'use_agent', 'True')
             self.cfg.add_section('main')
             self.cfg.set('main', 'base_dir', NYMPHEMERAL_PATH)
-            self.cfg.set('main', 'db_dir', '%(base_dir)s/db')
-            self.cfg.set('main', 'messages_dir', '%(base_dir)s/messages')
-            self.cfg.set('main', 'read_dir', '%(messages_dir)s/read')
-            self.cfg.set('main', 'unread_dir', '%(messages_dir)s/unread')
-            self.cfg.set('main', 'hsub_file', '%(base_dir)s/hsubs.txt')
-            self.cfg.set('main', 'encrypted_hsub_file', '%(base_dir)s/encrypted_hsubs.txt')
+            self.cfg.set('main', 'db_dir',
+                         os.path.join('%(base_dir)s', 'db'))
+            self.cfg.set('main', 'messages_dir',
+                         os.path.join('%(base_dir)s', 'messages'))
+            self.cfg.set('main', 'read_dir',
+                         os.path.join('%(messages_dir)s', 'read'))
+            self.cfg.set('main', 'unread_dir',
+                         os.path.join('%(messages_dir)s', 'unread'))
+            self.cfg.set('main', 'hsub_file',
+                         os.path.join('%(base_dir)s', 'hsubs.txt'))
+            self.cfg.set('main', 'encrypted_hsub_file',
+                         os.path.join('%(base_dir)s', 'encrypted_hsubs.txt'))
             self.cfg.set('main', 'logger_level', 'warning')
             self.cfg.set('main', 'output_method', 'manual')
             self.cfg.add_section('mixmaster')
@@ -709,7 +716,7 @@ class Client:
                 os.unlink(hsub_file)
             except IOError:
                 log.error('IOError while manipulating ' +
-                          hsub_file.split('/')[-1])
+                          hsub_file.split(PATHSEP)[-1])
                 return False
         else:
             return self.save_hsubs(self.hsubs)
@@ -754,7 +761,7 @@ class Client:
         files = files_in_path(path)
         for file_name in files:
             if re.match('message_' + self.nym.address + '_.*', file_name):
-                file_path = path + '/' + file_name
+                file_path = os.path.join(path, file_name)
                 data = read_data(file_path)
                 if read_messages:
                     decrypted_data = decrypt_data(self.gpg, data, self.nym.passphrase)
@@ -765,7 +772,7 @@ class Client:
                                                       self.nym.passphrase)
                         if encrypted_data:
                             save_data(encrypted_data, file_path)
-                            log.debug(file_path.split('/')[-1] + ' is now'
+                            log.debug(file_path.split(PATHSEP)[-1] + ' is now'
                                       'encrypted')
                 new_message = Message(not read_messages, data, file_path)
                 if new_message.date:
@@ -934,7 +941,7 @@ class Client:
 
     def send_delete(self):
         recipient = 'config@' + self.nym.server
-        db_file = self.directory_db + '/' + self.nym.fingerprint + '.db'
+        db_file = os.path.join(self.directory_db, self.nym.fingerprint + '.db')
 
         data = 'delete: yes'
         success, info, ciphertext = self.encrypt_and_send(data, recipient, self.nym)
@@ -1107,7 +1114,8 @@ class Client:
 
     def save_message_to_disk(self, msg):
         try:
-            new_identifier = self.directory_read_messages + '/' + msg.identifier.split('/')[-1]
+            new_identifier = os.path.join(self.directory_read_messages,
+                                          msg.identifier.split(PATHSEP)[-1])
             data = msg.processed_message.as_string()
             ciphertext = encrypt_data(self.gpg, data, self.nym.address, self.nym.fingerprint, self.nym.passphrase)
             if ciphertext:

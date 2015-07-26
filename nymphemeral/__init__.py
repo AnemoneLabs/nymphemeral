@@ -36,9 +36,11 @@ __status__ = 'Beta'
 
 
 import logging
+import os
 
 
 LINESEP = '\n'
+PATHSEP = os.path.sep
 FORMAT = '%(levelname)s - %(name)s: %(message)s'
 
 handler = logging.StreamHandler()
