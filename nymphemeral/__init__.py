@@ -37,6 +37,7 @@ __status__ = 'Beta'
 
 import logging
 
+LINESEP = '\n'
 FORMAT = '%(levelname)s - %(name)s: %(message)s'
 
 handler = logging.StreamHandler()

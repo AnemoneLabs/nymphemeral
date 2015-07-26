@@ -18,7 +18,7 @@ from client import Client
 from nym import Nym
 
 from __init__ import __version__
-
+from __init__ import LINESEP
 
 log = logging.getLogger(__name__)
 
@@ -157,10 +157,12 @@ class LoginWindow(Tk.Tk, object):
                 errors.IncorrectPassphraseError) as e:
             tkMessageBox.showerror(e.title, e.message)
         except errors.NymservNotFoundError as e:
-            if tkMessageBox.askyesno(e.title, e.message + '\nWould you like to import it?'):
+            if tkMessageBox.askyesno(e.title, e.message + LINESEP +
+                                     'Would you like to import it?'):
                 KeyWindow(self.gui, self.client)
         except errors.NymNotFoundError as e:
-            if tkMessageBox.askyesno(e.title, e.message + '\nWould you like to create it?'):
+            if tkMessageBox.askyesno(e.title, e.message + LINESEP +
+                                     'Would you like to create it?'):
                 self.start_session(address, passphrase, True)
         else:
             self.gui.start_session(creating_nym)
@@ -428,8 +430,9 @@ class CreationTab(Tk.Frame, object):
         scrollbar.grid(row=0, column=1, sticky='ns')
         self.text_create['yscrollcommand'] = scrollbar.set
         self.text_create.insert(Tk.INSERT,
-                                'Key generation may take a long time after you click the "Create Nym" button.'
-                                '\nBe prepared to wait...')
+                                'Key generation may take a long time after '
+                                'you click the "Create Nym" button.' +
+                                LINESEP + 'Be prepared to wait...')
 
     def set_interface(self, enabled):
         if enabled:
@@ -603,12 +606,13 @@ class InboxTab(Tk.Frame, object):
                         except errors.KeyNotFoundError:
                             pass
                 if keys:
-                    prompt = 'Message encrypted to:\n'
+                    prompt = 'Message encrypted to:' + LINESEP
                     for k in keys:
                         prompt += format_key_info(k)
                 else:
-                    prompt = 'The key ID which the message was encrypted to was removed ' \
-                             'or is not in the keyring.\n'
+                    prompt = ('The key ID which the message was encrypted to '
+                              'was removed or is not in the keyring.' +
+                              LINESEP)
                 prompt += 'Provide a passphrase to attempt to decrypt it:'
                 passphrase = tkSimpleDialog.askstring('End-to-End Encrypted Message',
                                                       prompt,
@@ -767,9 +771,9 @@ class SendTab(Tk.Frame, object):
             self.entry_subject_send.insert(0, msg.subject)
             if not msg.subject.startswith('Re: '):
                 self.entry_subject_send.insert(0, 'Re: ')
-        content = '\n\n'
+        content = LINESEP*2
         for line in msg.content.splitlines():
-            content += '> ' + line + '\n'
+            content += '> ' + line + LINESEP
         if msg.id:
             header = 'In-Reply-To: ' + msg.id
             write_on_text(self.text_header, [header])
@@ -790,7 +794,7 @@ class SendTab(Tk.Frame, object):
             if e2ee_signer and not self.client.use_agent:
                 e2ee_signer_key = retrieve_key(self.client.gpg, e2ee_signer)
                 prompt = (
-                    'Signing with:\n' +
+                    'Signing with:' + LINESEP +
                     format_key_info(e2ee_signer_key) +
                     'Provide a passphrase to unlock the secret key:'
                 )

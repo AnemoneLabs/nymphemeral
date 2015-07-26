@@ -27,7 +27,6 @@ For more information, https://github.com/felipedau/nymphemeral
 import logging
 import nntplib
 import socket
-import string
 import time
 from calendar import timegm
 from copy import deepcopy
@@ -37,6 +36,7 @@ from threading import Event
 from dateutil import parser, tz
 
 import hsub
+from __init__ import LINESEP
 
 
 log = logging.getLogger(__name__)
@@ -134,7 +134,7 @@ class AAMpy(object):
                 # no such message (maybe it was deleted?)
                 pass
             else:
-                message = message_from_string(string.join(text, '\n'))
+                message = message_from_string(LINESEP.join(text))
                 subject = message.get('Subject')
                 if subject:
                     subject_length = len(subject)
@@ -148,7 +148,7 @@ class AAMpy(object):
                                              nick)
                                     file_name = 'message_' + nick + '_' + message_id[1:6] + '.txt'
                                     with open(self._directory + '/' + file_name, 'w') as f:
-                                        f.write(message.as_string()+'\n')
+                                        f.write(message.as_string() + LINESEP)
                                         log.info('Encrypted message stored in '
                                                  + file_name)
                 date = parser.parse(message.get('Date'))

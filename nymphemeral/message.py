@@ -3,6 +3,8 @@ from email import message_from_string
 
 from dateutil import parser
 
+from __init__ import LINESEP
+
 
 class Message(object):
     def __init__(self, is_unread, string, identifier):
@@ -46,7 +48,7 @@ class Message(object):
         headers = []
         for item in message.items():
             headers.append(': '.join(item))
-        self._headers = '\n'.join(headers)
+        self._headers = LINESEP.join(headers)
 
         # content types we print
         mtypes = ('text/plain', 'text/html', 'message/rfc822')

@@ -15,6 +15,7 @@ import gnupg
 from pyaxo import Axolotl
 
 import errors
+from __init__ import LINESEP
 from __init__ import logger
 from aampy import AAMpy
 from message import Message
@@ -113,11 +114,11 @@ def search_block(data, beginning, end):
     block = ''
     for line in data.splitlines():
         if block:
-            block += line + '\n'
+            block += line + LINESEP
             if line == end:
                 return block
         elif line == beginning:
-            block = line + '\n'
+            block = line + LINESEP
     return None
 
 
@@ -241,11 +242,11 @@ def format_key_info(key):
 
     info = ''
     for uid in key['uids']:
-        info += uid + '\n'
+        info += uid + LINESEP
     info += key['length'] + '-bit key' \
         + ', ID ' + key['keyid'][-8:] \
         + ', expires ' + time.strftime('%Y-%m-%d', time.gmtime(float(key['expires']))) \
-        + '\n'
+        + LINESEP
     return info
 
 
@@ -671,7 +672,7 @@ class Client:
         output_file = self.file_hsub
         data = ''
         for key, item in hsubs.iteritems():
-            data += key + ' ' + str(item) + '\n'
+            data += key + ' ' + str(item) + LINESEP
         # check if the nym has access or can create the encrypted hSub passphrases file
         if self.nym.fingerprint and (not os.path.exists(self.file_encrypted_hsub) or self.decrypt_hsubs_file()):
             nyms = self.retrieve_nyms()
@@ -806,7 +807,7 @@ class Client:
         lines.append('ratchet: ' + b2a_base64(axolotl.state['DHRs']).strip())
         lines.append('hsub: ' + hsub)
         lines.append(pubkey)
-        data = '\n'.join(lines)
+        data = LINESEP.join(lines)
 
         success, info, ciphertext = self.encrypt_and_send(data, recipient, self.nym)
         if success:
@@ -841,8 +842,8 @@ class Client:
             if e2ee_target:
                 e2ee_target_key = retrieve_key(self.gpg, e2ee_target)
                 e2ee_target_fp = e2ee_target_key['fingerprint']
-                e2ee_target_info = ('End-to-End Encryption to:\n' +
-                                    format_key_info(e2ee_target_key) + '\n')
+                e2ee_target_info = ('End-to-End Encryption to:' + LINESEP +
+                                    format_key_info(e2ee_target_key) + LINESEP)
                 if e2ee_signer:
                     # encrypt and sign
                     body = self._encrypt_e2ee_data(
@@ -880,7 +881,7 @@ class Client:
         lines.append('')
         lines.append(body)
         lines.append('')
-        content = '\n'.join(lines)
+        content = LINESEP.join(lines)
         msg = message_from_string(content).as_string().strip()
 
         self.axolotl.loadState(self.nym.fingerprint, self.nym.server)
@@ -888,9 +889,9 @@ class Client:
         self.axolotl.saveState()
 
         lines = [ciphertext[i:i + 64] for i in xrange(0, len(ciphertext), 64)]
-        lines.insert(0, '-----BEGIN PGP MESSAGE-----\n')
-        lines.append('-----END PGP MESSAGE-----\n')
-        pgp_message = '\n'.join(lines)
+        lines.insert(0, '-----BEGIN PGP MESSAGE-----' + LINESEP)
+        lines.append('-----END PGP MESSAGE-----' + LINESEP)
+        pgp_message = LINESEP.join(lines)
 
         success, info, ciphertext = self.encrypt_and_send(pgp_message,
                                                           recipient,
@@ -916,7 +917,7 @@ class Client:
             lines.append('hsub: ' + str(hsub))
         if name:
             lines.append('name: ' + str(name))
-        data = '\n'.join(lines) + '\n'
+        data = LINESEP.join(lines) + LINESEP
 
         success = info = ciphertext = None
         if data != '':
@@ -954,15 +955,15 @@ class Client:
             if self.output_method == 'manual':
                 info = 'Send the following message to ' + recipient
                 copy_to_clipboard(ciphertext)
-                info += '\nIt has been copied to the clipboard'
+                info += LINESEP + 'It has been copied to the clipboard'
             else:
-                data = 'To: ' + recipient + '\n\n' + ciphertext
+                data = 'To: ' + recipient + LINESEP*2 + ciphertext
                 if self.send_data(data):
                     info = 'The following message was successfully sent to ' + recipient
                 else:
                     info = 'ERROR! The following message could not be sent to ' + recipient
                     success = False
-            info += '\n\n'
+            info += LINESEP*2
             return success, info, ciphertext
         else:
             raise errors.IncorrectPassphraseError()
@@ -1047,7 +1048,10 @@ class Client:
                 plaintext = ciphertext
                 if search_pgp_message(ciphertext):
                     log.debug('Asymmetric layer not decrypted')
-                    plaintext = 'The asymmetric layer encrypted by the server could not be decrypted:\n\n' + ciphertext
+                    plaintext = ('The asymmetric layer encrypted by the '
+                                 'server could not be decrypted:' +
+                                 LINESEP*2 +
+                                 ciphertext)
             return Message(False, plaintext, msg.identifier)
         else:
             raise errors.UndecipherableMessageError()
@@ -1086,12 +1090,12 @@ class Client:
                     while not line_id.startswith('gpg: anonymous recipient; trying secret key'):
                         j += 1
                         line_id = lines[i - j]
-                    gpg_info = gpg_info + line_id + '\n'
+                    gpg_info = gpg_info + line_id + LINESEP
 
-                gpg_info += line + '\n'
+                gpg_info += line + LINESEP
 
             if not gpg_info:
-                gpg_info = 'GPG information not available\n'
+                gpg_info = 'GPG information not available' + LINESEP
 
             headers = str(msg.processed_message).split(data)[0]
             full_msg = headers + gpg_info + result.data

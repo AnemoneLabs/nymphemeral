@@ -1,3 +1,6 @@
+from __init__ import LINESEP
+
+
 class NymphemeralError(Exception):
     def __init__(self, title, message):
         self.title = title
@@ -126,12 +129,15 @@ class InvalidDurationError(NymphemeralError):
     def __init__(self):
         super(InvalidDurationError, self).__init__(
             title='Invalid Duration',
-            message='The duration provided should be in the format:\n\n'
-                    '0 = key does not expire\n'
-                    '<n> = key expires in n days\n'
-                    '<n>w = key expires in n weeks\n'
-                    '<n>m = key expires in n months\n'
-                    '<n>y = key expires in n years'
+            message=LINESEP.join([
+                'The duration provided should be in the format:',
+                '',
+                '0 = key does not expire',
+                '<n> = key expires in n days',
+                '<n>w = key expires in n weeks',
+                '<n>m = key expires in n months',
+                '<n>y = key expires in n years'
+            ])
         )
 
 
