@@ -928,21 +928,19 @@ class Client:
             lines.append('name: ' + str(name))
         data = LINESEP.join(lines) + LINESEP
 
-        success = info = ciphertext = None
-        if data != '':
-            success, info, ciphertext = self.encrypt_and_send(
-                data,
-                recipient='config@'+self.nym.server,
-                nym=self.nym
-            )
-            if success:
-                if ephemeral:
-                    create_state(axolotl=axolotl,
-                                 other_name=self.nym.server,
-                                 mkey=ephemeral)
-                if hsub:
-                    self.nym.hsub = hsub
-                    self.add_hsub(self.nym)
+        success, info, ciphertext = self.encrypt_and_send(
+            data,
+            recipient='config@'+self.nym.server,
+            nym=self.nym
+        )
+        if success:
+            if ephemeral:
+                create_state(axolotl=axolotl,
+                             other_name=self.nym.server,
+                             mkey=ephemeral)
+            if hsub:
+                self.nym.hsub = hsub
+                self.add_hsub(self.nym)
         return success, info, ciphertext
 
     def send_delete(self):
