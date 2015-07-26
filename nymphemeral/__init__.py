@@ -29,13 +29,14 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 For more information, see https://github.com/felipedau/nymphemeral
 """
-
 __author__ = 'Felipe Dau and David R. Andersen'
 __license__ = 'GPL'
 __version__ = '1.3.4.2'
 __status__ = 'Beta'
 
+
 import logging
+
 
 LINESEP = '\n'
 FORMAT = '%(levelname)s - %(name)s: %(message)s'
