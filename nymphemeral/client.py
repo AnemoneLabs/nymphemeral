@@ -544,10 +544,10 @@ class Client:
         self.cfg.set('main', 'output_method', self.output_method)
 
     def initialize_aampy(self):
-        group = self.cfg.get('newsgroup', 'group')
-        server = self.cfg.get('newsgroup', 'server')
-        port = self.cfg.get('newsgroup', 'port')
-        return AAMpy(self.directory_unread_messages, group, server, port)
+        return AAMpy(self.directory_unread_messages,
+                     group=self.cfg.get('newsgroup', 'group'),
+                     server=self.cfg.get('newsgroup', 'server'),
+                     port=self.cfg.get('newsgroup', 'port'))
 
     def check_mixmaster(self):
         self.file_mix_cfg = None
@@ -804,7 +804,6 @@ class Client:
         if not re.match(r'\d+[dwmy]{0,1}$', duration, flags=re.IGNORECASE):
             raise errors.InvalidDurationError()
 
-        recipient = 'config@' + self.nym.server
         pubkey, fingerprint = generate_key(self.gpg, name, self.nym.address, self.nym.passphrase, duration)
         nym = Nym(self.nym.address, self.nym.passphrase, fingerprint, hsub)
         axolotl = create_axolotl(nym, self.directory_db)
@@ -816,7 +815,11 @@ class Client:
         lines.append(pubkey)
         data = LINESEP.join(lines)
 
-        success, info, ciphertext = self.encrypt_and_send(data, recipient, self.nym)
+        success, info, ciphertext = self.encrypt_and_send(
+            data,
+            recipient='config@'+self.nym.server,
+            nym=self.nym
+        )
         if success:
             create_state(axolotl=axolotl,
                          other_name=self.nym.server,
@@ -875,8 +878,6 @@ class Client:
                     passphrase=passphrase
                 )
 
-        recipient = 'send@' + self.nym.server
-
         lines = []
         lines.append('To: ' + target_address)
         if len(subject):
@@ -900,9 +901,11 @@ class Client:
         lines.append('-----END PGP MESSAGE-----' + LINESEP)
         pgp_message = LINESEP.join(lines)
 
-        success, info, ciphertext = self.encrypt_and_send(pgp_message,
-                                                          recipient,
-                                                          self.nym)
+        success, info, ciphertext = self.encrypt_and_send(
+            pgp_message,
+            recipient='send@'+self.nym.server,
+            nym=self.nym
+        )
         return success, e2ee_target_info + info, ciphertext
 
     def send_config(self, ephemeral='', hsub='', name=''):
@@ -914,7 +917,6 @@ class Client:
             raise errors.EmptyChangesError()
 
         axolotl = create_axolotl(self.nym, self.directory_base)
-        recipient = 'config@' + self.nym.server
 
         lines = []
         if ephemeral:
@@ -928,7 +930,11 @@ class Client:
 
         success = info = ciphertext = None
         if data != '':
-            success, info, ciphertext = self.encrypt_and_send(data, recipient, self.nym)
+            success, info, ciphertext = self.encrypt_and_send(
+                data,
+                recipient='config@'+self.nym.server,
+                nym=self.nym
+            )
             if success:
                 if ephemeral:
                     create_state(axolotl=axolotl,
@@ -940,11 +946,13 @@ class Client:
         return success, info, ciphertext
 
     def send_delete(self):
-        recipient = 'config@' + self.nym.server
         db_file = os.path.join(self.directory_db, self.nym.fingerprint + '.db')
 
-        data = 'delete: yes'
-        success, info, ciphertext = self.encrypt_and_send(data, recipient, self.nym)
+        success, info, ciphertext = self.encrypt_and_send(
+            data='delete: yes',
+            recipient='config@'+self.nym.server,
+            nym=self.nym
+        )
         if success:
             if os.path.exists(db_file):
                 os.unlink(db_file)
