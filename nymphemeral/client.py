@@ -924,7 +924,8 @@ class Client:
             lines.append('hsub: ' + str(hsub))
         if name:
             lines.append('name: ' + str(name))
-        data = LINESEP.join(lines) + LINESEP
+        lines.append('')
+        data = LINESEP.join(lines)
 
         success, info, ciphertext = self.encrypt_and_send(
             data,
