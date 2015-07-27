@@ -817,8 +817,7 @@ class Client:
 
         success, info, ciphertext = self.encrypt_and_send(
             data,
-            recipient='config@'+self.nym.server,
-            nym=self.nym
+            recipient='config@'+self.nym.server
         )
         if success:
             create_state(axolotl=axolotl,
@@ -903,8 +902,7 @@ class Client:
 
         success, info, ciphertext = self.encrypt_and_send(
             pgp_message,
-            recipient='send@'+self.nym.server,
-            nym=self.nym
+            recipient='send@'+self.nym.server
         )
         return success, e2ee_target_info + info, ciphertext
 
@@ -930,8 +928,7 @@ class Client:
 
         success, info, ciphertext = self.encrypt_and_send(
             data,
-            recipient='config@'+self.nym.server,
-            nym=self.nym
+            recipient='config@'+self.nym.server
         )
         if success:
             if ephemeral:
@@ -948,8 +945,7 @@ class Client:
 
         success, info, ciphertext = self.encrypt_and_send(
             data='delete: yes',
-            recipient='config@'+self.nym.server,
-            nym=self.nym
+            recipient='config@'+self.nym.server
         )
         if success:
             if os.path.exists(db_file):
@@ -961,8 +957,9 @@ class Client:
             self.gpg.delete_keys(self.nym.fingerprint)
         return success, info, ciphertext
 
-    def encrypt_and_send(self, data, recipient, nym):
-        ciphertext = encrypt_data(self.gpg, data, recipient, nym.fingerprint, nym.passphrase)
+    def encrypt_and_send(self, data, recipient):
+        ciphertext = encrypt_data(self.gpg, data, recipient,
+                                  self.nym.fingerprint, self.nym.passphrase)
         if ciphertext:
             success = True
             if self.output_method == 'manual':
