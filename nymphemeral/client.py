@@ -890,7 +890,7 @@ class Client:
         lines.append(body)
         lines.append('')
         content = LINESEP.join(lines)
-        msg = message_from_string(content).as_string().strip()
+        msg = message_from_string(content).as_string()
 
         self.axolotl.loadState(self.nym.fingerprint, self.nym.server)
         ciphertext = b2a_base64(self.axolotl.encrypt(msg)).strip()
