@@ -946,7 +946,7 @@ class Client:
         if not (ephemeral or hsub or name):
             raise errors.EmptyChangesError()
 
-        axolotl = create_axolotl(self._session.nym, self.directory_base)
+        axolotl = create_axolotl(self._session.nym, self.directory_db)
 
         lines = []
         if ephemeral:
