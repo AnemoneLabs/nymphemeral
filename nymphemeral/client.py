@@ -21,6 +21,7 @@ from __init__ import logger
 from aampy import AAMpy
 from message import Message
 from nym import Nym
+from session import Session
 
 
 USER_PATH = os.path.expanduser('~')
@@ -363,9 +364,7 @@ class Client:
         # create a GPG instance using nymphemeral's base directory as home
         self.gpg = new_gpg(self.directory_base)
 
-        self.axolotl = None
-        self.nym = None
-        self.hsubs = {}
+        self._session = Session()
 
         # attributes to handle aampy (to retrieve new messages) using threads
         self.aampy = self._initialize_aampy()
@@ -373,6 +372,10 @@ class Client:
         self._thread_aampy_wait = None
 
         log.debug('Initialized')
+
+    @property
+    def nym_address(self):
+        return self._session.nym.address
 
     def _check_base_files(self):
         try:
@@ -430,14 +433,16 @@ class Client:
 
     def _wait_for_aampy(self):
         self.aampy.event.wait()
-        if self.hsubs and self.aampy.timestamp:
-            self.hsubs['time'] = self.aampy.timestamp
-            self.save_hsubs(self.hsubs)
+        if self._session.hsubs and self.aampy.timestamp:
+            self._session.hsubs['time'] = self.aampy.timestamp
+            self.save_hsubs(self._session.hsubs)
 
     def _decrypt_hsubs_file(self):
         if os.path.exists(self.file_encrypted_hsub):
             encrypted_data = read_data(self.file_encrypted_hsub)
-            return decrypt_data(self.gpg, encrypted_data, self.nym.passphrase)
+            return decrypt_data(self.gpg,
+                                encrypted_data,
+                                self._session.nym.passphrase)
         else:
             log.info('Decryption of ' + self.file_encrypted_hsub + ' failed. '
                      'It does not exist')
@@ -451,16 +456,24 @@ class Client:
             path = self.directory_unread_messages
         files = files_in_path(path)
         for file_name in files:
-            if re.match('message_' + self.nym.address + '_.*', file_name):
+            if re.match('message_' + self._session.nym.address + '_.*',
+                        file_name):
                 file_path = os.path.join(path, file_name)
                 data = read_data(file_path)
                 if read_messages:
-                    decrypted_data = decrypt_data(self.gpg, data, self.nym.passphrase)
+                    decrypted_data = decrypt_data(self.gpg,
+                                                  data,
+                                                  self._session.nym.passphrase)
                     if decrypted_data:
                         data = decrypted_data
                     elif not search_pgp_message(data):
-                        encrypted_data = encrypt_data(self.gpg, data, self.nym.address, self.nym.fingerprint,
-                                                      self.nym.passphrase)
+                        encrypted_data = encrypt_data(
+                            self.gpg,
+                            data,
+                            self._session.nym.address,
+                            self._session.nym.fingerprint,
+                            self._session.nym.passphrase
+                        )
                         if encrypted_data:
                             save_data(encrypted_data, file_path)
                             log.debug(file_path.split(PATHSEP)[-1] + ' is now'
@@ -682,17 +695,15 @@ class Client:
             nym.fingerprint = result[0].fingerprint
             if not nym.fingerprint:
                 raise errors.FingerprintNotFoundError(nym.address)
-            self.axolotl = create_axolotl(nym, self.directory_db)
-        self.nym = nym
-        self.hsubs = self.retrieve_hsubs()
+            self._session.axolotl = create_axolotl(nym, self.directory_db)
+        self._session.nym = nym
+        self._session.hsubs = self.retrieve_hsubs()
         if not creating_nym:
-            self.nym.hsub = self.hsubs[nym.address]
+            self._session.nym.hsub = self._session.hsubs[nym.address]
         self.check_configs(use_agent, output_method)
 
     def end_session(self):
-        self.axolotl = None
-        self.nym = None
-        self.hsubs = {}
+        self._session = Session()
 
     def check_configs(self, use_agent, output_method):
         update = False
@@ -715,12 +726,18 @@ class Client:
         for key, item in hsubs.iteritems():
             data += key + ' ' + str(item) + LINESEP
         # check if the nym has access or can create the encrypted hSub passphrases file
-        if self.nym.fingerprint and (not os.path.exists(self.file_encrypted_hsub) or self._decrypt_hsubs_file()):
+        if self._session.nym.fingerprint \
+                and (not os.path.exists(self.file_encrypted_hsub)
+                     or self._decrypt_hsubs_file()):
             nyms = self.retrieve_nyms()
             recipients = []
             for n in nyms:
                 recipients.append(n.address)
-            result = encrypt_data(self.gpg, data, recipients, self.nym.fingerprint, self.nym.passphrase)
+            result = encrypt_data(self.gpg,
+                                  data,
+                                  recipients,
+                                  self._session.nym.fingerprint,
+                                  self._session.nym.passphrase)
             if result:
                 output_file = self.file_encrypted_hsub
                 data = result
@@ -735,13 +752,14 @@ class Client:
             return False
 
     def add_hsub(self, nym):
-        self.hsubs[nym.address] = nym.hsub
-        return self.save_hsubs(self.hsubs)
+        self._session.hsubs[nym.address] = nym.hsub
+        return self.save_hsubs(self._session.hsubs)
 
     def delete_hsub(self, nym):
-        del self.hsubs[nym.address]
+        del self._session.hsubs[nym.address]
         # check if there are no hSub passphrases anymore
-        if not self.hsubs or len(self.hsubs) == 1 and 'time' in self.hsubs:
+        if not self._session.hsubs or len(self._session.hsubs) == 1 \
+                and 'time' in self._session.hsubs:
             if self._decrypt_hsubs_file():
                 hsub_file = self.file_encrypted_hsub
             else:
@@ -753,7 +771,7 @@ class Client:
                           hsub_file.split(PATHSEP)[-1])
                 return False
         else:
-            return self.save_hsubs(self.hsubs)
+            return self.save_hsubs(self._session.hsubs)
         return True
 
     def retrieve_hsubs(self):
@@ -810,8 +828,15 @@ class Client:
         if not re.match(r'\d+[dwmy]{0,1}$', duration, flags=re.IGNORECASE):
             raise errors.InvalidDurationError()
 
-        pubkey, fingerprint = generate_key(self.gpg, name, self.nym.address, self.nym.passphrase, duration)
-        nym = Nym(self.nym.address, self.nym.passphrase, fingerprint, hsub)
+        pubkey, fingerprint = generate_key(self.gpg,
+                                           name,
+                                           self._session.nym.address,
+                                           self._session.nym.passphrase,
+                                           duration)
+        nym = Nym(self._session.nym.address,
+                  self._session.nym.passphrase,
+                  fingerprint,
+                  hsub)
         axolotl = create_axolotl(nym, self.directory_db)
 
         lines = []
@@ -823,15 +848,15 @@ class Client:
 
         success, info, ciphertext = self.encrypt_and_send(
             data,
-            recipient='config@'+self.nym.server
+            recipient='config@'+self._session.nym.server
         )
         if success:
             create_state(axolotl=axolotl,
-                         other_name=self.nym.server,
+                         other_name=self._session.nym.server,
                          mkey=ephemeral)
-            self.axolotl = axolotl
-            self.nym = nym
-            self.add_hsub(self.nym)
+            self._session.axolotl = axolotl
+            self._session.nym = nym
+            self.add_hsub(self._session.nym)
         return success, info, ciphertext
 
     def send_message(self, target_address, body,
@@ -897,9 +922,10 @@ class Client:
         content = LINESEP.join(lines)
         msg = message_from_string(content).as_string()
 
-        self.axolotl.loadState(self.nym.fingerprint, self.nym.server)
-        ciphertext = b2a_base64(self.axolotl.encrypt(msg)).strip()
-        self.axolotl.saveState()
+        self._session.axolotl.loadState(self._session.nym.fingerprint,
+                                        self._session.nym.server)
+        ciphertext = b2a_base64(self._session.axolotl.encrypt(msg)).strip()
+        self._session.axolotl.saveState()
 
         lines = [ciphertext[i:i + 64] for i in xrange(0, len(ciphertext), 64)]
         lines.insert(0, '-----BEGIN PGP MESSAGE-----' + LINESEP)
@@ -908,7 +934,7 @@ class Client:
 
         success, info, ciphertext = self.encrypt_and_send(
             pgp_message,
-            recipient='send@'+self.nym.server
+            recipient='send@'+self._session.nym.server
         )
         return success, e2ee_target_info + info, ciphertext
 
@@ -920,7 +946,7 @@ class Client:
         if not (ephemeral or hsub or name):
             raise errors.EmptyChangesError()
 
-        axolotl = create_axolotl(self.nym, self.directory_base)
+        axolotl = create_axolotl(self._session.nym, self.directory_base)
 
         lines = []
         if ephemeral:
@@ -935,38 +961,40 @@ class Client:
 
         success, info, ciphertext = self.encrypt_and_send(
             data,
-            recipient='config@'+self.nym.server
+            recipient='config@'+self._session.nym.server
         )
         if success:
             if ephemeral:
                 create_state(axolotl=axolotl,
-                             other_name=self.nym.server,
+                             other_name=self._session.nym.server,
                              mkey=ephemeral)
             if hsub:
-                self.nym.hsub = hsub
-                self.add_hsub(self.nym)
+                self._session.nym.hsub = hsub
+                self.add_hsub(self._session.nym)
         return success, info, ciphertext
 
     def send_delete(self):
-        db_file = os.path.join(self.directory_db, self.nym.fingerprint + '.db')
+        db_file = os.path.join(self.directory_db,
+                               self._session.nym.fingerprint + '.db')
 
         success, info, ciphertext = self.encrypt_and_send(
             data='delete: yes',
-            recipient='config@'+self.nym.server
+            recipient='config@'+self._session.nym.server
         )
         if success:
             if os.path.exists(db_file):
                 os.unlink(db_file)
-            self.delete_hsub(self.nym)
+            self.delete_hsub(self._session.nym)
             # delete secret key
-            self.gpg.delete_keys(self.nym.fingerprint, True)
+            self.gpg.delete_keys(self._session.nym.fingerprint, True)
             # delete public key
-            self.gpg.delete_keys(self.nym.fingerprint)
+            self.gpg.delete_keys(self._session.nym.fingerprint)
         return success, info, ciphertext
 
     def encrypt_and_send(self, data, recipient):
         ciphertext = encrypt_data(self.gpg, data, recipient,
-                                  self.nym.fingerprint, self.nym.passphrase)
+                                  self._session.nym.fingerprint,
+                                  self._session.nym.passphrase)
         if ciphertext:
             success = True
             if self.output_method == 'manual':
@@ -1016,7 +1044,8 @@ class Client:
 
         self._thread_aampy_wait = Thread(target=self._wait_for_aampy)
         self._thread_aampy_wait.daemon = True
-        self._thread_aampy = Thread(target=self.aampy.retrieve_messages, args=(self.hsubs,))
+        self._thread_aampy = Thread(target=self.aampy.retrieve_messages,
+                                    args=(self._session.hsubs,))
         self._thread_aampy.daemon = True
 
         self._thread_aampy_wait.start()
@@ -1027,17 +1056,18 @@ class Client:
 
     def decrypt_ephemeral_data(self, data):
         ciphertext = None
-        self.axolotl.loadState(self.nym.fingerprint, self.nym.server)
+        self._session.axolotl.loadState(self._session.nym.fingerprint,
+                                        self._session.nym.server)
         # workaround to suppress prints by pyaxo
         sys.stdout = open(os.devnull, 'w')
         try:
-            ciphertext = self.axolotl.decrypt(a2b_base64(data)).strip()
+            ciphertext = self._session.axolotl.decrypt(a2b_base64(data)).strip()
         except SystemExit:
             sys.stdout = sys.__stdout__
             log.info('Error while decrypting message')
         else:
             sys.stdout = sys.__stdout__
-            self.axolotl.saveState()
+            self._session.axolotl.saveState()
         return ciphertext
 
     def decrypt_ephemeral_message(self, msg):
@@ -1052,7 +1082,9 @@ class Client:
         self.delete_message_from_disk(msg)
         if ciphertext:
             log.debug('Ephemeral layer decrypted')
-            plaintext = decrypt_data(self.gpg, ciphertext, self.nym.passphrase)
+            plaintext = decrypt_data(self.gpg,
+                                     ciphertext,
+                                     self._session.nym.passphrase)
             if plaintext:
                 log.debug('Asymmetric layer decrypted')
             else:
@@ -1121,7 +1153,11 @@ class Client:
             new_identifier = os.path.join(self.directory_read_messages,
                                           msg.identifier.split(PATHSEP)[-1])
             data = msg.processed_message.as_string()
-            ciphertext = encrypt_data(self.gpg, data, self.nym.address, self.nym.fingerprint, self.nym.passphrase)
+            ciphertext = encrypt_data(self.gpg,
+                                      data,
+                                      self._session.nym.address,
+                                      self._session.nym.fingerprint,
+                                      self._session.nym.passphrase)
             if ciphertext:
                 data = ciphertext
             else:
