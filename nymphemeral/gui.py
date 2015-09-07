@@ -334,7 +334,7 @@ class MainWindow(Tk.Tk, object):
         frame_left.pack(side=Tk.LEFT)
         frame_address = Tk.Frame(frame_left)
         frame_address.pack(fill=Tk.X, expand=True)
-        label_address = Tk.Label(frame_address, text=self.client.nym.address)
+        label_address = Tk.Label(frame_address, text=self.client.nym_address)
         label_address.pack(side=Tk.LEFT)
         if self.client.output_method == 'mixmaster':
             frame_chain = Tk.Frame(frame_left)
