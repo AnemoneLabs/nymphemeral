@@ -344,7 +344,7 @@ def create_state(axolotl, other_name, mkey):
 
 class Client:
     def __init__(self):
-        self.cfg = ConfigParser()
+        self._cfg = ConfigParser()
 
         self.use_agent = None
         self.directory_base = None
@@ -358,7 +358,7 @@ class Client:
         self.file_mix_binary = None
         self.file_mix_cfg = None
         self.chain = None
-        self.check_base_files()
+        self._check_base_files()
 
         # create a GPG instance using nymphemeral's base directory as home
         self.gpg = new_gpg(self.directory_base)
@@ -368,11 +368,108 @@ class Client:
         self.hsubs = {}
 
         # attributes to handle aampy (to retrieve new messages) using threads
-        self.aampy = self.initialize_aampy()
-        self.thread_aampy = None
-        self.thread_aampy_wait = None
+        self.aampy = self._initialize_aampy()
+        self._thread_aampy = None
+        self._thread_aampy_wait = None
 
         log.debug('Initialized')
+
+    def _check_base_files(self):
+        try:
+            self.load_configs()
+            create_directory(self.directory_db)
+            create_directory(self.directory_read_messages)
+            create_directory(self.directory_unread_messages)
+        except IOError:
+            log.error('IOError while creating base files')
+            raise
+
+    def _check_mixmaster(self):
+        self.file_mix_cfg = None
+        self.chain = None
+
+        # check Mixmaster binary
+        binary = self._cfg.get('mixmaster', 'binary')
+        binaries = add_to_head(binary, MIX_BINS)
+        self.file_mix_binary = working_binary(binaries)
+        if self.file_mix_binary:
+            log.info('Mixmaster binary works')
+            self._cfg.set('mixmaster', 'binary', self.file_mix_binary)
+
+            # check Mixmaster configs and chain
+            cfg = self._cfg.get('mixmaster', 'cfg')
+            cfgs = add_to_head(cfg, MIX_CONFIGS)
+            self.file_mix_cfg = existing_path(cfgs)
+            if self.file_mix_cfg:
+                log.info('Mixmaster config file found at ' + self.file_mix_cfg)
+                self._cfg.set('mixmaster', 'cfg', self.file_mix_cfg)
+                try:
+                    with open(self.file_mix_cfg, 'r') as config:
+                        lines = config.readlines()
+                        for line in lines:
+                            s = re.match(r'CHAIN (.+)', line)
+                            if s:
+                                self.chain = s.group(1)
+                                log.info('Mix chain in use: ' + self.chain)
+                                break
+                        else:
+                            log.info('Mix chain was not found')
+                except IOError:
+                    log.error('IOError when reading ' + self.file_mix_cfg)
+                    self.file_mix_cfg = None
+            else:
+                log.info('Mixmaster config file was not found')
+        else:
+            log.info('Mixmaster binary was not found or is not appropriate')
+
+    def _initialize_aampy(self):
+        return AAMpy(self.directory_unread_messages,
+                     group=self._cfg.get('newsgroup', 'group'),
+                     server=self._cfg.get('newsgroup', 'server'),
+                     port=self._cfg.get('newsgroup', 'port'))
+
+    def _wait_for_aampy(self):
+        self.aampy.event.wait()
+        if self.hsubs and self.aampy.timestamp:
+            self.hsubs['time'] = self.aampy.timestamp
+            self.save_hsubs(self.hsubs)
+
+    def _decrypt_hsubs_file(self):
+        if os.path.exists(self.file_encrypted_hsub):
+            encrypted_data = read_data(self.file_encrypted_hsub)
+            return decrypt_data(self.gpg, encrypted_data, self.nym.passphrase)
+        else:
+            log.info('Decryption of ' + self.file_encrypted_hsub + ' failed. '
+                     'It does not exist')
+        return None
+
+    def _append_messages_to_list(self, read_messages, messages, messages_without_date):
+        # check which directory to read the files from
+        if read_messages:
+            path = self.directory_read_messages
+        else:
+            path = self.directory_unread_messages
+        files = files_in_path(path)
+        for file_name in files:
+            if re.match('message_' + self.nym.address + '_.*', file_name):
+                file_path = os.path.join(path, file_name)
+                data = read_data(file_path)
+                if read_messages:
+                    decrypted_data = decrypt_data(self.gpg, data, self.nym.passphrase)
+                    if decrypted_data:
+                        data = decrypted_data
+                    elif not search_pgp_message(data):
+                        encrypted_data = encrypt_data(self.gpg, data, self.nym.address, self.nym.fingerprint,
+                                                      self.nym.passphrase)
+                        if encrypted_data:
+                            save_data(encrypted_data, file_path)
+                            log.debug(file_path.split(PATHSEP)[-1] + ' is now'
+                                      'encrypted')
+                new_message = Message(not read_messages, data, file_path)
+                if new_message.date:
+                    messages.append(new_message)
+                else:
+                    messages_without_date.append(new_message)
 
     def _encrypt_e2ee_data(self, data, target,
                            signer=None, passphrase=None, throw_keyids=False):
@@ -423,45 +520,35 @@ class Client:
             else:
                 raise errors.NymphemeralError('GPG Error', result.stderr)
 
-    def check_base_files(self):
-        try:
-            self.load_configs()
-            create_directory(self.directory_db)
-            create_directory(self.directory_read_messages)
-            create_directory(self.directory_unread_messages)
-        except IOError:
-            log.error('IOError while creating base files')
-            raise
-
     def load_configs(self):
         try:
             # load default configs
-            self.cfg.add_section('gpg')
-            self.cfg.set('gpg', 'use_agent', 'True')
-            self.cfg.add_section('main')
-            self.cfg.set('main', 'base_dir', NYMPHEMERAL_PATH)
-            self.cfg.set('main', 'db_dir',
-                         os.path.join('%(base_dir)s', 'db'))
-            self.cfg.set('main', 'messages_dir',
-                         os.path.join('%(base_dir)s', 'messages'))
-            self.cfg.set('main', 'read_dir',
-                         os.path.join('%(messages_dir)s', 'read'))
-            self.cfg.set('main', 'unread_dir',
-                         os.path.join('%(messages_dir)s', 'unread'))
-            self.cfg.set('main', 'hsub_file',
-                         os.path.join('%(base_dir)s', 'hsubs.txt'))
-            self.cfg.set('main', 'encrypted_hsub_file',
-                         os.path.join('%(base_dir)s', 'encrypted_hsubs.txt'))
-            self.cfg.set('main', 'logger_level', 'warning')
-            self.cfg.set('main', 'output_method', 'manual')
-            self.cfg.add_section('mixmaster')
-            self.cfg.set('mixmaster', 'binary', MIX_BINS[0])
-            self.cfg.set('mixmaster', 'cfg', MIX_CONFIGS[0])
-            self.cfg.add_section('newsgroup')
-            self.cfg.set('newsgroup', 'base_dir', NYMPHEMERAL_PATH)
-            self.cfg.set('newsgroup', 'group', 'alt.anonymous.messages')
-            self.cfg.set('newsgroup', 'server', 'localhost')
-            self.cfg.set('newsgroup', 'port', '119')
+            self._cfg.add_section('gpg')
+            self._cfg.set('gpg', 'use_agent', 'True')
+            self._cfg.add_section('main')
+            self._cfg.set('main', 'base_dir', NYMPHEMERAL_PATH)
+            self._cfg.set('main', 'db_dir',
+                          os.path.join('%(base_dir)s', 'db'))
+            self._cfg.set('main', 'messages_dir',
+                          os.path.join('%(base_dir)s', 'messages'))
+            self._cfg.set('main', 'read_dir',
+                          os.path.join('%(messages_dir)s', 'read'))
+            self._cfg.set('main', 'unread_dir',
+                          os.path.join('%(messages_dir)s', 'unread'))
+            self._cfg.set('main', 'hsub_file',
+                          os.path.join('%(base_dir)s', 'hsubs.txt'))
+            self._cfg.set('main', 'encrypted_hsub_file',
+                          os.path.join('%(base_dir)s', 'encrypted_hsubs.txt'))
+            self._cfg.set('main', 'logger_level', 'warning')
+            self._cfg.set('main', 'output_method', 'manual')
+            self._cfg.add_section('mixmaster')
+            self._cfg.set('mixmaster', 'binary', MIX_BINS[0])
+            self._cfg.set('mixmaster', 'cfg', MIX_CONFIGS[0])
+            self._cfg.add_section('newsgroup')
+            self._cfg.set('newsgroup', 'base_dir', NYMPHEMERAL_PATH)
+            self._cfg.set('newsgroup', 'group', 'alt.anonymous.messages')
+            self._cfg.set('newsgroup', 'server', 'localhost')
+            self._cfg.set('newsgroup', 'port', '119')
 
             # parse existing configs in case:
             #   - new versions add/remove sections/options
@@ -475,11 +562,11 @@ class Client:
                 except MissingSectionHeaderError:
                     pass
                 else:
-                    for section in self.cfg.sections():
-                        for option in self.cfg.options(section):
+                    for section in self._cfg.sections():
+                        for option in self._cfg.options(section):
                             try:
-                                self.cfg.set(section, option,
-                                             saved_cfg.get(section, option))
+                                self._cfg.set(section, option,
+                                              saved_cfg.get(section, option))
                             except NoSectionError:
                                 break
                             except NoOptionError:
@@ -490,7 +577,7 @@ class Client:
             # make sure to use a valid level for the logger
             log_sec = 'main'
             log_opt = 'logger_level'
-            log_cfg_str = self.cfg.get(log_sec, log_opt).lower()
+            log_cfg_str = self._cfg.get(log_sec, log_opt).lower()
             valid_level = log_cfg_str in LOGGER_LEVEL
 
             if valid_level:
@@ -508,26 +595,26 @@ class Client:
                             '/'.join(LOGGER_LEVEL.keys()),
                             self.logger_level))
 
-            self.check_mixmaster()
+            self._check_mixmaster()
 
             # make sure to enable Mixmaster only if the the binary and config
             # file have been found
-            output_method = self.cfg.get('main', 'output_method')
+            output_method = self._cfg.get('main', 'output_method')
             if output_method == 'mixmaster' and not (self.file_mix_binary or
                                                      self.file_mix_cfg):
                 output_method = 'manual'
-                self.cfg.set('main', 'output_method', output_method)
+                self._cfg.set('main', 'output_method', output_method)
             self.output_method = output_method
 
             self.save_configs()
 
-            self.use_agent = self.cfg.getboolean('gpg', 'use_agent')
-            self.directory_base = self.cfg.get('main', 'base_dir')
-            self.directory_db = self.cfg.get('main', 'db_dir')
-            self.directory_read_messages = self.cfg.get('main', 'read_dir')
-            self.directory_unread_messages = self.cfg.get('main', 'unread_dir')
-            self.file_hsub = self.cfg.get('main', 'hsub_file')
-            self.file_encrypted_hsub = self.cfg.get('main', 'encrypted_hsub_file')
+            self.use_agent = self._cfg.getboolean('gpg', 'use_agent')
+            self.directory_base = self._cfg.get('main', 'base_dir')
+            self.directory_db = self._cfg.get('main', 'db_dir')
+            self.directory_read_messages = self._cfg.get('main', 'read_dir')
+            self.directory_unread_messages = self._cfg.get('main', 'unread_dir')
+            self.file_hsub = self._cfg.get('main', 'hsub_file')
+            self.file_encrypted_hsub = self._cfg.get('main', 'encrypted_hsub_file')
 
             log.debug('Configs have been loaded')
         except IOError:
@@ -537,55 +624,11 @@ class Client:
 
     def save_configs(self):
         with open(CONFIG_FILE, 'w') as config_file:
-            self.cfg.write(config_file)
+            self._cfg.write(config_file)
 
     def update_configs(self):
-        self.cfg.set('gpg', 'use_agent', self.use_agent)
-        self.cfg.set('main', 'output_method', self.output_method)
-
-    def initialize_aampy(self):
-        return AAMpy(self.directory_unread_messages,
-                     group=self.cfg.get('newsgroup', 'group'),
-                     server=self.cfg.get('newsgroup', 'server'),
-                     port=self.cfg.get('newsgroup', 'port'))
-
-    def check_mixmaster(self):
-        self.file_mix_cfg = None
-        self.chain = None
-
-        # check Mixmaster binary
-        binary = self.cfg.get('mixmaster', 'binary')
-        binaries = add_to_head(binary, MIX_BINS)
-        self.file_mix_binary = working_binary(binaries)
-        if self.file_mix_binary:
-            log.info('Mixmaster binary works')
-            self.cfg.set('mixmaster', 'binary', self.file_mix_binary)
-
-            # check Mixmaster configs and chain
-            cfg = self.cfg.get('mixmaster', 'cfg')
-            cfgs = add_to_head(cfg, MIX_CONFIGS)
-            self.file_mix_cfg = existing_path(cfgs)
-            if self.file_mix_cfg:
-                log.info('Mixmaster config file found at ' + self.file_mix_cfg)
-                self.cfg.set('mixmaster', 'cfg', self.file_mix_cfg)
-                try:
-                    with open(self.file_mix_cfg, 'r') as config:
-                        lines = config.readlines()
-                        for line in lines:
-                            s = re.match(r'CHAIN (.+)', line)
-                            if s:
-                                self.chain = s.group(1)
-                                log.info('Mix chain in use: ' + self.chain)
-                                break
-                        else:
-                            log.info('Mix chain was not found')
-                except IOError:
-                    log.error('IOError when reading ' + self.file_mix_cfg)
-                    self.file_mix_cfg = None
-            else:
-                log.info('Mixmaster config file was not found')
-        else:
-            log.info('Mixmaster binary was not found or is not appropriate')
+        self._cfg.set('gpg', 'use_agent', self.use_agent)
+        self._cfg.set('main', 'output_method', self.output_method)
 
     def save_key(self, key, server=None):
         # also used to update an identity
@@ -666,22 +709,13 @@ class Client:
             self.update_configs()
             self.save_configs()
 
-    def decrypt_hsubs_file(self):
-        if os.path.exists(self.file_encrypted_hsub):
-            encrypted_data = read_data(self.file_encrypted_hsub)
-            return decrypt_data(self.gpg, encrypted_data, self.nym.passphrase)
-        else:
-            log.info('Decryption of ' + self.file_encrypted_hsub + ' failed. '
-                     'It does not exist')
-        return None
-
     def save_hsubs(self, hsubs):
         output_file = self.file_hsub
         data = ''
         for key, item in hsubs.iteritems():
             data += key + ' ' + str(item) + LINESEP
         # check if the nym has access or can create the encrypted hSub passphrases file
-        if self.nym.fingerprint and (not os.path.exists(self.file_encrypted_hsub) or self.decrypt_hsubs_file()):
+        if self.nym.fingerprint and (not os.path.exists(self.file_encrypted_hsub) or self._decrypt_hsubs_file()):
             nyms = self.retrieve_nyms()
             recipients = []
             for n in nyms:
@@ -708,7 +742,7 @@ class Client:
         del self.hsubs[nym.address]
         # check if there are no hSub passphrases anymore
         if not self.hsubs or len(self.hsubs) == 1 and 'time' in self.hsubs:
-            if self.decrypt_hsubs_file():
+            if self._decrypt_hsubs_file():
                 hsub_file = self.file_encrypted_hsub
             else:
                 hsub_file = self.file_hsub
@@ -730,7 +764,7 @@ class Client:
             hsubs = create_dictionary(read_data(self.file_hsub))
 
         if os.path.exists(self.file_encrypted_hsub):
-            decrypted_data = self.decrypt_hsubs_file()
+            decrypted_data = self._decrypt_hsubs_file()
             if decrypted_data:
                 decrypted_hsubs = create_dictionary(decrypted_data)
                 # check if there are unencrypted hSub passphrases
@@ -752,39 +786,11 @@ class Client:
             self.save_hsubs(hsubs)
         return hsubs
 
-    def append_messages_to_list(self, read_messages, messages, messages_without_date):
-        # check which directory to read the files from
-        if read_messages:
-            path = self.directory_read_messages
-        else:
-            path = self.directory_unread_messages
-        files = files_in_path(path)
-        for file_name in files:
-            if re.match('message_' + self.nym.address + '_.*', file_name):
-                file_path = os.path.join(path, file_name)
-                data = read_data(file_path)
-                if read_messages:
-                    decrypted_data = decrypt_data(self.gpg, data, self.nym.passphrase)
-                    if decrypted_data:
-                        data = decrypted_data
-                    elif not search_pgp_message(data):
-                        encrypted_data = encrypt_data(self.gpg, data, self.nym.address, self.nym.fingerprint,
-                                                      self.nym.passphrase)
-                        if encrypted_data:
-                            save_data(encrypted_data, file_path)
-                            log.debug(file_path.split(PATHSEP)[-1] + ' is now'
-                                      'encrypted')
-                new_message = Message(not read_messages, data, file_path)
-                if new_message.date:
-                    messages.append(new_message)
-                else:
-                    messages_without_date.append(new_message)
-
     def retrieve_messages_from_disk(self):
         messages = []
         messages_without_date = []
-        self.append_messages_to_list(False, messages, messages_without_date)
-        self.append_messages_to_list(True, messages, messages_without_date)
+        self._append_messages_to_list(False, messages, messages_without_date)
+        self._append_messages_to_list(True, messages, messages_without_date)
         messages = sorted(messages, key=lambda item: item.date, reverse=True)
         messages += messages_without_date
         return messages
@@ -1008,22 +1014,16 @@ class Client:
     def start_aampy(self):
         self.aampy.reset()
 
-        self.thread_aampy_wait = Thread(target=self.wait_for_aampy)
-        self.thread_aampy_wait.daemon = True
-        self.thread_aampy = Thread(target=self.aampy.retrieve_messages, args=(self.hsubs,))
-        self.thread_aampy.daemon = True
+        self._thread_aampy_wait = Thread(target=self._wait_for_aampy)
+        self._thread_aampy_wait.daemon = True
+        self._thread_aampy = Thread(target=self.aampy.retrieve_messages, args=(self.hsubs,))
+        self._thread_aampy.daemon = True
 
-        self.thread_aampy_wait.start()
-        self.thread_aampy.start()
+        self._thread_aampy_wait.start()
+        self._thread_aampy.start()
 
     def stop_aampy(self):
         self.aampy.stop()
-
-    def wait_for_aampy(self):
-        self.aampy.event.wait()
-        if self.hsubs and self.aampy.timestamp:
-            self.hsubs['time'] = self.aampy.timestamp
-            self.save_hsubs(self.hsubs)
 
     def decrypt_ephemeral_data(self, data):
         ciphertext = None
