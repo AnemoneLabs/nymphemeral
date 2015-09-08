@@ -23,7 +23,7 @@ To configure *stunnel*, you can use the ``.conf`` file we provide
 with nymphemeral. Copy that file to the directory where *stunnel*
 looks for config files (which is usually ``/etc/stunnel``)::
 
-    sudo curl https://raw.githubusercontent.com/felipedau/nymphemeral/develop/connections/stunnel-whonix.conf -o /etc/stunnel/stunnel.conf
+    sudo curl https://raw.githubusercontent.com/felipedau/nymphemeral/master/connections/stunnel-whonix.conf -o /etc/stunnel/stunnel.conf
 
 Open ``/etc/default/stunnel4`` and enable *stunnel* automatic startup
 by switching ``ENABLE`` to ``1``::
