@@ -28,6 +28,11 @@ Features
 
 - Supports End-to-End Encryption
 
+Current Release
+---------------
+The current version of nymphemeral is 1.3.4, a beta, released
+2015-07-22.
+
 Limitations
 -----------
 
@@ -46,11 +51,6 @@ cannot be used to send regular email. nymphemeral is a **nym client**
 and the only way to exchange messages is to send every message to the
 nym server, to be processed and then remailed to the recipient.
 *Mixmaster* is just one of the output methods.
-
-Current Release
----------------
-The current version of nymphemeral is 1.3.4, a beta, released
-2015-07-22.
 
 .. important::
 
