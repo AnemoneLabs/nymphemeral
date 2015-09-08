@@ -2,6 +2,20 @@
 Changelog
 =========
 
+nymphemeral 1.3.5
+=================
+
+- Improve the logger level
+
+- Add more information to the installation sections
+
+- Define which attributes and methods of Client are private
+
+- Improve the code (add constants, simplify methods, remove
+  redundancy)
+
+- Fix bug to save new databases in the ``db`` directory
+
 nymphemeral 1.3.4, released 2015-07-22
 ======================================
 
