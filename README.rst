@@ -84,7 +84,7 @@ Acknowledgements
 .. _`github issue tracker`: https://github.com/felipedau/nymphemeral/issues
 .. _`hulahoopwhonix`: https://github.com/HulaHoopWhonix
 .. _`installation`: http://nymphemeral.readthedocs.org/en/latest/install/dependencies.html
-.. _`limitations': http://nymphemeral.readthedocs.org/en/latest/overview.html#limitations
+.. _`limitations`: http://nymphemeral.readthedocs.org/en/latest/overview.html#limitations
 .. _`mixmaster`: http://www.zen19351.zen.co.uk/mixmaster302
 .. _`news server`: http://nymphemeral.readthedocs.org/en/latest/install/newsserver.html
 .. _`new nymserv`: https://github.com/rxcomm/nymserv
