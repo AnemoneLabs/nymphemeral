@@ -4,7 +4,6 @@ except ImportError:
     from distutils.core import setup
 
 import platform
-from glob import glob
 from subprocess import call
 
 distro = platform.linux_distribution()[0].lower()
@@ -27,10 +26,8 @@ if distro in manager:
     packages_string = ' '.join(packages_list)
 
 if not_installed:
-    print 'Cannot verify if all/some of these packages are installed: ' + packages_string + '.You might have to do ' \
-                                                                                            'it manually'
-
-BASE_DIRECTORY = '/usr/share/nymphemeral'
+    print 'Cannot verify if all/some of these packages are installed: ' + \
+          packages_string + '.You might have to do it manually'
 
 setup(
     name='nymphemeral',
@@ -60,10 +57,5 @@ setup(
         'pyaxo>=0.4.1',
         'python-gnupg>=0.3.5',
         'python-dateutil>=2.2',
-    ],
-    data_files=[
-        (BASE_DIRECTORY, ['COPYING']),
-        (BASE_DIRECTORY, ['README.rst']),
-        (BASE_DIRECTORY + '/connections', glob('connections/*')),
     ],
 )
