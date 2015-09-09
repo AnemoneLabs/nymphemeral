@@ -31,7 +31,7 @@ if not_installed:
 
 setup(
     name='nymphemeral',
-    version='1.3.4.7',
+    version='1.3.5',
     description='An ephemeral nym GUI client',
     url='https://github.com/felipedau/nymphemeral',
     author='Felipe Dau',

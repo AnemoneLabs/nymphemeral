@@ -2,8 +2,8 @@
 Changelog
 =========
 
-nymphemeral 1.3.5
-=================
+nymphemeral 1.3.5, released 2015-09-09
+======================================
 
 - Improve the logger level
 
