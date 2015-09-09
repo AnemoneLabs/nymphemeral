@@ -43,11 +43,12 @@ LINESEP = '\n'
 PATHSEP = os.path.sep
 FORMAT = '%(levelname)s - %(name)s: %(message)s'
 
-handler = logging.StreamHandler()
-handler.setFormatter(logging.Formatter(FORMAT))
-
 logger = logging.getLogger()
-logger.addHandler(handler)
+
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter(FORMAT))
+    logger.addHandler(handler)
 
 # let gnupg log only errors
 logging.getLogger('gnupg').setLevel(logging.ERROR)
