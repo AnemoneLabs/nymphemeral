@@ -241,15 +241,19 @@ def format_key_info(key):
         Username <user@domain>
         4096-bit key, ID 31415926, expires 2015-03-14
     """
+    details = [
+        key['length'] + '-bit key',
+        'ID ' + key['keyid'][-8:],
+    ]
+    try:
+        expiration = float(key['expires'])
+    except ValueError:
+        pass
+    else:
+        details.append('expires ' + time.strftime('%Y-%m-%d',
+                                                  time.gmtime(expiration)))
 
-    info = ''
-    for uid in key['uids']:
-        info += uid + LINESEP
-    info += key['length'] + '-bit key' \
-        + ', ID ' + key['keyid'][-8:] \
-        + ', expires ' + time.strftime('%Y-%m-%d', time.gmtime(float(key['expires']))) \
-        + LINESEP
-    return info
+    return LINESEP.join(key['uids'] + [', '.join(details)] + [''])
 
 
 def retrieve_keyids(msg):
