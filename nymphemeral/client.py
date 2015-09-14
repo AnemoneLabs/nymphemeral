@@ -381,6 +381,15 @@ class Client:
     def nym_address(self):
         return self._session.nym.address
 
+    @property
+    def chain_info(self):
+        info = 'Mix Chain: '
+        try:
+            info += self.chain
+        except TypeError:
+            info += 'Unknown'
+        return info
+
     def _check_base_files(self):
         try:
             self.load_configs()
