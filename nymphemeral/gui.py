@@ -113,11 +113,7 @@ class LoginWindow(Tk.Tk, object):
         elif not self.client.file_mix_cfg:
             text = 'Config File Not Found'
         else:
-            chain = self.client.chain
-            if not chain:
-                text = 'Unknown Mix Chain'
-            else:
-                text = 'Mix Chain: ' + chain
+            text = self.client.chain_info
             radio_mix.config(state=Tk.NORMAL)
         label_mix = Tk.Label(frame_radio, text=text)
         label_mix.grid(sticky='w', padx=(25, 0))
@@ -339,8 +335,7 @@ class MainWindow(Tk.Tk, object):
         if self.client.output_method == 'mixmaster':
             frame_chain = Tk.Frame(frame_left)
             frame_chain.pack(fill=Tk.X, expand=True)
-            label_chain = Tk.Label(frame_chain,
-                                   text='Mix chain: ' + self.client.chain)
+            label_chain = Tk.Label(frame_chain, text=self.client.chain_info)
             label_chain.pack(side=Tk.LEFT)
         button_change_nym = Tk.Button(frame_footer, text='Change Nym', command=self.gui.end_session)
         button_change_nym.pack(side=Tk.RIGHT)
