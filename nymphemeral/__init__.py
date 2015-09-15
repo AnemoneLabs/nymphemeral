@@ -31,7 +31,7 @@ For more information, see https://github.com/felipedau/nymphemeral
 """
 __author__ = 'Felipe Dau and David R. Andersen'
 __license__ = 'GPL'
-__version__ = '1.3.5.2.1'
+__version__ = '1.3.5.2.2'
 __status__ = 'Beta'
 
 
