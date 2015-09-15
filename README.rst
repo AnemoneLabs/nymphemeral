@@ -16,7 +16,7 @@ Features
   deletion, as well as message dispatch and retrieval
 
 - Communicates with the `new nymserv`_, a *Zax-type* nym server with
-  forward secrecy
+  forward and future secrecy
 
 - Uses `python-gnupg`_ and `pyaxo`_ for encryption
 
