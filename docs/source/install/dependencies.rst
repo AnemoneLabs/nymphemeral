@@ -27,6 +27,12 @@ The dependencies will be installed automatically.
 If you do not use *setuptools* as well, you will have to install each
 dependency and sub-dependencies manually.
 
+Updating
+--------
+If you installed nymphemeral with *pip*, you can use it to update it as well::
+
+    sudo pip install --upgrade nymphemeral
+
 .. _other-dependencies:
 
 Other Dependencies

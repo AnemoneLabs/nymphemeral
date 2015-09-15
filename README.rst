@@ -41,6 +41,12 @@ If you use `pip`_, you can easily install nymphemeral with::
 You should at least read `news server`_ to make sure you have one
 running and configured so that your nyms can receive messages.
 
+Updating
+''''''''
+If you installed nymphemeral with *pip*, you can use it to update it as well::
+
+    sudo pip install --upgrade nymphemeral
+
 Documentation
 -------------
 You can find `installation`_ and `usage`_ instructions (with
