@@ -112,7 +112,6 @@ def search_block(data, beginning, end):
         end
     Return None if beginning or end are not found
     """
-
     block = ''
     for line in data.splitlines():
         if block:
@@ -126,7 +125,6 @@ def search_block(data, beginning, end):
 
 def search_pgp_message(data):
     """Return the first PGP message found, return None otherwise"""
-
     return search_block(data, '-----BEGIN PGP MESSAGE-----', '-----END PGP MESSAGE-----')
 
 
@@ -1114,7 +1112,6 @@ class Client:
 
     def decrypt_e2ee_message(self, msg, passphrase=None):
         """Return plaintext of end-to-end encrypted message using nymphemeral's keyring"""
-
         data = search_pgp_message(msg.content)
         if not data:
             log.debug('Not a PGP message to be decrypted')
