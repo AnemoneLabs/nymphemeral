@@ -34,6 +34,11 @@ The current version of nymphemeral is 1.3.5, a beta, released
 
 Quick Install
 -------------
+Make sure that you have the following::
+
+    sudo apt-get install python-dev python-tk # If using Debian/Ubuntu
+    sudo yum install python-devel tkinter # If using Fedora
+
 If you use `pip`_, you can easily install nymphemeral with::
 
     sudo pip install nymphemeral

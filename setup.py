@@ -3,31 +3,6 @@ try:
 except ImportError:
     from distutils.core import setup
 
-import platform
-from subprocess import call
-
-distro = platform.linux_distribution()[0].lower()
-manager = {
-    'debian': 'apt-get',
-    'ubuntu': 'apt-get',
-    'fedora': 'yum',
-}
-packages = {
-    'python-tk': {'apt-get': 'python-tk', 'yum': 'tkinter'},
-}
-packages_string = ' '.join(packages.keys())
-not_installed = True
-
-if distro in manager:
-    packages_list = []
-    for package in packages:
-        packages_list.append(packages[package][manager[distro]])
-    not_installed = call([manager[distro], 'install', '-y'] + packages_list)
-    packages_string = ' '.join(packages_list)
-
-if not_installed:
-    print 'Cannot verify if all/some of these packages are installed: ' + \
-          packages_string + '.You might have to do it manually'
 
 setup(
     name='nymphemeral',
