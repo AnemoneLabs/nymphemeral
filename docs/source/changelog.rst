@@ -2,6 +2,17 @@
 Changelog
 =========
 
+nymphemeral 1.3.6, released 2015-12-17
+======================================
+
+- Fix issue #26 to format the key info of nyms without expiration
+
+- Fix issue #30 to not crash nymphemeral when a mix chain is not found
+
+- Add an ``Updating`` section to the docs
+
+- Do not call the package manager to install dependencies
+
 nymphemeral 1.3.5, released 2015-09-09
 ======================================
 

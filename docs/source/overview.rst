@@ -17,7 +17,7 @@ Features
   deletion, as well as message dispatch and retrieval
 
 - Communicates with the `new nymserv`_, a *Zax-type* nym server with
-  forward secrecy
+  forward and future secrecy
 
 - Uses `python-gnupg`_ and `pyaxo`_ for encryption
 
@@ -30,8 +30,8 @@ Features
 
 Current Release
 ---------------
-The current version of nymphemeral is 1.3.5, a beta, released
-2015-09-09.
+The current version of nymphemeral is 1.3.6, a beta, released
+2015-12-17.
 
 Limitations
 -----------

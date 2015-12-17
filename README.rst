@@ -16,7 +16,7 @@ Features
   deletion, as well as message dispatch and retrieval
 
 - Communicates with the `new nymserv`_, a *Zax-type* nym server with
-  forward secrecy
+  forward and future secrecy
 
 - Uses `python-gnupg`_ and `pyaxo`_ for encryption
 
@@ -29,17 +29,29 @@ Features
 
 Current Release
 ---------------
-The current version of nymphemeral is 1.3.5, a beta, released
-2015-09-09.
+The current version of nymphemeral is 1.3.6, a beta, released
+2015-12-17.
 
 Quick Install
 -------------
+Make sure that you have the following::
+
+    sudo apt-get install python-dev python-tk # If using Debian/Ubuntu
+    sudo yum install python-devel tkinter # If using Fedora
+
 If you use `pip`_, you can easily install nymphemeral with::
 
     sudo pip install nymphemeral
 
 You should at least read `news server`_ to make sure you have one
 running and configured so that your nyms can receive messages.
+
+Updating
+''''''''
+If you installed nymphemeral with *pip*, you can also use it for
+updates::
+
+    sudo pip install --upgrade nymphemeral
 
 Documentation
 -------------
