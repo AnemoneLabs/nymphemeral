@@ -48,7 +48,8 @@ running and configured so that your nyms can receive messages.
 
 Updating
 ''''''''
-If you installed nymphemeral with *pip*, you can use it to update it as well::
+If you installed nymphemeral with *pip*, you can also use it for
+updates::
 
     sudo pip install --upgrade nymphemeral
 

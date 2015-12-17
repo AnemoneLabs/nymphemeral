@@ -29,7 +29,8 @@ dependency and sub-dependencies manually.
 
 Updating
 --------
-If you installed nymphemeral with *pip*, you can use it to update it as well::
+If you installed nymphemeral with *pip*, you can also use it for
+updates::
 
     sudo pip install --upgrade nymphemeral
 
