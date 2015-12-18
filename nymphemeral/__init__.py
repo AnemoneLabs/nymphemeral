@@ -29,15 +29,14 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 For more information, see https://github.com/felipedau/nymphemeral
 """
+import logging
+import os
+
+
 __author__ = 'Felipe Dau and David R. Andersen'
 __license__ = 'GPL'
 __version__ = '1.3.6.1'
 __status__ = 'Beta'
-
-
-import logging
-import os
-
 
 LINESEP = '\n'
 PATHSEP = os.path.sep
