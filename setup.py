@@ -6,7 +6,7 @@ except ImportError:
 
 setup(
     name='nymphemeral',
-    version='1.3.6',
+    version='1.3.6.1',
     description='An ephemeral nym GUI client',
     url='https://github.com/felipedau/nymphemeral',
     author='Felipe Dau',
