@@ -32,10 +32,12 @@ For more information, see https://github.com/felipedau/nymphemeral
 import logging
 import os
 
+from ._version import get_versions
+
 
 __author__ = 'Felipe Dau and David R. Andersen'
 __license__ = 'GPL'
-__version__ = '1.3.6.1'
+__version__ = get_versions()['version']
 __status__ = 'Beta'
 
 LINESEP = '\n'
@@ -51,3 +53,5 @@ if not logger.handlers:
 
 # let gnupg log only errors
 logging.getLogger('gnupg').setLevel(logging.ERROR)
+
+del get_versions
