@@ -29,15 +29,16 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 For more information, see https://github.com/felipedau/nymphemeral
 """
-__author__ = 'Felipe Dau and David R. Andersen'
-__license__ = 'GPL'
-__version__ = '1.3.6'
-__status__ = 'Beta'
-
-
 import logging
 import os
 
+from ._version import get_versions
+
+
+__author__ = 'Felipe Dau and David R. Andersen'
+__license__ = 'GPL'
+__version__ = get_versions()['version']
+__status__ = 'Beta'
 
 LINESEP = '\n'
 PATHSEP = os.path.sep
@@ -52,3 +53,5 @@ if not logger.handlers:
 
 # let gnupg log only errors
 logging.getLogger('gnupg').setLevel(logging.ERROR)
+
+del get_versions

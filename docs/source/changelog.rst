@@ -2,6 +2,13 @@
 Changelog
 =========
 
+nymphemeral 1.4, released 2015-12-19
+====================================
+
+- Make a proper entry point to launch the GUI
+
+- Close #24 by using versioneer for version management
+
 nymphemeral 1.3.6, released 2015-12-17
 ======================================
 

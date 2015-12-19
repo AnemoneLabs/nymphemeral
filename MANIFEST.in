@@ -1,5 +1,6 @@
 include COPYING
 include README.rst
+include nymphemeral/_version.py
+include versioneer.py
 recursive-include docs *
-recursive-include scripts *
 recursive-include connections *

@@ -3,10 +3,13 @@ try:
 except ImportError:
     from distutils.core import setup
 
+import versioneer
+
 
 setup(
     name='nymphemeral',
-    version='1.3.6',
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     description='An ephemeral nym GUI client',
     url='https://github.com/felipedau/nymphemeral',
     author='Felipe Dau',
@@ -25,12 +28,14 @@ setup(
     packages=[
         'nymphemeral',
     ],
-    scripts=[
-        'scripts/nymphemeral',
-    ],
     install_requires=[
         'pyaxo>=0.4.1',
         'python-gnupg>=0.3.5',
         'python-dateutil>=2.2',
     ],
+    entry_points={
+        'console_scripts': [
+            'nymphemeral = nymphemeral.__main__:main',
+        ],
+    },
 )
