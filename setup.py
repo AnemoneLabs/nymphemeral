@@ -25,12 +25,14 @@ setup(
     packages=[
         'nymphemeral',
     ],
-    scripts=[
-        'scripts/nymphemeral',
-    ],
     install_requires=[
         'pyaxo>=0.4.1',
         'python-gnupg>=0.3.5',
         'python-dateutil>=2.2',
     ],
+    entry_points={
+        'console_scripts': [
+            'nymphemeral = nymphemeral.__main__:main',
+        ],
+    },
 )

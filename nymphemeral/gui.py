@@ -2,6 +2,7 @@
 import logging
 import operator
 import os
+import sys
 import Tkinter as Tk
 import tkMessageBox
 import tkSimpleDialog
@@ -929,5 +930,10 @@ class UnreadCounterTab(Tk.Frame, object):
         else:
             self.list_unread.insert(Tk.END, 'No messages found')
 
-if __name__ == '__main__':
+
+def main():
     Gui().window_login.mainloop()
+
+
+if __name__ == '__main__':
+    sys.exit(main())

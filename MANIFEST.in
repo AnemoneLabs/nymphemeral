@@ -1,5 +1,4 @@
 include COPYING
 include README.rst
 recursive-include docs *
-recursive-include scripts *
 recursive-include connections *
