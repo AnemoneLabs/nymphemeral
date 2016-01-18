@@ -398,7 +398,7 @@ class CreationTab(Tk.Frame, object):
         self.entry_hsub_create.grid(sticky='we')
 
         # name
-        label_name = Tk.Label(frame_tab, text='Pseudonymous')
+        label_name = Tk.Label(frame_tab, text='Pseudonymous Name')
         label_name.grid(sticky=Tk.W, pady=(10, 0))
         self.entry_name_create = Tk.Entry(frame_tab)
         self.entry_name_create.grid(sticky='we')
@@ -842,7 +842,7 @@ class ConfigTab(Tk.Frame, object):
         self.entry_hsub_config.grid(sticky='we')
 
         # name
-        label_name = Tk.Label(frame_tab, text='Pseudonymous')
+        label_name = Tk.Label(frame_tab, text='Pseudonymous Name')
         label_name.grid(sticky=Tk.W, pady=(10, 0))
         self.entry_name_config = Tk.Entry(frame_tab)
         self.entry_name_config.grid(sticky='we')
