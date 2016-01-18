@@ -334,11 +334,11 @@ def create_state(axolotl, other_name, mkey):
         os.unlink(axolotl.dbname)
     # Based on the latest protocol specification (Oct/2014), Alice is
     # the one that starts ratcheting the keys. Therefore, she needs
-    # needs Bob's Diffie-Hellman Ratchet Key (DHR). Since the nym
-    # already sends the master key to the nym server to be created,
-    # it makes more sense to assign mode Bob (False) to the nym and
-    # Alice (True) to the nym server, so that the ratchet key is also
-    # sent in the same message.
+    # Bob's Diffie-Hellman Ratchet Key (DHR). Since the nym already
+    # sends the master key to the nym server to be created, it makes
+    # more sense to assign mode Bob (False) to the nym and Alice
+    # (True) to the nym server, so that the ratchet key is also sent
+    # in the same message.
     axolotl.createState(other_name=other_name,
                         mkey=hashlib.sha256(mkey).digest(),
                         mode=False)
