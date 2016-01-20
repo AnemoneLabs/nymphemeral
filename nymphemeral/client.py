@@ -520,7 +520,7 @@ class Client:
                 text = 'Unknown error'
             raise errors.NymphemeralError('GPG Error', text + '!')
 
-    def _sign_data(self, data, signer, passphrase=None):
+    def _sign_data(self, data, signer, passphrase=None, use_agent=None):
         """Return data signed by the fingerprint given
 
         :param str data: The data to be signed
@@ -528,7 +528,9 @@ class Client:
         :param str passphrase: The passphrase of the signer
         :rtype: str
         """
-        gpg = new_gpg(self.directory_base, self.use_agent)
+        if use_agent is None:
+            use_agent = self.use_agent
+        gpg = new_gpg(self.directory_base, use_agent)
         result = gpg.sign(data, keyid=signer, passphrase=passphrase)
         if result:
             return str(result)
@@ -543,6 +545,18 @@ class Client:
                 raise errors.SecretKeyNotFoundError(signer)
             else:
                 raise errors.NymphemeralError('GPG Error', result.stderr)
+
+    def _check_passphrase(self, nym):
+        """Check the nym's passphrase by attempting to sign dummy data and
+        raising NymphemeralErrors on failure
+
+        :param nym: A nym with fingerprint and passhrase attributes
+        :type nym: nym.Nym
+        """
+        self._sign_data(data='',
+                        signer=nym.fingerprint,
+                        passphrase=nym.passphrase,
+                        use_agent=False)
 
     def load_configs(self):
         try:
@@ -706,6 +720,7 @@ class Client:
             nym.fingerprint = result[0].fingerprint
             if not nym.fingerprint:
                 raise errors.FingerprintNotFoundError(nym.address)
+            self._check_passphrase(nym)
             self._session.axolotl = create_axolotl(nym, self.directory_db)
         self._session.nym = nym
         self._session.hsubs = self.retrieve_hsubs()
