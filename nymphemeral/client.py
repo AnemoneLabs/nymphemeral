@@ -697,16 +697,29 @@ class Client:
         return servers
 
     def retrieve_nyms(self):
+        """Retrieve nyms owned by the user by searching the keyring for secret
+        keys with email addresses in their user IDs with the same domains as
+        the servers
+
+        :rtype: list
+        """
         servers = self.retrieve_servers()
         nyms = []
-        keys = self.gpg.list_keys(secret=True)
-        for item in keys:
-            if len(item['uids']) == 1:
-                search = re.search(r'\b(\S+@(\S+))\b', item['uids'][0])
-                if search and search.group(2) in servers:
-                    nym = Nym(address=search.group(1),
-                              fingerprint=item['fingerprint'])
-                    nyms.append(nym)
+        key_map = self.gpg.list_keys(secret=True).key_map
+        for fp, key in key_map.iteritems():
+            try:
+                uid = key['uids'][0]
+            except IndexError:
+                # ignore for probably not being a nym's key, as it unexpectedly
+                # has no user IDs
+                pass
+            else:
+                # check if the key is the public master key
+                if fp.endswith(key['keyid']):
+                    search = re.search(r'\b(\S+@(\S+))\b', uid)
+                    if search and search.group(2) in servers:
+                        nym = Nym(address=search.group(1), fingerprint=fp)
+                        nyms.append(nym)
         return nyms
 
     def start_session(self, nym, use_agent=False, output_method='manual', creating_nym=False):
