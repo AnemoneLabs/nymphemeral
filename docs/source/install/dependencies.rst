@@ -3,36 +3,31 @@
 =================
 Main Dependencies
 =================
-If you use `pip`_, install nymphemeral with::
+Make sure that you have the following::
+
+    sudo apt-get install python-dev python-tk # If using Debian/Ubuntu
+    sudo yum install python-devel tkinter # If using Fedora
+
+If you use `pip`_, you can easily install nymphemeral with::
 
     sudo pip install nymphemeral
 
-The dependencies will be automatically downloaded and installed.
-You can go to :ref:`other-dependencies`.
+The other dependencies used by nymphemeral such as `pyaxo`_,
+`python-dateutil`_ and `python-gnupg`_ will be automatically
+downloaded and installed. You can go to :ref:`other-dependencies`.
 
-If you do not use *pip*, first make sure that you have the
-following::
+If you do not use *pip*, the easiest way to install those
+dependencies is using `setuptools`_. After making sure you have
+*setuptools*, install with::
 
-    sudo apt-get install python-dev python-tk
-
-nymphemeral also uses `pyaxo`_, `python-dateutil`_ and
-`python-gnupg`_, and the easiest way to install those is using
-`setuptools`_. After making sure you have *setuptools*, from
-nymphemeral's source folder, install with::
-
+    git clone https://github.com/felipedau/nymphemeral
+    cd nymphemeral/
     sudo python setup.py install
 
-The dependencies will be installed automatically.
+nymphemeral and its dependencies should be installed.
 
 If you do not use *setuptools* as well, you will have to install each
 dependency and sub-dependencies manually.
-
-Updating
---------
-If you installed nymphemeral with *pip*, you can also use it for
-updates::
-
-    sudo pip install --upgrade nymphemeral
 
 .. _other-dependencies:
 
@@ -43,6 +38,13 @@ the two methods described in :ref:`main-dependencies`. However, you
 should follow the instructions from :ref:`connections`, install
 :ref:`mixmaster` and have a :ref:`newsserver` running to be able to
 use all of its features.
+
+Updating
+--------
+If you installed nymphemeral with *pip*, you can also use it for
+updates::
+
+    sudo pip install --upgrade nymphemeral
 
 .. _`pip`: https://pypi.python.org/pypi/pip
 .. _`pyaxo`: https://github.com/rxcomm/pyaxo
