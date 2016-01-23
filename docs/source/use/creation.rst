@@ -54,10 +54,10 @@ nym, this client works better if you use one and we decided to make
 it a required field. If you feel that it should allow nyms without an
 hSub, let us know.
 
-Pseudonymous
-------------
-The ``Pseudonymous`` field is the name you are going to give to the
-nym.
+Pseudonymous Name
+-----------------
+The ``Pseudonymous Name`` field is the name you are going to give to
+the nym.
 
 Duration
 --------
