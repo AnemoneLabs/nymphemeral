@@ -864,7 +864,7 @@ class Client:
             raise errors.InvalidHsubError()
         if not name:
             raise errors.InvalidNameError()
-        if not re.match(r'\d+[dwmy]{0,1}$', duration, flags=re.IGNORECASE):
+        if not re.match(r'\d+[dwmy]?$', duration, flags=re.IGNORECASE):
             raise errors.InvalidDurationError()
 
         pubkey, fingerprint = generate_key(self.gpg,
