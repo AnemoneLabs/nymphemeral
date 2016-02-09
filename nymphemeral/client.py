@@ -866,20 +866,28 @@ class Client:
         messages += messages_without_date
         return messages
 
-    def send_create(self, ephemeral, hsub, name, duration):
-        ephemeral = ephemeral.strip()
-        hsub = hsub.strip()
+    def send_create(self, name, duration, ephemeral=None, hsub=None):
         name = name.strip()
-        duration = duration.strip()
-
-        if not ephemeral:
-            raise errors.InvalidEphemeralKeyError()
-        if not hsub:
-            raise errors.InvalidHsubError()
         if not name:
             raise errors.InvalidNameError()
+
+        duration = duration.strip()
         if not re.match(r'\d+[dwmy]?$', duration, flags=re.IGNORECASE):
             raise errors.InvalidDurationError()
+
+        if ephemeral is None:
+            ephemeral = get_random_key()
+        else:
+            ephemeral = ephemeral.strip()
+        if not ephemeral:
+            raise errors.InvalidEphemeralKeyError()
+
+        if hsub is None:
+            hsub = get_random_key()
+        else:
+            hsub = hsub.strip()
+        if not hsub:
+            raise errors.InvalidHsubError()
 
         pubkey, fingerprint = generate_key(self.gpg,
                                            name,
@@ -991,26 +999,35 @@ class Client:
         )
         return success, e2ee_target_info + info, ciphertext
 
-    def send_config(self, ephemeral='', hsub='', name=''):
-        ephemeral = ephemeral.strip()
-        hsub = hsub.strip()
-        name = name.strip()
-
-        if not (ephemeral or hsub or name):
-            raise errors.EmptyChangesError()
+    def send_config(self, ephemeral='', hsub='', name='',
+                    gen_ephemeral=False, gen_hsub=False):
+        lines = []
 
         axolotl = create_axolotl(self._session.nym, self.directory_db)
-
-        lines = []
+        if gen_ephemeral:
+            ephemeral = get_random_key()
+        else:
+            ephemeral = ephemeral.strip()
         if ephemeral:
             lines.append('ephemeral: ' + str(ephemeral))
-            lines.append('ratchet: ' + b2a_base64(axolotl.state['DHRs']).strip())
+            lines.append('ratchet: ' +
+                         b2a_base64(axolotl.state['DHRs']).strip())
+
+        if gen_hsub:
+            hsub = get_random_key()
+        else:
+            hsub = hsub.strip()
         if hsub:
             lines.append('hsub: ' + str(hsub))
+
+        name = name.strip()
         if name:
             lines.append('name: ' + str(name))
+
         lines.append('')
         data = LINESEP.join(lines)
+        if not data:
+            raise errors.EmptyChangesError()
 
         success, info, ciphertext = self.encrypt_and_send(
             data,
