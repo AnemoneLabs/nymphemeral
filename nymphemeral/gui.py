@@ -47,6 +47,16 @@ def bind_handler_to_widget_events(handler, widget, events):
         widget.bind(event, handler)
 
 
+def bind_checkbutton_and_entry(checkbutton, entry, enable=False):
+    def handler(event):
+        state = checkbutton.var.get()
+        if enable:
+            state = not state
+        set_widget_state(state, entry)
+    events = ['<Return>', '<Key-space>', '<Button-1>']
+    bind_handler_to_widget_events(handler, checkbutton, events)
+
+
 class Gui:
     def __init__(self):
         self.client = Client()
