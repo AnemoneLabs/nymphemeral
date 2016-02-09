@@ -30,6 +30,7 @@ setup(
     ],
     install_requires=[
         'pyaxo>=0.4.1',
+        'pycrypto>=2.1.0',
         'python-gnupg>=0.3.5',
         'python-dateutil>=2.2',
     ],
