@@ -34,6 +34,14 @@ def write_on_text(text, content, clear=True):
     text.config(state=state)
 
 
+def set_widget_state(enable, widget):
+    if enable:
+        state = Tk.NORMAL
+    else:
+        state = Tk.DISABLED
+    widget.config(state=state)
+
+
 class Gui:
     def __init__(self):
         self.client = Client()
