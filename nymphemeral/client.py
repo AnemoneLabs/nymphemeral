@@ -5,13 +5,15 @@ import re
 import subprocess
 import sys
 import time
-from binascii import b2a_base64, a2b_base64
+from binascii import a2b_base64, b2a_base64, hexlify
 from ConfigParser import ConfigParser, MissingSectionHeaderError, NoOptionError, NoSectionError
 from email import message_from_string
 from threading import Thread
 from Tkinter import Tk
 
 import gnupg
+from Crypto.Random.random import getrandbits
+from Crypto.Util.number import long_to_bytes
 from pyaxo import Axolotl
 
 import errors
@@ -51,6 +53,8 @@ MIX_CONFIGS = [
     os.path.join(USER_PATH, 'Mix', 'mix.cfg'),
     os.path.join(USER_PATH, '.Mix', 'mix.cfg'),
 ]
+
+RANDOM_KEY_BYTE_LENGTH = 32
 
 
 log = logging.getLogger(__name__)
@@ -343,6 +347,16 @@ def create_state(axolotl, other_name, mkey):
                         mkey=hashlib.sha256(mkey).digest(),
                         mode=False)
     axolotl.saveState()
+
+
+def get_random_key(byte_length=RANDOM_KEY_BYTE_LENGTH):
+    """Return a hexadecimal random key with the byte length specified.
+
+    :param byte_length: The length of the key, in bytes
+    :type byte_length: int
+    :rtype: str
+    """
+    return hexlify(long_to_bytes(getrandbits(byte_length << 3)))
 
 
 class Client:
