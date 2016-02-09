@@ -42,6 +42,11 @@ def set_widget_state(enable, widget):
     widget.config(state=state)
 
 
+def bind_handler_to_widget_events(handler, widget, events):
+    for event in events:
+        widget.bind(event, handler)
+
+
 class Gui:
     def __init__(self):
         self.client = Client()
