@@ -736,7 +736,13 @@ class Client:
                 if fp.endswith(key['keyid']):
                     search = re.search(r'\b(\S+@(\S+))\b', uid)
                     if search and search.group(2) in servers:
-                        nym = Nym(address=search.group(1), fingerprint=fp)
+                        if key['expires']:
+                            epoch = key['expires']
+                        else:
+                            epoch = 0
+                        nym = Nym(address=search.group(1),
+                                  fingerprint=fp,
+                                  expiration_epoch=epoch)
                         nyms.append(nym)
         return nyms
 
@@ -774,7 +780,13 @@ class Client:
                 # belongs to a nym
                 address = re.search(r'\b(\S+@(\S+))\b', uid)
                 if address and address.group(2) in servers:
-                    nym = Nym(address=address.group(1), fingerprint=fp)
+                    if key['expires']:
+                        epoch = key['expires']
+                    else:
+                        epoch = 0
+                    nym = Nym(address=address.group(1),
+                              fingerprint=fp,
+                              expiration_epoch=epoch)
                     nyms.append(nym)
         if nyms:
             for nym in nyms[1:]:
