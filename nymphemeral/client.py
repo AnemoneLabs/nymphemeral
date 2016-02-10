@@ -744,7 +744,8 @@ class Client:
             if not creating_nym:
                 raise errors.NymNotFoundError(nym.address)
         else:
-            nym.fingerprint = result[0].fingerprint
+            result[0].passphrase = nym.passphrase
+            nym = result[0]
             if not nym.fingerprint:
                 raise errors.FingerprintNotFoundError(nym.address)
             self._check_passphrase(nym)
