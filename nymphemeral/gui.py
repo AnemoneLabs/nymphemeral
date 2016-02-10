@@ -352,10 +352,11 @@ class MainWindow(Tk.Tk, object):
 
         frame_left = Tk.Frame(frame_footer)
         frame_left.pack(side=Tk.LEFT)
-        frame_address = Tk.Frame(frame_left)
-        frame_address.pack(fill=Tk.X, expand=True)
-        label_address = Tk.Label(frame_address, text=self.client.nym_address)
-        label_address.pack(side=Tk.LEFT)
+        frame_nym = Tk.Frame(frame_left)
+        frame_nym.pack(fill=Tk.X, expand=True)
+        self.label_nym = Tk.Label(frame_nym)
+        self.label_nym.pack(side=Tk.LEFT)
+        self.update_nym_info()
         if self.client.output_method == 'mixmaster':
             frame_chain = Tk.Frame(frame_left)
             frame_chain.pack(fill=Tk.X, expand=True)
@@ -369,6 +370,13 @@ class MainWindow(Tk.Tk, object):
         window_w, window_h = self.winfo_width(), self.winfo_height()
         screen_w, screen_h = self.winfo_screenwidth(), self.winfo_screenheight()
         self.geometry('%dx%d+%d+%d' % (window_w, window_h, (screen_w - window_w) / 2, (screen_h - window_h) / 2))
+
+    def update_nym_info(self):
+        text_nym = self.client.nym_address
+        exp = self.client.nym_expiration_date
+        if exp:
+            text_nym += ' (expiration: ' + exp + ')'
+        self.label_nym.config(text=text_nym)
 
     def set_tab_state(self, tab, enabled):
         if enabled:
@@ -505,6 +513,7 @@ class CreationTab(Tk.Frame, object):
         else:
             write_on_text(self.text_create, [info, ciphertext])
             if success:
+                self.gui.window_main.update_nym_info()
                 self.set_interface(False)
                 self.gui.window_main.set_creation_interface(False)
 

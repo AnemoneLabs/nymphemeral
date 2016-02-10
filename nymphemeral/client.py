@@ -398,6 +398,10 @@ class Client:
         return self._session.nym.address
 
     @property
+    def nym_expiration_date(self):
+        return self._session.nym.expiration_date
+
+    @property
     def chain_info(self):
         info = 'Mix Chain: '
         try:
