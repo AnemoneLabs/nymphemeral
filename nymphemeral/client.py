@@ -183,7 +183,9 @@ def generate_key(gpg, name, address, passphrase, duration):
 
 
 def retrieve_key(gpg, search_query):
-    """Find the ONLY key in the keyring for the search query
+    """Retrieve a key with user IDs that match the search query. Returns a
+    dictionary of the key if it is the only one found, raising errors
+    otherwise
 
     :param gpg: The object that might have the data being searched
     :type gpg: gnupg.GPG
@@ -195,16 +197,17 @@ def retrieve_key(gpg, search_query):
     except AttributeError:
         raise errors.InvalidSearchQueryError()
     else:
+        def matches(info):
+            return info.lower().endswith(search_query)
         results = []
         keys = gpg.list_keys()
 
         for k in keys:
-            if (k['keyid'].lower().endswith(search_query)
-                    or k['fingerprint'].lower().endswith(search_query)):
+            if matches(k['keyid']) or matches(k['fingerprint']):
                 results.append(k)
             else:
                 for sub in k['subkeys']:
-                    if sub[0].lower().endswith(search_query):
+                    if matches(sub[0]):
                         results.append(k)
                         break
                 else:
@@ -217,7 +220,8 @@ def retrieve_key(gpg, search_query):
             for r in results[1:]:
                 if r['fingerprint'] != results[0]['fingerprint']:
                     raise errors.AmbiguousUidError(search_query)
-            return results[0]
+            else:
+                return results[0]
         else:
             raise errors.KeyNotFoundError(search_query)
 
