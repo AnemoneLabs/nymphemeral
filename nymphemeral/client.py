@@ -736,16 +736,62 @@ class Client:
                         nyms.append(nym)
         return nyms
 
+    def retrieve_nym(self, search_query):
+        """Retrieve a nym owned by the user by searching the keyring for secret
+        keys with user IDs that match the search query and email addresses with
+        the same domains as the servers. Returns a nym if it is the only one
+        found, raising errors otherwise
+
+        :param str search_query: The search query
+        :rtype: nym.Nym
+        """
+        def matches(info):
+            return info.lower().endswith(search_query)
+        servers = self.retrieve_servers()
+        nyms = []
+        key_map = self.gpg.list_keys(secret=True).key_map
+        for fp, key in key_map.iteritems():
+            uid = None
+            try:
+                # check if the key is the public master key
+                if fp.endswith(key['keyid']):
+                    if matches(fp) or matches(key['fingerprint']):
+                        uid = key['uids'][0]
+                    elif re.search(r'\b' + search_query + r'\b',
+                                   key['uids'][0],
+                                   flags=re.IGNORECASE):
+                        uid = key['uids'][0]
+            except IndexError:
+                # ignore for probably not being a nym's key, as it unexpectedly
+                # has no user IDs
+                continue
+            if uid:
+                # a key that matches the search query was found, check if it
+                # belongs to a nym
+                address = re.search(r'\b(\S+@(\S+))\b', uid)
+                if address and address.group(2) in servers:
+                    nym = Nym(address=address.group(1), fingerprint=fp)
+                    nyms.append(nym)
+        if nyms:
+            for nym in nyms[1:]:
+                if nym.fingerprint != nyms[0].fingerprint:
+                    raise errors.AmbiguousUidError(search_query)
+            else:
+                return nyms[0]
+        else:
+            raise errors.NymNotFoundError(search_query)
+
     def start_session(self, nym, use_agent=False, output_method='manual', creating_nym=False):
         if nym.server not in self.retrieve_servers():
             raise errors.NymservNotFoundError(nym.server)
-        result = filter(lambda n: n.address == nym.address, self.retrieve_nyms())
-        if not result:
+        try:
+            result = self.retrieve_nym(nym.address)
+        except errors.NymNotFoundError as e:
             if not creating_nym:
-                raise errors.NymNotFoundError(nym.address)
+                raise e
         else:
-            result[0].passphrase = nym.passphrase
-            nym = result[0]
+            result.passphrase = nym.passphrase
+            nym = result
             if not nym.fingerprint:
                 raise errors.FingerprintNotFoundError(nym.address)
             self._check_passphrase(nym)
@@ -890,15 +936,14 @@ class Client:
         if not hsub:
             raise errors.InvalidHsubError()
 
-        pubkey, fingerprint = generate_key(self.gpg,
-                                           name,
-                                           self._session.nym.address,
-                                           self._session.nym.passphrase,
-                                           duration)
-        nym = Nym(self._session.nym.address,
-                  self._session.nym.passphrase,
-                  fingerprint,
-                  hsub)
+        pubkey, _ = generate_key(self.gpg,
+                                 name,
+                                 self._session.nym.address,
+                                 self._session.nym.passphrase,
+                                 duration)
+        nym = self.retrieve_nym(self._session.nym.address)
+        nym.passphrase = self._session.nym.passphrase
+        nym.hsub = hsub
         axolotl = create_axolotl(nym, self.directory_db)
 
         lines = []
