@@ -2,8 +2,8 @@
 Changelog
 =========
 
-nymphemeral 1.4.1
-=================
+nymphemeral 1.4.1, released 2016-02-13
+======================================
 
 - Add nymphemeral's own method to check a nym's passphrase
 
