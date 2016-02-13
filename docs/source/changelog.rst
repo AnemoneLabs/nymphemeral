@@ -2,6 +2,20 @@
 Changelog
 =========
 
+nymphemeral 1.4.1, released 2016-02-13
+======================================
+
+- Add nymphemeral's own method to check a nym's passphrase
+
+- Fix issue when retrieving nyms due to a change to python-gnupg
+
+- Enable auto-generation of ephemeral and hSub keys
+
+- Add method to retrieve a specific nym
+
+- Add expiration attributes to the ``Nym`` class and display the
+  expiration date on the GUI
+
 nymphemeral 1.4, released 2015-12-19
 ====================================
 

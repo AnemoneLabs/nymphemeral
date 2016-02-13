@@ -34,6 +34,29 @@ def write_on_text(text, content, clear=True):
     text.config(state=state)
 
 
+def set_widget_state(enable, widget):
+    if enable:
+        state = Tk.NORMAL
+    else:
+        state = Tk.DISABLED
+    widget.config(state=state)
+
+
+def bind_handler_to_widget_events(handler, widget, events):
+    for event in events:
+        widget.bind(event, handler)
+
+
+def bind_checkbutton_and_entry(checkbutton, entry, enable=False):
+    def handler(event):
+        state = checkbutton.var.get()
+        if enable:
+            state = not state
+        set_widget_state(state, entry)
+    events = ['<Return>', '<Key-space>', '<Button-1>']
+    bind_handler_to_widget_events(handler, checkbutton, events)
+
+
 class Gui:
     def __init__(self):
         self.client = Client()
@@ -329,10 +352,11 @@ class MainWindow(Tk.Tk, object):
 
         frame_left = Tk.Frame(frame_footer)
         frame_left.pack(side=Tk.LEFT)
-        frame_address = Tk.Frame(frame_left)
-        frame_address.pack(fill=Tk.X, expand=True)
-        label_address = Tk.Label(frame_address, text=self.client.nym_address)
-        label_address.pack(side=Tk.LEFT)
+        frame_nym = Tk.Frame(frame_left)
+        frame_nym.pack(fill=Tk.X, expand=True)
+        self.label_nym = Tk.Label(frame_nym)
+        self.label_nym.pack(side=Tk.LEFT)
+        self.update_nym_info()
         if self.client.output_method == 'mixmaster':
             frame_chain = Tk.Frame(frame_left)
             frame_chain.pack(fill=Tk.X, expand=True)
@@ -346,6 +370,13 @@ class MainWindow(Tk.Tk, object):
         window_w, window_h = self.winfo_width(), self.winfo_height()
         screen_w, screen_h = self.winfo_screenwidth(), self.winfo_screenheight()
         self.geometry('%dx%d+%d+%d' % (window_w, window_h, (screen_w - window_w) / 2, (screen_h - window_h) / 2))
+
+    def update_nym_info(self):
+        text_nym = self.client.nym_address
+        exp = self.client.nym_expiration_date
+        if exp:
+            text_nym += ' (expiration: ' + exp + ')'
+        self.label_nym.config(text=text_nym)
 
     def set_tab_state(self, tab, enabled):
         if enabled:
@@ -385,21 +416,9 @@ class CreationTab(Tk.Frame, object):
         frame_tab = Tk.Frame(self)
         frame_tab.grid(sticky='nswe', padx=15, pady=15)
 
-        # ephemeral
-        label_ephemeral = Tk.Label(frame_tab, text='Ephemeral Key')
-        label_ephemeral.grid(sticky='w')
-        self.entry_ephemeral_create = Tk.Entry(frame_tab)
-        self.entry_ephemeral_create.grid(sticky='we')
-
-        # hSub
-        label_hsub = Tk.Label(frame_tab, text='hSub Passphrase')
-        label_hsub.grid(sticky=Tk.W, pady=(10, 0))
-        self.entry_hsub_create = Tk.Entry(frame_tab)
-        self.entry_hsub_create.grid(sticky='we')
-
         # name
-        label_name = Tk.Label(frame_tab, text='Pseudonymous')
-        label_name.grid(sticky=Tk.W, pady=(10, 0))
+        label_name = Tk.Label(frame_tab, text='Pseudonymous Name')
+        label_name.grid(sticky=Tk.W)
         self.entry_name_create = Tk.Entry(frame_tab)
         self.entry_name_create.grid(sticky='we')
 
@@ -409,12 +428,48 @@ class CreationTab(Tk.Frame, object):
         self.entry_duration_create = Tk.Entry(frame_tab)
         self.entry_duration_create.grid(sticky='we')
 
+        # ephemeral
+        frame_ephemeral = Tk.Frame(frame_tab)
+        frame_ephemeral.grid(sticky=Tk.EW, pady=(10, 0))
+        label_ephemeral = Tk.Label(frame_ephemeral, text='Ephemeral Key')
+        label_ephemeral.grid()
+        var_gen_ephemeral = Tk.BooleanVar(value=True)
+        self.check_gen_ephemeral = Tk.Checkbutton(
+            frame_ephemeral,
+            text='Auto-generate',
+            variable=var_gen_ephemeral)
+        self.check_gen_ephemeral.var = var_gen_ephemeral
+        self.check_gen_ephemeral.grid(row='0', column='1')
+        self.entry_ephemeral_create = Tk.Entry(frame_tab, state=Tk.DISABLED)
+        self.entry_ephemeral_create.grid(sticky=Tk.EW)
+        bind_checkbutton_and_entry(self.check_gen_ephemeral,
+                                   self.entry_ephemeral_create)
+
+        # hSub
+        frame_hsub = Tk.Frame(frame_tab)
+        frame_hsub.grid(sticky=Tk.EW, pady=(10, 0))
+        label_hsub = Tk.Label(frame_hsub, text='hSub Passphrase')
+        label_hsub.grid()
+        var_gen_hsub = Tk.BooleanVar(value=True)
+        self.check_gen_hsub = Tk.Checkbutton(frame_hsub,
+                                             text='Auto-generate',
+                                             variable=var_gen_hsub)
+        self.check_gen_hsub.var = var_gen_hsub
+        self.check_gen_hsub.grid(row='0', column='1')
+        self.entry_hsub_create = Tk.Entry(frame_tab, state=Tk.DISABLED)
+        self.entry_hsub_create.grid(sticky=Tk.EW)
+        bind_checkbutton_and_entry(self.check_gen_hsub,
+                                   self.entry_hsub_create)
+
         # create button
-        self.button_create = Tk.Button(frame_tab, text='Create Nym',
-                                       command=lambda: self.create(self.entry_ephemeral_create.get(),
-                                                                   self.entry_hsub_create.get(),
-                                                                   self.entry_name_create.get(),
-                                                                   self.entry_duration_create.get()))
+        self.button_create = Tk.Button(frame_tab,
+                                       text='Create Nym',
+                                       command=lambda: self.create(
+                                           self.entry_name_create.get(),
+                                           self.entry_duration_create.get(),
+                                           self.entry_ephemeral_create.get(),
+                                           self.entry_hsub_create.get())
+                                       )
         self.button_create.grid(pady=(10, 0))
 
         # message box
@@ -435,23 +490,30 @@ class CreationTab(Tk.Frame, object):
             state = Tk.NORMAL
         else:
             state = Tk.DISABLED
+        self.check_gen_ephemeral.config(state=state)
         self.entry_ephemeral_create.config(state=state)
+        self.check_gen_hsub.config(state=state)
         self.entry_hsub_create.config(state=state)
         self.entry_name_create.config(state=state)
         self.entry_duration_create.config(state=state)
         self.button_create.config(state=state)
 
-    def create(self, ephemeral, hsub, name, duration):
+    def create(self, name, duration, ephemeral, hsub):
+        if self.check_gen_ephemeral.var.get():
+            ephemeral = None
+        if self.check_gen_hsub.var.get():
+            hsub = None
         try:
-            success, info, ciphertext = self.client.send_create(ephemeral,
-                                                                hsub,
-                                                                name,
-                                                                duration)
+            success, info, ciphertext = self.client.send_create(name,
+                                                                duration,
+                                                                ephemeral,
+                                                                hsub)
         except errors.NymphemeralError as e:
             tkMessageBox.showerror(e.title, e.message)
         else:
             write_on_text(self.text_create, [info, ciphertext])
             if success:
+                self.gui.window_main.update_nym_info()
                 self.set_interface(False)
                 self.gui.window_main.set_creation_interface(False)
 
@@ -829,23 +891,43 @@ class ConfigTab(Tk.Frame, object):
         frame_tab = Tk.Frame(self)
         frame_tab.grid(sticky='nswe', padx=15, pady=15)
 
-        # ephemeral
-        label_ephemeral = Tk.Label(frame_tab, text='Ephemeral Key')
-        label_ephemeral.grid(sticky='w')
-        self.entry_ephemeral_config = Tk.Entry(frame_tab)
-        self.entry_ephemeral_config.grid(sticky='we')
-
-        # hSub
-        label_hsub = Tk.Label(frame_tab, text='hSub Key')
-        label_hsub.grid(sticky=Tk.W, pady=(10, 0))
-        self.entry_hsub_config = Tk.Entry(frame_tab)
-        self.entry_hsub_config.grid(sticky='we')
-
         # name
-        label_name = Tk.Label(frame_tab, text='Pseudonymous')
-        label_name.grid(sticky=Tk.W, pady=(10, 0))
+        label_name = Tk.Label(frame_tab, text='Pseudonymous Name')
+        label_name.grid(sticky=Tk.W)
         self.entry_name_config = Tk.Entry(frame_tab)
         self.entry_name_config.grid(sticky='we')
+
+        # ephemeral
+        frame_ephemeral = Tk.Frame(frame_tab)
+        frame_ephemeral.grid(sticky=Tk.EW, pady=(10, 0))
+        label_ephemeral = Tk.Label(frame_ephemeral, text='Ephemeral Key')
+        label_ephemeral.grid()
+        var_gen_ephemeral = Tk.BooleanVar()
+        self.check_gen_ephemeral = Tk.Checkbutton(frame_ephemeral,
+                                                  text='Auto-generate',
+                                                  variable=var_gen_ephemeral)
+        self.check_gen_ephemeral.var = var_gen_ephemeral
+        self.check_gen_ephemeral.grid(row='0', column='1')
+        self.entry_ephemeral_config = Tk.Entry(frame_tab)
+        self.entry_ephemeral_config.grid(sticky=Tk.EW)
+        bind_checkbutton_and_entry(self.check_gen_ephemeral,
+                                   self.entry_ephemeral_config)
+
+        # hSub
+        frame_hsub = Tk.Frame(frame_tab)
+        frame_hsub.grid(sticky=Tk.EW, pady=(10, 0))
+        label_hsub = Tk.Label(frame_hsub, text='hSub Key')
+        label_hsub.grid()
+        var_gen_hsub = Tk.BooleanVar()
+        self.check_gen_hsub = Tk.Checkbutton(frame_hsub,
+                                             text='Auto-generate',
+                                             variable=var_gen_hsub)
+        self.check_gen_hsub.var = var_gen_hsub
+        self.check_gen_hsub.grid(row='0', column='1')
+        self.entry_hsub_config = Tk.Entry(frame_tab)
+        self.entry_hsub_config.grid(sticky=Tk.EW)
+        bind_checkbutton_and_entry(self.check_gen_hsub,
+                                   self.entry_hsub_config)
 
         buttons_row = frame_tab.grid_size()[1] + 1
 
@@ -871,7 +953,9 @@ class ConfigTab(Tk.Frame, object):
 
     def set_deleted_interface(self):
         self.gui.window_main.set_all_tabs_state(False, [self])
+        self.check_gen_ephemeral.config(state=Tk.DISABLED)
         self.entry_ephemeral_config.config(state=Tk.DISABLED)
+        self.check_gen_hsub.config(state=Tk.DISABLED)
         self.entry_hsub_config.config(state=Tk.DISABLED)
         self.entry_name_config.config(state=Tk.DISABLED)
         self.button_config.config(state=Tk.DISABLED)
@@ -882,9 +966,12 @@ class ConfigTab(Tk.Frame, object):
                                  'Are you sure you want to reconfigure the '
                                  'nym?'):
             try:
-                success, info, ciphertext = self.client.send_config(ephemeral,
-                                                                    hsub,
-                                                                    name)
+                success, info, ciphertext = self.client.send_config(
+                    ephemeral,
+                    hsub,
+                    name,
+                    gen_ephemeral=self.check_gen_ephemeral.var.get(),
+                    gen_hsub=self.check_gen_hsub.var.get())
             except errors.EmptyChangesError as e:
                 tkMessageBox.showerror(e.title, e.message)
             else:

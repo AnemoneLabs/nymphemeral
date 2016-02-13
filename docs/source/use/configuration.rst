@@ -11,9 +11,9 @@ Configuring the Nym
    Configure Nym Tab
 
 On the ``Configure Nym`` tab you can modify the ``Ephemeral Key``,
-``hSub key`` and ``Name`` of your nym. Clicking on ``Configure`` will
-create the message that will be sent to the server. If you wish to
-not use your nym anymore, click ``Delete Nym``.
+``hSub key`` and ``Pseudonymous Name`` of your nym. Clicking on
+``Configure`` will create the message that will be sent to the server.
+If you wish to not use your nym anymore, click ``Delete Nym``.
 
 .. tip::
 

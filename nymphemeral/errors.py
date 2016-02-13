@@ -121,7 +121,7 @@ class InvalidNameError(NymphemeralError):
     def __init__(self):
         super(InvalidNameError, self).__init__(
             title='Invalid Name',
-            message='The pseudonymous provided (empty) is not valid.'
+            message='The pseudonymous name provided (empty) is not valid.'
         )
 
 

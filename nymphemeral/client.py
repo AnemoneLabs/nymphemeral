@@ -5,13 +5,15 @@ import re
 import subprocess
 import sys
 import time
-from binascii import b2a_base64, a2b_base64
+from binascii import a2b_base64, b2a_base64, hexlify
 from ConfigParser import ConfigParser, MissingSectionHeaderError, NoOptionError, NoSectionError
 from email import message_from_string
 from threading import Thread
 from Tkinter import Tk
 
 import gnupg
+from Crypto.Random.random import getrandbits
+from Crypto.Util.number import long_to_bytes
 from pyaxo import Axolotl
 
 import errors
@@ -51,6 +53,8 @@ MIX_CONFIGS = [
     os.path.join(USER_PATH, 'Mix', 'mix.cfg'),
     os.path.join(USER_PATH, '.Mix', 'mix.cfg'),
 ]
+
+RANDOM_KEY_BYTE_LENGTH = 32
 
 
 log = logging.getLogger(__name__)
@@ -179,7 +183,9 @@ def generate_key(gpg, name, address, passphrase, duration):
 
 
 def retrieve_key(gpg, search_query):
-    """Find the ONLY key in the keyring for the search query
+    """Retrieve a key with user IDs that match the search query. Returns a
+    dictionary of the key if it is the only one found, raising errors
+    otherwise
 
     :param gpg: The object that might have the data being searched
     :type gpg: gnupg.GPG
@@ -191,16 +197,17 @@ def retrieve_key(gpg, search_query):
     except AttributeError:
         raise errors.InvalidSearchQueryError()
     else:
+        def matches(info):
+            return info.lower().endswith(search_query)
         results = []
         keys = gpg.list_keys()
 
         for k in keys:
-            if (k['keyid'].lower().endswith(search_query)
-                    or k['fingerprint'].lower().endswith(search_query)):
+            if matches(k['keyid']) or matches(k['fingerprint']):
                 results.append(k)
             else:
                 for sub in k['subkeys']:
-                    if sub[0].lower().endswith(search_query):
+                    if matches(sub[0]):
                         results.append(k)
                         break
                 else:
@@ -213,7 +220,8 @@ def retrieve_key(gpg, search_query):
             for r in results[1:]:
                 if r['fingerprint'] != results[0]['fingerprint']:
                     raise errors.AmbiguousUidError(search_query)
-            return results[0]
+            else:
+                return results[0]
         else:
             raise errors.KeyNotFoundError(search_query)
 
@@ -334,15 +342,25 @@ def create_state(axolotl, other_name, mkey):
         os.unlink(axolotl.dbname)
     # Based on the latest protocol specification (Oct/2014), Alice is
     # the one that starts ratcheting the keys. Therefore, she needs
-    # needs Bob's Diffie-Hellman Ratchet Key (DHR). Since the nym
-    # already sends the master key to the nym server to be created,
-    # it makes more sense to assign mode Bob (False) to the nym and
-    # Alice (True) to the nym server, so that the ratchet key is also
-    # sent in the same message.
+    # Bob's Diffie-Hellman Ratchet Key (DHR). Since the nym already
+    # sends the master key to the nym server to be created, it makes
+    # more sense to assign mode Bob (False) to the nym and Alice
+    # (True) to the nym server, so that the ratchet key is also sent
+    # in the same message.
     axolotl.createState(other_name=other_name,
                         mkey=hashlib.sha256(mkey).digest(),
                         mode=False)
     axolotl.saveState()
+
+
+def get_random_key(byte_length=RANDOM_KEY_BYTE_LENGTH):
+    """Return a hexadecimal random key with the byte length specified.
+
+    :param byte_length: The length of the key, in bytes
+    :type byte_length: int
+    :rtype: str
+    """
+    return hexlify(long_to_bytes(getrandbits(byte_length << 3)))
 
 
 class Client:
@@ -378,6 +396,10 @@ class Client:
     @property
     def nym_address(self):
         return self._session.nym.address
+
+    @property
+    def nym_expiration_date(self):
+        return self._session.nym.expiration_date
 
     @property
     def chain_info(self):
@@ -520,7 +542,7 @@ class Client:
                 text = 'Unknown error'
             raise errors.NymphemeralError('GPG Error', text + '!')
 
-    def _sign_data(self, data, signer, passphrase=None):
+    def _sign_data(self, data, signer, passphrase=None, use_agent=None):
         """Return data signed by the fingerprint given
 
         :param str data: The data to be signed
@@ -528,7 +550,9 @@ class Client:
         :param str passphrase: The passphrase of the signer
         :rtype: str
         """
-        gpg = new_gpg(self.directory_base, self.use_agent)
+        if use_agent is None:
+            use_agent = self.use_agent
+        gpg = new_gpg(self.directory_base, use_agent)
         result = gpg.sign(data, keyid=signer, passphrase=passphrase)
         if result:
             return str(result)
@@ -543,6 +567,18 @@ class Client:
                 raise errors.SecretKeyNotFoundError(signer)
             else:
                 raise errors.NymphemeralError('GPG Error', result.stderr)
+
+    def _check_passphrase(self, nym):
+        """Check the nym's passphrase by attempting to sign dummy data and
+        raising NymphemeralErrors on failure
+
+        :param nym: A nym with fingerprint and passhrase attributes
+        :type nym: nym.Nym
+        """
+        self._sign_data(data='',
+                        signer=nym.fingerprint,
+                        passphrase=nym.passphrase,
+                        use_agent=False)
 
     def load_configs(self):
         try:
@@ -683,29 +719,102 @@ class Client:
         return servers
 
     def retrieve_nyms(self):
+        """Retrieve nyms owned by the user by searching the keyring for secret
+        keys with email addresses in their user IDs with the same domains as
+        the servers
+
+        :rtype: list
+        """
         servers = self.retrieve_servers()
         nyms = []
-        keys = self.gpg.list_keys(secret=True)
-        for item in keys:
-            if len(item['uids']) == 1:
-                search = re.search(r'\b(\S+@(\S+))\b', item['uids'][0])
-                if search and search.group(2) in servers:
-                    nym = Nym(address=search.group(1),
-                              fingerprint=item['fingerprint'])
-                    nyms.append(nym)
+        key_map = self.gpg.list_keys(secret=True).key_map
+        for fp, key in key_map.iteritems():
+            try:
+                uid = key['uids'][0]
+            except IndexError:
+                # ignore for probably not being a nym's key, as it unexpectedly
+                # has no user IDs
+                pass
+            else:
+                # check if the key is the public master key
+                if fp.endswith(key['keyid']):
+                    search = re.search(r'\b(\S+@(\S+))\b', uid)
+                    if search and search.group(2) in servers:
+                        if key['expires']:
+                            epoch = key['expires']
+                        else:
+                            epoch = 0
+                        nym = Nym(address=search.group(1),
+                                  fingerprint=fp,
+                                  expiration_epoch=epoch)
+                        nyms.append(nym)
         return nyms
+
+    def retrieve_nym(self, search_query):
+        """Retrieve a nym owned by the user by searching the keyring for secret
+        keys with user IDs that match the search query and email addresses with
+        the same domains as the servers. Returns a nym if it is the only one
+        found, raising errors otherwise
+
+        :param str search_query: The search query
+        :rtype: nym.Nym
+        """
+        def matches(info):
+            return info.lower().endswith(search_query)
+        servers = self.retrieve_servers()
+        nyms = []
+        key_map = self.gpg.list_keys(secret=True).key_map
+        for fp, key in key_map.iteritems():
+            uid = None
+            try:
+                # check if the key is the public master key
+                if fp.endswith(key['keyid']):
+                    if matches(fp) or matches(key['fingerprint']):
+                        uid = key['uids'][0]
+                    elif re.search(r'\b' + search_query + r'\b',
+                                   key['uids'][0],
+                                   flags=re.IGNORECASE):
+                        uid = key['uids'][0]
+            except IndexError:
+                # ignore for probably not being a nym's key, as it unexpectedly
+                # has no user IDs
+                continue
+            if uid:
+                # a key that matches the search query was found, check if it
+                # belongs to a nym
+                address = re.search(r'\b(\S+@(\S+))\b', uid)
+                if address and address.group(2) in servers:
+                    if key['expires']:
+                        epoch = key['expires']
+                    else:
+                        epoch = 0
+                    nym = Nym(address=address.group(1),
+                              fingerprint=fp,
+                              expiration_epoch=epoch)
+                    nyms.append(nym)
+        if nyms:
+            for nym in nyms[1:]:
+                if nym.fingerprint != nyms[0].fingerprint:
+                    raise errors.AmbiguousUidError(search_query)
+            else:
+                return nyms[0]
+        else:
+            raise errors.NymNotFoundError(search_query)
 
     def start_session(self, nym, use_agent=False, output_method='manual', creating_nym=False):
         if nym.server not in self.retrieve_servers():
             raise errors.NymservNotFoundError(nym.server)
-        result = filter(lambda n: n.address == nym.address, self.retrieve_nyms())
-        if not result:
+        try:
+            result = self.retrieve_nym(nym.address)
+        except errors.NymNotFoundError as e:
             if not creating_nym:
-                raise errors.NymNotFoundError(nym.address)
+                raise e
         else:
-            nym.fingerprint = result[0].fingerprint
+            result.passphrase = nym.passphrase
+            nym = result
             if not nym.fingerprint:
                 raise errors.FingerprintNotFoundError(nym.address)
+            self._check_passphrase(nym)
             self._session.axolotl = create_axolotl(nym, self.directory_db)
         self._session.nym = nym
         self._session.hsubs = self.retrieve_hsubs()
@@ -824,30 +933,37 @@ class Client:
         messages += messages_without_date
         return messages
 
-    def send_create(self, ephemeral, hsub, name, duration):
-        ephemeral = ephemeral.strip()
-        hsub = hsub.strip()
+    def send_create(self, name, duration, ephemeral=None, hsub=None):
         name = name.strip()
-        duration = duration.strip()
-
-        if not ephemeral:
-            raise errors.InvalidEphemeralKeyError()
-        if not hsub:
-            raise errors.InvalidHsubError()
         if not name:
             raise errors.InvalidNameError()
-        if not re.match(r'\d+[dwmy]{0,1}$', duration, flags=re.IGNORECASE):
+
+        duration = duration.strip()
+        if not re.match(r'\d+[dwmy]?$', duration, flags=re.IGNORECASE):
             raise errors.InvalidDurationError()
 
-        pubkey, fingerprint = generate_key(self.gpg,
-                                           name,
-                                           self._session.nym.address,
-                                           self._session.nym.passphrase,
-                                           duration)
-        nym = Nym(self._session.nym.address,
-                  self._session.nym.passphrase,
-                  fingerprint,
-                  hsub)
+        if ephemeral is None:
+            ephemeral = get_random_key()
+        else:
+            ephemeral = ephemeral.strip()
+        if not ephemeral:
+            raise errors.InvalidEphemeralKeyError()
+
+        if hsub is None:
+            hsub = get_random_key()
+        else:
+            hsub = hsub.strip()
+        if not hsub:
+            raise errors.InvalidHsubError()
+
+        pubkey, _ = generate_key(self.gpg,
+                                 name,
+                                 self._session.nym.address,
+                                 self._session.nym.passphrase,
+                                 duration)
+        nym = self.retrieve_nym(self._session.nym.address)
+        nym.passphrase = self._session.nym.passphrase
+        nym.hsub = hsub
         axolotl = create_axolotl(nym, self.directory_db)
 
         lines = []
@@ -949,26 +1065,35 @@ class Client:
         )
         return success, e2ee_target_info + info, ciphertext
 
-    def send_config(self, ephemeral='', hsub='', name=''):
-        ephemeral = ephemeral.strip()
-        hsub = hsub.strip()
-        name = name.strip()
-
-        if not (ephemeral or hsub or name):
-            raise errors.EmptyChangesError()
+    def send_config(self, ephemeral='', hsub='', name='',
+                    gen_ephemeral=False, gen_hsub=False):
+        lines = []
 
         axolotl = create_axolotl(self._session.nym, self.directory_db)
-
-        lines = []
+        if gen_ephemeral:
+            ephemeral = get_random_key()
+        else:
+            ephemeral = ephemeral.strip()
         if ephemeral:
             lines.append('ephemeral: ' + str(ephemeral))
-            lines.append('ratchet: ' + b2a_base64(axolotl.state['DHRs']).strip())
+            lines.append('ratchet: ' +
+                         b2a_base64(axolotl.state['DHRs']).strip())
+
+        if gen_hsub:
+            hsub = get_random_key()
+        else:
+            hsub = hsub.strip()
         if hsub:
             lines.append('hsub: ' + str(hsub))
+
+        name = name.strip()
         if name:
             lines.append('name: ' + str(name))
+
         lines.append('')
         data = LINESEP.join(lines)
+        if not data:
+            raise errors.EmptyChangesError()
 
         success, info, ciphertext = self.encrypt_and_send(
             data,
