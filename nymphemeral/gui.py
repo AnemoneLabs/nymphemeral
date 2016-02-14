@@ -131,20 +131,22 @@ class LoginWindow(Tk.Tk, object):
         frame_radio = Tk.LabelFrame(frame_login, text='Output Method')
         frame_radio.grid(pady=(10, 0), ipadx=5, ipady=5, sticky='we')
         self.var_output_method = Tk.IntVar()
+        if not self.client.file_mix_binary:
+            text = 'Binary Not Found or Inappropriate'
+            mix_state = Tk.DISABLED
+        elif not self.client.file_mix_cfg:
+            text = 'Config File Not Found'
+            mix_state = Tk.DISABLED
+        else:
+            text = self.client.chain_info
+            mix_state = Tk.NORMAL
         radio_mix = Tk.Radiobutton(frame_radio,
                                    text='Send via Mixmaster',
                                    variable=self.var_output_method,
                                    value=OUTPUT_METHOD['mixmaster'],
-                                   state=Tk.DISABLED)
+                                   state=mix_state)
         radio_mix.grid(pady=(5, 0), sticky='w')
-        if not self.client.file_mix_binary:
-            text = 'Binary Not Found or Inappropriate'
-        elif not self.client.file_mix_cfg:
-            text = 'Config File Not Found'
-        else:
-            text = self.client.chain_info
-            radio_mix.config(state=Tk.NORMAL)
-        label_mix = Tk.Label(frame_radio, text=text)
+        label_mix = Tk.Label(frame_radio, state=mix_state, text=text)
         label_mix.grid(sticky='w', padx=(25, 0))
         radio_email = Tk.Radiobutton(frame_radio, text='Send via Email', variable=self.var_output_method,
                                      value=OUTPUT_METHOD['sendmail'])
