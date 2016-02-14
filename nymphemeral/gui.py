@@ -112,10 +112,15 @@ class LoginWindow(Tk.Tk, object):
         entry_passphrase_login = Tk.Entry(frame_login, show='*')
         entry_passphrase_login.grid(sticky='we')
 
-        # servers
-        button_servers = Tk.Button(frame_login, text='Manage Servers', command=lambda: ServersWindow(self.gui,
-                                                                                                     self.client))
-        button_servers.grid(pady=(5, 0))
+        # start button
+        button_start = Tk.Button(
+            frame_login, text='Start Session',
+            command=lambda: self.start_session(entry_address_login.get(),
+                                               entry_passphrase_login.get()))
+        button_start.grid(pady=(15, 0))
+        self.bind('<Return>', lambda event: self.start_session(
+            entry_address_login.get(),
+            entry_passphrase_login.get()))
 
         # GPG agent checkbox
         check_agent = Tk.Checkbutton(frame_login, text='Use GPG Agent', variable=self.var_use_agent)
@@ -150,13 +155,11 @@ class LoginWindow(Tk.Tk, object):
         radio_text.grid(sticky='w')
         self.var_output_method.set(OUTPUT_METHOD[self.client.output_method])
 
-        # start button
-        button_start = Tk.Button(frame_login, text='Start Session',
-                                 command=lambda: self.start_session(entry_address_login.get(),
-                                                                    entry_passphrase_login.get()))
-        button_start.grid(pady=(15, 0))
-        self.bind('<Return>', lambda event: self.start_session(entry_address_login.get(),
-                                                               entry_passphrase_login.get()))
+        # servers
+        button_servers = Tk.Button(frame_login, text='Manage Servers',
+                                   command=lambda: ServersWindow(self.gui,
+                                                                 self.client))
+        button_servers.grid(pady=(10, 0))
 
         entry_address_login.focus_set()
 
