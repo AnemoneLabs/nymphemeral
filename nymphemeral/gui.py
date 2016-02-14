@@ -490,6 +490,8 @@ class CreationTab(Tk.Frame, object):
                                 'you click the "Create Nym" button.' +
                                 LINESEP + 'Be prepared to wait...')
 
+        self.entry_name_create.focus_set()
+
     def set_interface(self, enabled):
         if enabled:
             state = Tk.NORMAL
