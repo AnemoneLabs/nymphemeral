@@ -72,10 +72,12 @@ so on.
     can uncheck ``Auto-generate`` and provide a key that you
     generated.
 
-**Note:** Although the ``hSub Passphrase`` is not required to use a
-nym, this client works better if you use one and we decided to make
-it a required field. If you feel that it should allow nyms without an
-hSub, let us know.
+.. note::
+
+    Although the ``hSub Passphrase`` is not required to use a nym,
+    this client works better if you use one and we decided to make it
+    a required field. If you feel that it should allow nyms without an
+    hSub, let us know.
 
 Create Nym
 ----------

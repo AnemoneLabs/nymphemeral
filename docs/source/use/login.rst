@@ -39,9 +39,11 @@ when you finish the creation process, the nym information will be
 written to disk right away as well as it will be deleted when you
 confirm to delete the nym.
 
-**Important:** Regardless the method that is being used, information
-about the message that has just been created is displayed in the
-first lines of the text box from the current tab.
+.. important::
+
+    Regardless the method that is being used, information about the
+    message that has just been created is displayed in the first
+    lines of the text box from the current tab.
 
 Managing Servers
 ----------------
