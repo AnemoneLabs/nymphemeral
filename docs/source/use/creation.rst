@@ -15,6 +15,17 @@ found, you will be asked if you wish to create it and you will be
 directed to the ``Create Nym`` tab in the main window. To create a
 nym, you must provide the following information:
 
+Pseudonymous Name
+-----------------
+The ``Pseudonymous Name`` field is the name you are going to give to
+the nym.
+
+Duration
+--------
+You must provide the duration of the nym's key. Once the key expires,
+the nym expires as well. The ``Duration`` must be in the same format
+used by **GPG** (e.g. ``1w``, ``2m``, or ``3y``).
+
 Ephemeral Key
 -------------
 The `Axolotl Ratchet protocol`_ derives a master key from the
@@ -24,6 +35,12 @@ go ahead and send a master key to skip that extra step. That key is
 the ``Ephemeral Key`` you need to provide. It can be any random string
 since it is ephemeral and will be used only on the first round of
 message exchange until the ratcheting starts.
+
+.. tip::
+
+    nymphemeral will automatically generate one by default, but you
+    can uncheck ``Auto-generate`` and provide a key that you
+    generated.
 
 hSub Passphrase
 ---------------
@@ -49,21 +66,16 @@ encrypt both passphrases to both nyms and if you create a third nym,
 those two other nyms can encrypt the passphrases to the third one and
 so on.
 
+.. tip::
+
+    nymphemeral will automatically generate one by default, but you
+    can uncheck ``Auto-generate`` and provide a key that you
+    generated.
+
 **Note:** Although the ``hSub Passphrase`` is not required to use a
 nym, this client works better if you use one and we decided to make
 it a required field. If you feel that it should allow nyms without an
 hSub, let us know.
-
-Pseudonymous Name
------------------
-The ``Pseudonymous Name`` field is the name you are going to give to
-the nym.
-
-Duration
---------
-You must provide the duration of the nym's key. Once the key expires,
-the nym expires as well. The ``Duration`` must be in the same format
-used by **GPG** (e.g. ``1w``, ``2m``, or ``3y``).
 
 Create Nym
 ----------
