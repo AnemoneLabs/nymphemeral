@@ -204,6 +204,12 @@ class ServersWindow(Tk.Tk, object):
         frame_servers = Tk.Frame(self)
         frame_servers.grid(sticky='w', padx=15, pady=15)
 
+        # import default keys button
+        button_import_default = Tk.Button(frame_servers,
+                                          text='Import Default Keys',
+                                          command=self.import_default_keys)
+        button_import_default.grid(pady=(0, 10))
+
         # servers list box
         frame_list = Tk.LabelFrame(frame_servers, text='Nym Servers')
         frame_list.grid(sticky='we')
@@ -251,6 +257,13 @@ class ServersWindow(Tk.Tk, object):
         for s in self.client.retrieve_servers().keys():
             self.list_servers.insert(Tk.END, s)
         self.toggle_servers_interface()
+
+    def import_default_keys(self):
+        if tkMessageBox.askokcancel('Confirm', 'This will import public keys '
+                                    'included with nymphemeral to the client '
+                                    'keyring.'):
+            self.client.import_default_keys()
+            self.update_servers_list()
 
     def delete_key(self, server):
         if tkMessageBox.askyesno('Confirm', 'Are you sure you want to delete ' + server + "'s key?"):
