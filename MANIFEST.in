@@ -4,3 +4,4 @@ include nymphemeral/_version.py
 include versioneer.py
 recursive-include docs *
 recursive-include connections *
+recursive-include nymphemeral/keyring *.asc
