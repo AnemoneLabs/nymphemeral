@@ -1,7 +1,4 @@
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
+from setuptools import setup, find_packages
 
 import versioneer
 
@@ -25,9 +22,7 @@ setup(
         'Topic :: Communications :: Email',
     ],
     keywords='nymphemeral ephemeral nymserver GUI client',
-    packages=[
-        'nymphemeral',
-    ],
+    packages=find_packages(),
     install_requires=[
         'pyaxo>=0.4.1',
         'pycrypto>=2.1.0',
