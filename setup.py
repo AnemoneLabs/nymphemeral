@@ -34,4 +34,7 @@ setup(
             'nymphemeral = nymphemeral.__main__:main',
         ],
     },
+    package_data={
+        'nymphemeral.keyring': ['*.asc'],
+    },
 )

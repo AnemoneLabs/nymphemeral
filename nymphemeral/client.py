@@ -17,6 +17,7 @@ from Crypto.Util.number import long_to_bytes
 from pyaxo import Axolotl
 
 import errors
+from .keyring import read_default_keys
 from __init__ import LINESEP
 from __init__ import PATHSEP
 from __init__ import logger
@@ -698,6 +699,11 @@ class Client:
 
     def delete_key(self, server):
         return self.gpg.delete_keys(self.retrieve_servers()[server])
+
+    def import_default_keys(self):
+        """Import public keys included in nymphemeral to the client keyring."""
+        for key in read_default_keys().values():
+            self.gpg.import_keys(key)
 
     def retrieve_servers(self):
         servers = {}

@@ -45,11 +45,14 @@ confirm to delete the nym.
     message that has just been created is displayed in the first
     lines of the text box from the current tab.
 
+.. _sec-managing-servers:
+
 Managing Servers
 ----------------
 If the nymserver's public key is not found in the keyring, you will
-be prompted to add it. You can also add, modify or delete these
-public keys whenever you want by clicking on ``Manage Servers`` in
+be prompted to add it. You can import the default keys (explained on
+:ref:`sec-default-keys`) as well as add, modify or delete any server
+public key whenever you want by clicking on ``Manage Servers`` in
 the login window.
 
 .. figure:: key.png
