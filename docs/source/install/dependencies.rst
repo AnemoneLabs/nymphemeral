@@ -8,7 +8,8 @@ Make sure that you have the following::
     sudo apt-get install python-dev python-tk # If using Debian/Ubuntu
     sudo yum install python-devel tkinter # If using Fedora
 
-If you use `pip`_, you can easily install nymphemeral with::
+If you use `pip`_ and `setuptools`_ (probably installed automatically
+with *pip*), you can easily install nymphemeral with::
 
     sudo pip install nymphemeral
 
@@ -16,18 +17,16 @@ The other dependencies used by nymphemeral such as `pyaxo`_,
 `python-dateutil`_ and `python-gnupg`_ will be automatically
 downloaded and installed. You can go to :ref:`other-dependencies`.
 
-If you do not use *pip*, the easiest way to install those
-dependencies is using `setuptools`_. After making sure you have
-*setuptools*, install with::
+If you do not use *pip*, you at least have to install *setuptools*. It
+provides a few features needed by nymphemeral and will also
+automatically install the dependencies mentioned above. After making
+sure you have *setuptools*, install with::
 
     git clone https://github.com/felipedau/nymphemeral
     cd nymphemeral/
     sudo python setup.py install
 
 nymphemeral and its dependencies should be installed.
-
-If you do not use *setuptools* as well, you will have to install each
-dependency and sub-dependencies manually.
 
 .. _other-dependencies:
 

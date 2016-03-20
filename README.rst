@@ -39,7 +39,8 @@ Make sure that you have the following::
     sudo apt-get install python-dev python-tk # If using Debian/Ubuntu
     sudo yum install python-devel tkinter # If using Fedora
 
-If you use `pip`_, you can easily install nymphemeral with::
+If you use `pip`_ and `setuptools`_ (probably installed automatically
+with *pip*), you can easily install nymphemeral with::
 
     sudo pip install nymphemeral
 
@@ -108,6 +109,7 @@ Acknowledgements
 .. _`pyaxo`: https://github.com/rxcomm/pyaxo
 .. _`python-gnupg`: https://pypi.python.org/pypi/python-gnupg
 .. _`rxcomm`: https://github.com/rxcomm
+.. _`setuptools`: https://pypi.python.org/pypi/setuptools
 .. _`tych0`: https://github.com/tych0
 .. _`usage`: http://nymphemeral.readthedocs.org/en/latest/use/login.html
 .. _`zax-type`: https://github.com/crooks/nymserv
