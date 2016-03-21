@@ -2,6 +2,19 @@
 Changelog
 =========
 
+nymphemeral 1.4.2
+=================
+
+- Make the login interface more intuitive and close #21
+
+- Minor interface enhancements
+
+- Require `setuptools` only
+
+- Include default keys and close #29
+
+- Organize imports and close #37
+
 nymphemeral 1.4.1, released 2016-02-13
 ======================================
 
