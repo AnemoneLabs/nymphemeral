@@ -8,18 +8,14 @@ import tkMessageBox
 import tkSimpleDialog
 import ttk
 
-import errors
-from client import OUTPUT_METHOD
-from client import DEBUG_LOGGER_LEVEL
-from client import search_pgp_message
-from client import retrieve_keyids
-from client import retrieve_key
-from client import format_key_info
-from client import Client
-from nym import Nym
-
-from __init__ import __version__
-from __init__ import LINESEP
+from . import __version__
+from . import errors
+from . import LINESEP
+from .client import DEBUG_LOGGER_LEVEL, OUTPUT_METHOD
+from .client import format_key_info
+from .client import retrieve_key, retrieve_keyids, search_pgp_message
+from .client import Client
+from .nym import Nym
 
 log = logging.getLogger(__name__)
 

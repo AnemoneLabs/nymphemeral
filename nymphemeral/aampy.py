@@ -36,8 +36,8 @@ from threading import Event
 
 from dateutil import parser, tz
 
-import hsub
-from __init__ import LINESEP
+from . import hsub
+from . import LINESEP
 
 
 log = logging.getLogger(__name__)

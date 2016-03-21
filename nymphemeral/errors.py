@@ -1,4 +1,4 @@
-from __init__ import LINESEP
+from . import LINESEP
 
 
 class NymphemeralError(Exception):
