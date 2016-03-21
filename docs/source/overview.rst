@@ -4,7 +4,7 @@ Overview
 nymphemeral is a tool made for users searching for secure and
 anonymous communication on the internet.
 
-It is a GUI client that relies on a pseudonymous remailer that
+It is a GUI client that relies on a pseudonym remailer that
 communicates to its users by posting messages to a shared mailbox,
 a `Zax-type`_ nym server. Both the server and the client apply an
 ephemeral encryption layer on their messages based on the `Axolotl
@@ -13,8 +13,8 @@ conversation.
 
 Features
 --------
-- Manages pseudonymous actions: creation, configuration and
-  deletion, as well as message dispatch and retrieval
+- Manages pseudonym actions: creation, configuration and deletion,
+  as well as message dispatch and retrieval
 
 - Communicates with the `new nymserv`_, a *Zax-type* nym server with
   forward and future secrecy
