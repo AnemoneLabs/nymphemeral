@@ -34,10 +34,12 @@ sequence and number of mixes in the chain, passing their names or
 simply ``*`` (which means that it could be any mix), separated by
 commas.
 
-**Note:** Adding more mixes to the chain will probably increase the
-latency to deliver your messages. That is actually not a bad thing,
-but you should decide how long you are willing to wait to exchange
-messages.
+.. note::
+
+    Adding more mixes to the chain will probably increase the latency
+    to deliver your messages. That is actually not a bad thing, but
+    you should decide how long you are willing to wait to exchange
+    messages.
 
 SMTP Server
 '''''''''''

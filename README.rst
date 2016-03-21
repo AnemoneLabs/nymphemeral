@@ -3,7 +3,7 @@ nymphemeral
 nymphemeral is a tool made for users searching for secure and
 anonymous communication on the internet.
 
-It is a GUI client that relies on a pseudonymous remailer that
+It is a GUI client that relies on a pseudonym remailer that
 communicates to its users by posting messages to a shared mailbox,
 a `Zax-type`_ nym server. Both the server and the client apply an
 ephemeral encryption layer on their messages based on the `Axolotl
@@ -12,8 +12,8 @@ conversation.
 
 Features
 --------
-- Manages pseudonymous actions: creation, configuration and
-  deletion, as well as message dispatch and retrieval
+- Manages pseudonym actions: creation, configuration and deletion,
+  as well as message dispatch and retrieval
 
 - Communicates with the `new nymserv`_, a *Zax-type* nym server with
   forward and future secrecy
@@ -29,8 +29,8 @@ Features
 
 Current Release
 ---------------
-The current version of nymphemeral is 1.4.1, a beta, released
-2016-02-13.
+The current version of nymphemeral is 1.4.2, a beta, released
+2016-03-21.
 
 Quick Install
 -------------
@@ -39,7 +39,8 @@ Make sure that you have the following::
     sudo apt-get install python-dev python-tk # If using Debian/Ubuntu
     sudo yum install python-devel tkinter # If using Fedora
 
-If you use `pip`_, you can easily install nymphemeral with::
+If you use `pip`_ and `setuptools`_ (probably installed automatically
+with *pip*), you can easily install nymphemeral with::
 
     sudo pip install nymphemeral
 
@@ -69,10 +70,13 @@ update. We suggest that users update nymphemeral and restart their
 conversations by changing their nyms' **ephemeral keys**. The
 `Configuring the Nym`_ section explains how that can be done.
 
-Feedback
---------
-Please report any suggestions, feature requests, bug reports, or
-annoyances to the `GitHub issue tracker`_.
+Feedback and Contact
+--------------------
+Please use the `GitHub issue tracker`_ to leave suggestions, feature
+requests, bug reports, complaints or any contribution to nymphemeral.
+If you feel the need to talk about something else, send messages to
+``nymphemeral@nym.now.im``. You can also use its `public key`_ for
+end-to-end encryption.
 
 Acknowledgements
 ----------------
@@ -101,9 +105,11 @@ Acknowledgements
 .. _`news server`: http://nymphemeral.readthedocs.org/en/latest/install/newsserver.html
 .. _`new nymserv`: https://github.com/rxcomm/nymserv
 .. _`pip`: https://pypi.python.org/pypi/pip
+.. _`public key`: https://raw.githubusercontent.com/felipedau/nymphemeral/master/docs/source/nymphemeral-nym.asc
 .. _`pyaxo`: https://github.com/rxcomm/pyaxo
 .. _`python-gnupg`: https://pypi.python.org/pypi/python-gnupg
 .. _`rxcomm`: https://github.com/rxcomm
+.. _`setuptools`: https://pypi.python.org/pypi/setuptools
 .. _`tych0`: https://github.com/tych0
 .. _`usage`: http://nymphemeral.readthedocs.org/en/latest/use/login.html
 .. _`zax-type`: https://github.com/crooks/nymserv

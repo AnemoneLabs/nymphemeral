@@ -1,7 +1,7 @@
 import re
 import time
 
-from errors import InvalidEmailAddressError
+from .errors import InvalidEmailAddressError
 
 
 class Nym(object):

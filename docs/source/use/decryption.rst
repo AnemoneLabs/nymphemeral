@@ -12,6 +12,13 @@ headers in the ``Headers`` tab. If you wish to keep the message,
 click ``Save to Disk``. You can also click ``Reply Message`` and you
 will be directed to the ``Send Message`` tab.
 
+.. note::
+
+    Clicking on undecrypted messages will delete them when the
+    process is done. If it fails to decrypt then it is useless. If it
+    succeeds, then it becomes useless due to the `Axolotl ratchet
+    protocol`_. You can go to `pyaxo`_ to read more about it.
+
 .. figure:: inbox-body.png
    :scale: 50%
    :alt: Inbox Body Tab
@@ -25,11 +32,6 @@ will be directed to the ``Send Message`` tab.
    :align: right
 
    Headers Tab
-
-**Note:** Clicking on undecrypted messages will delete them when the
-process is done. If it fails to decrypt then it is useless. If it
-succeeds, then it becomes useless due to the `Axolotl ratchet
-protocol`_. You can go to `pyaxo`_ to read more about it.
 
 End-to-End Encryption
 ---------------------

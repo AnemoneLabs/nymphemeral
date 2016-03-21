@@ -8,18 +8,14 @@ import tkMessageBox
 import tkSimpleDialog
 import ttk
 
-import errors
-from client import OUTPUT_METHOD
-from client import DEBUG_LOGGER_LEVEL
-from client import search_pgp_message
-from client import retrieve_keyids
-from client import retrieve_key
-from client import format_key_info
-from client import Client
-from nym import Nym
-
-from __init__ import __version__
-from __init__ import LINESEP
+from . import __version__
+from . import errors
+from . import LINESEP
+from .client import DEBUG_LOGGER_LEVEL, OUTPUT_METHOD
+from .client import format_key_info
+from .client import retrieve_key, retrieve_keyids, search_pgp_message
+from .client import Client
+from .nym import Nym
 
 log = logging.getLogger(__name__)
 
@@ -112,10 +108,15 @@ class LoginWindow(Tk.Tk, object):
         entry_passphrase_login = Tk.Entry(frame_login, show='*')
         entry_passphrase_login.grid(sticky='we')
 
-        # servers
-        button_servers = Tk.Button(frame_login, text='Manage Servers', command=lambda: ServersWindow(self.gui,
-                                                                                                     self.client))
-        button_servers.grid(pady=(5, 0))
+        # start button
+        button_start = Tk.Button(
+            frame_login, text='Start Session',
+            command=lambda: self.start_session(entry_address_login.get(),
+                                               entry_passphrase_login.get()))
+        button_start.grid(pady=(15, 0))
+        self.bind('<Return>', lambda event: self.start_session(
+            entry_address_login.get(),
+            entry_passphrase_login.get()))
 
         # GPG agent checkbox
         check_agent = Tk.Checkbutton(frame_login, text='Use GPG Agent', variable=self.var_use_agent)
@@ -126,20 +127,22 @@ class LoginWindow(Tk.Tk, object):
         frame_radio = Tk.LabelFrame(frame_login, text='Output Method')
         frame_radio.grid(pady=(10, 0), ipadx=5, ipady=5, sticky='we')
         self.var_output_method = Tk.IntVar()
+        if not self.client.file_mix_binary:
+            text = 'Binary Not Found or Inappropriate'
+            mix_state = Tk.DISABLED
+        elif not self.client.file_mix_cfg:
+            text = 'Config File Not Found'
+            mix_state = Tk.DISABLED
+        else:
+            text = self.client.chain_info
+            mix_state = Tk.NORMAL
         radio_mix = Tk.Radiobutton(frame_radio,
                                    text='Send via Mixmaster',
                                    variable=self.var_output_method,
                                    value=OUTPUT_METHOD['mixmaster'],
-                                   state=Tk.DISABLED)
+                                   state=mix_state)
         radio_mix.grid(pady=(5, 0), sticky='w')
-        if not self.client.file_mix_binary:
-            text = 'Binary Not Found or Inappropriate'
-        elif not self.client.file_mix_cfg:
-            text = 'Config File Not Found'
-        else:
-            text = self.client.chain_info
-            radio_mix.config(state=Tk.NORMAL)
-        label_mix = Tk.Label(frame_radio, text=text)
+        label_mix = Tk.Label(frame_radio, state=mix_state, text=text)
         label_mix.grid(sticky='w', padx=(25, 0))
         radio_email = Tk.Radiobutton(frame_radio, text='Send via Email', variable=self.var_output_method,
                                      value=OUTPUT_METHOD['sendmail'])
@@ -150,13 +153,11 @@ class LoginWindow(Tk.Tk, object):
         radio_text.grid(sticky='w')
         self.var_output_method.set(OUTPUT_METHOD[self.client.output_method])
 
-        # start button
-        button_start = Tk.Button(frame_login, text='Start Session',
-                                 command=lambda: self.start_session(entry_address_login.get(),
-                                                                    entry_passphrase_login.get()))
-        button_start.grid(pady=(15, 0))
-        self.bind('<Return>', lambda event: self.start_session(entry_address_login.get(),
-                                                               entry_passphrase_login.get()))
+        # servers
+        button_servers = Tk.Button(frame_login, text='Manage Servers',
+                                   command=lambda: ServersWindow(self.gui,
+                                                                 self.client))
+        button_servers.grid(pady=(10, 0))
 
         entry_address_login.focus_set()
 
@@ -198,6 +199,12 @@ class ServersWindow(Tk.Tk, object):
         self.title('Nym Servers')
         frame_servers = Tk.Frame(self)
         frame_servers.grid(sticky='w', padx=15, pady=15)
+
+        # import default keys button
+        button_import_default = Tk.Button(frame_servers,
+                                          text='Import Default Keys',
+                                          command=self.import_default_keys)
+        button_import_default.grid(pady=(0, 10))
 
         # servers list box
         frame_list = Tk.LabelFrame(frame_servers, text='Nym Servers')
@@ -246,6 +253,13 @@ class ServersWindow(Tk.Tk, object):
         for s in self.client.retrieve_servers().keys():
             self.list_servers.insert(Tk.END, s)
         self.toggle_servers_interface()
+
+    def import_default_keys(self):
+        if tkMessageBox.askokcancel('Confirm', 'This will import public keys '
+                                    'included with nymphemeral to the client '
+                                    'keyring.'):
+            self.client.import_default_keys()
+            self.update_servers_list()
 
     def delete_key(self, server):
         if tkMessageBox.askyesno('Confirm', 'Are you sure you want to delete ' + server + "'s key?"):
@@ -484,6 +498,8 @@ class CreationTab(Tk.Frame, object):
                                 'Key generation may take a long time after '
                                 'you click the "Create Nym" button.' +
                                 LINESEP + 'Be prepared to wait...')
+
+        self.entry_name_create.focus_set()
 
     def set_interface(self, enabled):
         if enabled:

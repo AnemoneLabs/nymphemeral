@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import sys
 
-from nymphemeral.gui import main
+from .gui import main
 
 
 if __name__ == '__main__':

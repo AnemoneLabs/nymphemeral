@@ -1,3 +1,4 @@
+import ConfigParser
 import hashlib
 import logging
 import os
@@ -6,7 +7,6 @@ import subprocess
 import sys
 import time
 from binascii import a2b_base64, b2a_base64, hexlify
-from ConfigParser import ConfigParser, MissingSectionHeaderError, NoOptionError, NoSectionError
 from email import message_from_string
 from threading import Thread
 from Tkinter import Tk
@@ -16,14 +16,13 @@ from Crypto.Random.random import getrandbits
 from Crypto.Util.number import long_to_bytes
 from pyaxo import Axolotl
 
-import errors
-from __init__ import LINESEP
-from __init__ import PATHSEP
-from __init__ import logger
-from aampy import AAMpy
-from message import Message
-from nym import Nym
-from session import Session
+from . import errors
+from . import LINESEP, logger, PATHSEP
+from .aampy import AAMpy
+from .keyring import read_default_keys
+from .message import Message
+from .nym import Nym
+from .session import Session
 
 
 USER_PATH = os.path.expanduser('~')
@@ -365,7 +364,7 @@ def get_random_key(byte_length=RANDOM_KEY_BYTE_LENGTH):
 
 class Client:
     def __init__(self):
-        self._cfg = ConfigParser()
+        self._cfg = ConfigParser.ConfigParser()
 
         self.use_agent = None
         self.directory_base = None
@@ -616,10 +615,10 @@ class Client:
             # a working config file will be written to disk after the process,
             # overwriting the existing one
             if os.path.exists(CONFIG_FILE):
-                saved_cfg = ConfigParser()
+                saved_cfg = ConfigParser.ConfigParser()
                 try:
                     saved_cfg.read(CONFIG_FILE)
-                except MissingSectionHeaderError:
+                except ConfigParser.MissingSectionHeaderError:
                     pass
                 else:
                     for section in self._cfg.sections():
@@ -627,9 +626,9 @@ class Client:
                             try:
                                 self._cfg.set(section, option,
                                               saved_cfg.get(section, option))
-                            except NoSectionError:
+                            except ConfigParser.NoSectionError:
                                 break
-                            except NoOptionError:
+                            except ConfigParser.NoOptionError:
                                 pass
             else:
                 create_directory(NYMPHEMERAL_PATH)
@@ -698,6 +697,11 @@ class Client:
 
     def delete_key(self, server):
         return self.gpg.delete_keys(self.retrieve_servers()[server])
+
+    def import_default_keys(self):
+        """Import public keys included in nymphemeral to the client keyring."""
+        for key in read_default_keys().values():
+            self.gpg.import_keys(key)
 
     def retrieve_servers(self):
         servers = {}

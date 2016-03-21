@@ -1,6 +1,6 @@
-================
-Starting Session
-================
+=====================
+Launching nymphemeral
+=====================
 .. figure:: login.png
    :scale: 70%
    :alt: Login Window
@@ -8,9 +8,30 @@ Starting Session
 
    Login Window
 
-When you run the client, a login window will be displayed. Fill in
-the ``Address`` and ``Passhphrase`` fields, choose the output method
-that you would like to use and click ``Start Session``.
+The client is launched with::
+
+    nymphemeral
+
+First Time Use
+--------------
+When you launch nymphemeral for the first time, you must import a
+server public key in order to create and use nyms.
+
+.. _sec-managing-servers:
+
+Managing Servers
+----------------
+You can import the :ref:`sec-default-keys` as well as add, modify or
+delete any server public key whenever you want by clicking ``Manage
+Servers`` in the login window.
+
+Starting Session
+----------------
+To start a session, in the login window, fill in the ``Address`` and
+``Passhphrase`` fields, choose the output method that you would like
+to use and click ``Start Session``. If you wish to create a nym,
+you can follow the same steps - nymphemeral asks if a nym is being
+created when the address is not found in the keyring.
 
 GPG Agent
 ---------
@@ -18,7 +39,7 @@ If it is enabled, the GPG Agent's dialogs will be displayed when you
 need to sign/decrypt messages, prompting you for a passphrase. If you
 decide not to enable it, nymphemeral's own dialogs will be used.
 
-Output method
+Output Method
 -------------
 When **Mixmaster** is installed and configured, clicking the
 ``Send via Mixmaster`` radio button on the login screen will route
@@ -39,16 +60,11 @@ when you finish the creation process, the nym information will be
 written to disk right away as well as it will be deleted when you
 confirm to delete the nym.
 
-**Important:** Regardless the method that is being used, information
-about the message that has just been created is displayed in the
-first lines of the text box from the current tab.
+.. important::
 
-Managing Servers
-----------------
-If the nymserver's public key is not found in the keyring, you will
-be prompted to add it. You can also add, modify or delete these
-public keys whenever you want by clicking on ``Manage Servers`` in
-the login window.
+    Regardless the method that is being used, information about the
+    message that has just been created is displayed in the first
+    lines of the text box from the current tab.
 
 .. figure:: key.png
    :scale: 55%

@@ -25,3 +25,23 @@ Similarly, you can also add private keys to the keyring if you expect
 to receive messages encrypted to a specific key you have. Either the
 GPG Agent or nymphemeral will automatically prompt you for a
 passphrase and decrypt the message.
+
+.. _sec-default-keys:
+
+Default Keys
+------------
+nymphemeral's package includes the public keys of the `nym.now.im`_
+server and the nymphemeral nym. By importing the former to the client
+keyring you are able to create and use nyms on that server, and if you
+need to contact us, the latter allows you to send end-to-end encrypted
+messages to ``nymphemeral@nym.now.im``. In order to import them you
+should click ``Import Default Keys`` in the ``Nym Servers`` window
+(presented in :ref:`sec-managing-servers`).
+
+The included keys can be found in the ``nymphemeral.keyring`` module
+as ``.asc`` files and a `detached signature`_ of *nym.now.im's* public
+key signed by the Jeremy Bentham Remailer Admin can be used to verify
+the ``nym-now-im-server.asc`` file.
+
+.. _`detached signature`: https://nym.now.im/nymserver/key.txt
+.. _`nym.now.im`: https://nym.now.im/nymserver

@@ -3,7 +3,7 @@ from email import message_from_string
 
 from dateutil import parser
 
-from __init__ import LINESEP
+from . import LINESEP
 
 
 class Message(object):
