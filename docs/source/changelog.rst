@@ -2,8 +2,8 @@
 Changelog
 =========
 
-nymphemeral 1.4.2
-=================
+nymphemeral 1.4.2, released 2016-03-21
+======================================
 
 - Make the login interface more intuitive and close #21
 
