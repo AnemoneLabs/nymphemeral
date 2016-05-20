@@ -7,7 +7,7 @@ setup(
     name='nymphemeral',
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
-    description='An ephemeral nym GUI client',
+    description='Ephemeral pseudonym client',
     url='https://github.com/felipedau/nymphemeral',
     author='Felipe Dau',
     author_email='dau.felipe@gmail.com',
@@ -21,7 +21,8 @@ setup(
         'Programming Language :: Python :: 2.7',
         'Topic :: Communications :: Email',
     ],
-    keywords='nymphemeral ephemeral nymserver GUI client',
+    keywords=('nymphemeral ephemeral pseudonymous pseudonym nym nymserver '
+              'nymclient gui client'),
     packages=find_packages(),
     install_requires=[
         'pyaxo>=0.4.1',
