@@ -61,8 +61,8 @@ able to find out whom the message was encrypted to, because the key
 ID was removed. Therefore, when someone receives that message, they
 will have to use all of their keys to attempt to decrypt it.
 
-If the message is being signed, either the GPG Agent or nymphemeral
-will prompt you for a passphrase to unlock the secret key:
+If the message is being signed, the GPG Agent will prompt you for a
+passphrase to unlock the secret key:
 
 .. figure:: agent.png
    :alt: GPG Agent

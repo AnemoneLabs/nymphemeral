@@ -5,15 +5,13 @@ import os
 import sys
 import Tkinter as Tk
 import tkMessageBox
-import tkSimpleDialog
 import ttk
 
 from . import __version__
 from . import errors
 from . import LINESEP
 from .client import DEBUG_LOGGER_LEVEL, OUTPUT_METHOD
-from .client import format_key_info
-from .client import retrieve_key, retrieve_keyids, search_pgp_message
+from .client import search_pgp_message
 from .client import Client
 from .nym import Nym
 
@@ -86,7 +84,6 @@ class LoginWindow(Tk.Tk, object):
         self.gui = gui
         self.client = client
         self.var_output_method = None
-        self.var_use_agent = Tk.BooleanVar()
 
         self.title(self.gui.title)
         frame_login = Tk.Frame(self)
@@ -117,11 +114,6 @@ class LoginWindow(Tk.Tk, object):
         self.bind('<Return>', lambda event: self.start_session(
             entry_address_login.get(),
             entry_passphrase_login.get()))
-
-        # GPG agent checkbox
-        check_agent = Tk.Checkbutton(frame_login, text='Use GPG Agent', variable=self.var_use_agent)
-        check_agent.grid(sticky='w', padx=0, pady=(10, 0))
-        self.var_use_agent.set(self.client.use_agent)
 
         # output radio buttons
         frame_radio = Tk.LabelFrame(frame_login, text='Output Method')
@@ -167,13 +159,12 @@ class LoginWindow(Tk.Tk, object):
                 return key
 
     def start_session(self, address, passphrase, creating_nym=False):
-        use_agent = bool(self.var_use_agent.get())
         method = self.get_output_method()
         try:
             nym = Nym(address, passphrase)
             if not len(passphrase):
                 raise errors.InvalidPassphraseError()
-            self.client.start_session(nym, use_agent, method, creating_nym)
+            self.client.start_session(nym, method, creating_nym)
         except (errors.InvalidEmailAddressError, errors.InvalidPassphraseError, errors.FingerprintNotFoundError,
                 errors.IncorrectPassphraseError) as e:
             tkMessageBox.showerror(e.title, e.message)
@@ -668,34 +659,7 @@ class InboxTab(Tk.Frame, object):
     def decrypt_e2ee_message(self, msg):
         pgp_message = search_pgp_message(msg.content)
         if pgp_message:
-            if self.client.use_agent:
-                return self.client.decrypt_e2ee_message(msg)
-            else:
-                keyids = retrieve_keyids(pgp_message)
-                keys = []
-                if keyids:
-                    for k in keyids:
-                        try:
-                            keys.append(retrieve_key(self.client.gpg, k))
-                        except errors.KeyNotFoundError:
-                            pass
-                if keys:
-                    prompt = 'Message encrypted to:' + LINESEP
-                    for k in keys:
-                        prompt += format_key_info(k)
-                else:
-                    prompt = ('The key ID which the message was encrypted to '
-                              'was removed or is not in the keyring.' +
-                              LINESEP)
-                prompt += 'Provide a passphrase to attempt to decrypt it:'
-                passphrase = tkSimpleDialog.askstring('End-to-End Encrypted Message',
-                                                      prompt,
-                                                      parent=self,
-                                                      show='*')
-                if passphrase is None:
-                    return msg
-                else:
-                    return self.client.decrypt_e2ee_message(msg, passphrase)
+            return self.client.decrypt_e2ee_message(msg)
         else:
             return msg
 
@@ -863,24 +827,6 @@ class SendTab(Tk.Frame, object):
         passphrase = None
         throw_keyids = bool(self.var_throw_keyids.get())
         try:
-            # if signing, nymphemeral's own dialog will prompt for a passphrase
-            # in case the user chose not to use the GPG agent
-            if e2ee_signer and not self.client.use_agent:
-                e2ee_signer_key = retrieve_key(self.client.gpg, e2ee_signer)
-                prompt = (
-                    'Signing with:' + LINESEP +
-                    format_key_info(e2ee_signer_key) +
-                    'Provide a passphrase to unlock the secret key:'
-                )
-                passphrase = tkSimpleDialog.askstring(
-                    title='Passphrase Required',
-                    prompt=prompt,
-                    parent=self,
-                    show='*'
-                )
-                if passphrase is None:
-                    # the user has canceled
-                    return
             success, info, ciphertext = self.client.send_message(
                 target_address,
                 body,

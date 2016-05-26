@@ -37,9 +37,8 @@ End-to-End Encryption
 ---------------------
 If someone has sent you an End-to-End Encrypted message, when you
 click on the message to decrypt it, after removing the encryption
-layers that were added by the nym server, either the GPG Agent or
-nymphemeral will prompt you for a passphrase if the key is found in
-the keyring:
+layers that were added by the nym server, the GPG Agent will prompt
+you for a passphrase if the key is found in the keyring:
 
 .. figure:: agent.png
    :alt: GPG Agent

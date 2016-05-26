@@ -22,9 +22,9 @@ nymphemeral's keyring with::
 Now you can type its UID or fingerprint when encrypting the message.
 
 Similarly, you can also add private keys to the keyring if you expect
-to receive messages encrypted to a specific key you have. Either the
-GPG Agent or nymphemeral will automatically prompt you for a
-passphrase and decrypt the message.
+to receive messages encrypted to a specific key you have. The GPG
+Agent will automatically prompt you for a passphrase and decrypt the
+message.
 
 .. _sec-default-keys:
 

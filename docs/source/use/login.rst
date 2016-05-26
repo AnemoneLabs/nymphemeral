@@ -33,12 +33,6 @@ to use and click ``Start Session``. If you wish to create a nym,
 you can follow the same steps - nymphemeral asks if a nym is being
 created when the address is not found in the keyring.
 
-GPG Agent
----------
-If it is enabled, the GPG Agent's dialogs will be displayed when you
-need to sign/decrypt messages, prompting you for a passphrase. If you
-decide not to enable it, nymphemeral's own dialogs will be used.
-
 Output Method
 -------------
 When **Mixmaster** is installed and configured, clicking the

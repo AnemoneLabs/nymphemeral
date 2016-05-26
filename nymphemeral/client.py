@@ -366,7 +366,7 @@ class Client:
     def __init__(self):
         self._cfg = ConfigParser.ConfigParser()
 
-        self.use_agent = None
+        self.use_agent = True
         self.directory_base = None
         self.directory_db = None
         self.directory_read_messages = None
@@ -582,8 +582,6 @@ class Client:
     def load_configs(self):
         try:
             # load default configs
-            self._cfg.add_section('gpg')
-            self._cfg.set('gpg', 'use_agent', 'True')
             self._cfg.add_section('main')
             self._cfg.set('main', 'base_dir', NYMPHEMERAL_PATH)
             self._cfg.set('main', 'db_dir',
@@ -667,7 +665,6 @@ class Client:
 
             self.save_configs()
 
-            self.use_agent = self._cfg.getboolean('gpg', 'use_agent')
             self.directory_base = self._cfg.get('main', 'base_dir')
             self.directory_db = self._cfg.get('main', 'db_dir')
             self.directory_read_messages = self._cfg.get('main', 'read_dir')
@@ -686,7 +683,6 @@ class Client:
             self._cfg.write(config_file)
 
     def update_configs(self):
-        self._cfg.set('gpg', 'use_agent', self.use_agent)
         self._cfg.set('main', 'output_method', self.output_method)
 
     def save_key(self, key, server=None):
@@ -805,7 +801,7 @@ class Client:
         else:
             raise errors.NymNotFoundError(search_query)
 
-    def start_session(self, nym, use_agent=False, output_method='manual', creating_nym=False):
+    def start_session(self, nym, output_method='manual', creating_nym=False):
         if nym.server not in self.retrieve_servers():
             raise errors.NymservNotFoundError(nym.server)
         try:
@@ -824,17 +820,13 @@ class Client:
         self._session.hsubs = self.retrieve_hsubs()
         if not creating_nym:
             self._session.nym.hsub = self._session.hsubs[nym.address]
-        self.check_configs(use_agent, output_method)
+        self.check_configs(output_method)
 
     def end_session(self):
         self._session = Session()
 
-    def check_configs(self, use_agent, output_method):
+    def check_configs(self, output_method):
         update = False
-
-        if use_agent != self.use_agent:
-            self.use_agent = use_agent
-            update = True
 
         if output_method != self.output_method:
             self.output_method = output_method

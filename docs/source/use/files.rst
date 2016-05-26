@@ -41,12 +41,6 @@ You can modify ``nymphemeral.cfg`` per your liking. We will not
 describe the whole file, but only the options relevant to the user
 that belong to the following sections:
 
-[gpg]
-'''''
-Although this option can be modified through the GUI, you can toggle
-``use_agent`` between ``True``/``False`` to use the GPG Agent when
-signing/decrypting messages. (Default: ``True``)
-
 [main]
 ''''''
 The value of ``logger_level`` can be modified to control what
