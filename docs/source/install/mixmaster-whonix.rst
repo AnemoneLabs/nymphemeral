@@ -17,6 +17,35 @@ should know: the user files are at ``~/.Mix`` and the binary at
 *Mixmaster* files at those locations and you do not need to configure
 anything (as explained on :ref:`cfg_mix`).
 
+Getting New Remailer Stats
+--------------------------
+Before you can use *Mixmaster*, you need to update the stats. We are
+going to use the pinger from the `Jeremy Bentham Remailer`_, but the
+process should be similar to other pingers you wish to use.
+
+An easy way to do this **securely** is with *curl*. First, create a
+file called ``update.sh`` in your ``~/Mix`` directory, with the
+following contents::
+
+    #!/bin/bash
+    rm pubring.asc pubring.mix mlist.txt rlist.txt
+    curl http://lnwxejysejqjlm3l.onion/stats/mlist.txt -o mlist.txt
+    curl http://lnwxejysejqjlm3l.onion/stats/rlist.txt -o rlist.txt
+    curl http://lnwxejysejqjlm3l.onion/stats/pubring.mix -o pubring.mix
+    curl http://lnwxejysejqjlm3l.onion/stats/pgp-all.asc -o pubring.asc
+
+Change the script to executable mode::
+
+    chmod +x update.sh
+
+As there is no need to use a certificate for an onion service, you can
+securely update your remailer stats by simply::
+
+    ./update.sh
+
+You should update the remailer stats *at least once a day* when using
+*Mixmaster*.
+
 Config File
 -----------
 *Mixmaster* just needs to be configured through the ``~/.Mix/mix.cfg``
