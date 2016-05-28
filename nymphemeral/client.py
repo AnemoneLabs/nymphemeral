@@ -95,7 +95,8 @@ def existing_path(paths):
 
 
 def files_in_path(path):
-    return [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
+    return [f for f in os.listdir(path) if os.path.isfile(
+        os.path.join(path, f))]
 
 
 def create_directory(directory):
@@ -128,7 +129,9 @@ def search_block(data, beginning, end):
 
 def search_pgp_message(data):
     """Return the first PGP message found, return None otherwise"""
-    return search_block(data, '-----BEGIN PGP MESSAGE-----', '-----END PGP MESSAGE-----')
+    return search_block(data,
+                        '-----BEGIN PGP MESSAGE-----',
+                        '-----END PGP MESSAGE-----')
 
 
 def read_data(identifier):
@@ -172,11 +175,11 @@ def new_gpg(home, use_agent=False, throw_keyids=False):
 
 
 def generate_key(gpg, name, address, passphrase, duration):
-    input_data = gpg.gen_key_input(key_type='RSA', key_length='4096', subkey_type='RSA',
-                                   subkey_length='4096', key_usage='sign,auth',
-                                   subkey_usage='encrypt', expire_date=duration,
-                                   passphrase=passphrase, name_real=name,
-                                   name_comment='', name_email=address)
+    input_data = gpg.gen_key_input(
+        key_type='RSA', key_length='4096', subkey_type='RSA',
+        subkey_length='4096', key_usage='sign,auth', subkey_usage='encrypt',
+        expire_date=duration, passphrase=passphrase, name_real=name,
+        name_comment='', name_email=address)
     fingerprint = gpg.gen_key(input_data).fingerprint
     return gpg.export_keys(keyids=address), fingerprint
 
@@ -325,9 +328,10 @@ def create_axolotl(nym, directory):
     # workaround to suppress prints by pyaxo
     sys.stdout = open(os.devnull, 'w')
     try:
-        axolotl = Axolotl(name=nym.fingerprint,
-                          dbname=os.path.join(directory, nym.fingerprint + '.db'),
-                          dbpassphrase=nym.passphrase)
+        axolotl = Axolotl(
+            name=nym.fingerprint,
+            dbname=os.path.join(directory, nym.fingerprint + '.db'),
+            dbpassphrase=nym.passphrase)
     except SystemExit:
         sys.stdout = sys.__stdout__
         raise errors.IncorrectPassphraseError()
@@ -480,7 +484,8 @@ class Client:
                      'It does not exist')
         return None
 
-    def _append_messages_to_list(self, read_messages, messages, messages_without_date):
+    def _append_messages_to_list(self, read_messages, messages,
+                                 messages_without_date):
         # check which directory to read the files from
         if read_messages:
             path = self.directory_read_messages
@@ -668,9 +673,11 @@ class Client:
             self.directory_base = self._cfg.get('main', 'base_dir')
             self.directory_db = self._cfg.get('main', 'db_dir')
             self.directory_read_messages = self._cfg.get('main', 'read_dir')
-            self.directory_unread_messages = self._cfg.get('main', 'unread_dir')
+            self.directory_unread_messages = self._cfg.get('main',
+                                                           'unread_dir')
             self.file_hsub = self._cfg.get('main', 'hsub_file')
-            self.file_encrypted_hsub = self._cfg.get('main', 'encrypted_hsub_file')
+            self.file_encrypted_hsub = self._cfg.get('main',
+                                                     'encrypted_hsub_file')
 
             log.debug('Configs have been loaded')
         except IOError:
@@ -708,11 +715,14 @@ class Client:
             url_match = None
             for uid in item['uids']:
                 if not config_match:
-                    config_match = re.search(r'\bconfig@(\S+)\b', uid, flags=re.IGNORECASE)
+                    config_match = re.search(r'\bconfig@(\S+)\b', uid,
+                                             flags=re.IGNORECASE)
                 if not send_match:
-                    send_match = re.search(r'\bsend@(\S+)+\b', uid, flags=re.IGNORECASE)
+                    send_match = re.search(r'\bsend@(\S+)+\b', uid,
+                                           flags=re.IGNORECASE)
                 if not url_match:
-                    url_match = re.search(r'\burl@(\S+)\b', uid, flags=re.IGNORECASE)
+                    url_match = re.search(r'\burl@(\S+)\b', uid,
+                                          flags=re.IGNORECASE)
             if config_match and send_match and url_match:
                 server = config_match.group(1)
                 servers[server] = item['fingerprint']
@@ -841,7 +851,8 @@ class Client:
         data = ''
         for key, item in hsubs.iteritems():
             data += key + ' ' + str(item) + LINESEP
-        # check if the nym has access or can create the encrypted hSub passphrases file
+        # check if the nym has access or can create the encrypted hSub
+        # passphrases file
         if self._session.nym.fingerprint \
                 and (not os.path.exists(self.file_encrypted_hsub)
                      or self._decrypt_hsubs_file()):
@@ -904,12 +915,15 @@ class Client:
                 # check if there are unencrypted hSub passphrases
                 if hsubs:
                     encrypt_hsubs = True
-                    # merge hSub passphrases and save the "older" time to ensure messages are not skipped
+                    # merge hSub passphrases and save the "older" time to
+                    # ensure messages are not skipped
                     try:
                         if hsubs['time'] < decrypted_hsubs['time']:
-                            hsubs = dict(decrypted_hsubs.items() + hsubs.items())
+                            hsubs = dict(
+                                decrypted_hsubs.items() + hsubs.items())
                         else:
-                            hsubs = dict(hsubs.items() + decrypted_hsubs.items())
+                            hsubs = dict(
+                                hsubs.items() + decrypted_hsubs.items())
                     except KeyError:
                         hsubs = dict(hsubs.items() + decrypted_hsubs.items())
                 else:
@@ -1136,9 +1150,11 @@ class Client:
             else:
                 data = 'To: ' + recipient + LINESEP*2 + ciphertext
                 if self.send_data(data):
-                    info = 'The following message was successfully sent to ' + recipient
+                    info = 'The following message was successfully sent ' + \
+                        'to ' + recipient
                 else:
-                    info = 'ERROR! The following message could not be sent to ' + recipient
+                    info = 'ERROR! The following message could not be ' + \
+                        'sent to ' + recipient
                     success = False
             info += LINESEP*2
             return success, info, ciphertext
@@ -1147,9 +1163,11 @@ class Client:
 
     def send_data(self, data):
         if self.output_method == 'mixmaster':
-            p = subprocess.Popen([self.file_mix_binary, '-m'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            p = subprocess.Popen([self.file_mix_binary, '-m'],
+                                 stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         elif self.output_method == 'sendmail':
-            p = subprocess.Popen(['sendmail', '-t'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            p = subprocess.Popen(['sendmail', '-t'],
+                                 stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         else:
             log.error('Invalid send choice: ' + self.output_method)
             return False
@@ -1193,7 +1211,8 @@ class Client:
         # workaround to suppress prints by pyaxo
         sys.stdout = open(os.devnull, 'w')
         try:
-            ciphertext = self._session.axolotl.decrypt(a2b_base64(data)).strip()
+            ciphertext = self._session.axolotl.decrypt(
+                a2b_base64(data)).strip()
         except SystemExit:
             sys.stdout = sys.__stdout__
             log.info('Error while decrypting message')
@@ -1252,7 +1271,8 @@ class Client:
                 if line.startswith('[GNUPG:]'):
                     continue
 
-                if line.startswith('gpg: anonymous recipient; trying secret key'):
+                if line.startswith('gpg: anonymous recipient; trying secret '
+                                   'key'):
                     continue
 
                 if line == 'gpg: encrypted with RSA key, ID 00000000':
@@ -1261,7 +1281,8 @@ class Client:
                 if line == 'gpg: okay, we are the anonymous recipient.':
                     j = 1
                     line_id = lines[i - j]
-                    while not line_id.startswith('gpg: anonymous recipient; trying secret key'):
+                    while not line_id.startswith('gpg: anonymous recipient; '
+                                                 'trying secret key'):
                         j += 1
                         line_id = lines[i - j]
                     gpg_info = gpg_info + line_id + LINESEP

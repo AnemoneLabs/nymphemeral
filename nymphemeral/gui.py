@@ -90,7 +90,8 @@ class LoginWindow(Tk.Tk, object):
         frame_login.grid(sticky='w', padx=15, pady=15)
 
         # title
-        label_title = Tk.Label(frame_login, text='nymphemeral', font=('Helvetica', 26))
+        label_title = Tk.Label(frame_login, text='nymphemeral',
+                               font=('Helvetica', 26))
         label_title.grid(sticky='n')
 
         # address
@@ -136,10 +137,12 @@ class LoginWindow(Tk.Tk, object):
         radio_mix.grid(pady=(5, 0), sticky='w')
         label_mix = Tk.Label(frame_radio, state=mix_state, text=text)
         label_mix.grid(sticky='w', padx=(25, 0))
-        radio_email = Tk.Radiobutton(frame_radio, text='Send via Email', variable=self.var_output_method,
+        radio_email = Tk.Radiobutton(frame_radio, text='Send via Email',
+                                     variable=self.var_output_method,
                                      value=OUTPUT_METHOD['sendmail'])
         radio_email.grid(sticky='w')
-        radio_text = Tk.Radiobutton(frame_radio, text='Display Output in Message Window',
+        radio_text = Tk.Radiobutton(frame_radio,
+                                    text='Display Output in Message Window',
                                     variable=self.var_output_method,
                                     value=OUTPUT_METHOD['manual'])
         radio_text.grid(sticky='w')
@@ -165,7 +168,8 @@ class LoginWindow(Tk.Tk, object):
             if not len(passphrase):
                 raise errors.InvalidPassphraseError()
             self.client.start_session(nym, method, creating_nym)
-        except (errors.InvalidEmailAddressError, errors.InvalidPassphraseError, errors.FingerprintNotFoundError,
+        except (errors.InvalidEmailAddressError, errors.InvalidPassphraseError,
+                errors.FingerprintNotFoundError,
                 errors.IncorrectPassphraseError) as e:
             tkMessageBox.showerror(e.title, e.message)
         except errors.NymservNotFoundError as e:
@@ -202,32 +206,40 @@ class ServersWindow(Tk.Tk, object):
         frame_list.grid(sticky='we')
         self.list_servers = Tk.Listbox(frame_list, height=11, width=40)
         self.list_servers.grid(row=0, column=0, sticky='we')
-        scrollbar_list = Tk.Scrollbar(frame_list, command=self.list_servers.yview)
+        scrollbar_list = Tk.Scrollbar(frame_list,
+                                      command=self.list_servers.yview)
         scrollbar_list.grid(row=0, column=1, sticky='nsew')
         self.list_servers['yscrollcommand'] = scrollbar_list.set
-        self.list_servers.bind('<<ListboxSelect>>', self.toggle_servers_interface)
+        self.list_servers.bind('<<ListboxSelect>>',
+                               self.toggle_servers_interface)
 
         buttons_row = frame_servers.grid_size()[1] + 1
 
         # new button
-        button_new_servers = Tk.Button(frame_servers, text='New', command=lambda: KeyWindow(self.gui, self.client,
-                                                                                            self))
+        button_new_servers = Tk.Button(
+            frame_servers, text='New',
+            command=lambda: KeyWindow(self.gui, self.client, self))
         button_new_servers.grid(row=buttons_row, sticky='w', pady=(10, 0))
 
         # modify button
-        self.button_modify_servers = Tk.Button(frame_servers, text='Modify',
-                                               command=lambda: KeyWindow(self.gui, self.client, self,
-                                                                         self.list_servers.get(
-                                                                             self.list_servers.curselection())),
-                                               state=Tk.DISABLED)
+        self.button_modify_servers = Tk.Button(
+            frame_servers, text='Modify',
+            command=lambda: KeyWindow(self.gui,
+                                      self.client,
+                                      self,
+                                      self.list_servers.get(
+                                          self.list_servers.curselection())),
+            state=Tk.DISABLED)
         self.button_modify_servers.grid(row=buttons_row, pady=(10, 0))
 
         # delete button
-        self.button_delete_servers = Tk.Button(frame_servers, text='Delete',
-                                               command=lambda: self.delete_key(self.list_servers.get(
-                                                   self.list_servers.curselection())),
-                                               state=Tk.DISABLED)
-        self.button_delete_servers.grid(row=buttons_row, sticky='e', pady=(10, 0))
+        self.button_delete_servers = Tk.Button(
+            frame_servers, text='Delete',
+            command=lambda: self.delete_key(self.list_servers.get(
+                self.list_servers.curselection())),
+            state=Tk.DISABLED)
+        self.button_delete_servers.grid(row=buttons_row, sticky='e',
+                                        pady=(10, 0))
 
         self.update_servers_list()
 
@@ -253,7 +265,9 @@ class ServersWindow(Tk.Tk, object):
             self.update_servers_list()
 
     def delete_key(self, server):
-        if tkMessageBox.askyesno('Confirm', 'Are you sure you want to delete ' + server + "'s key?"):
+        if tkMessageBox.askyesno('Confirm',
+                                 'Are you sure you want to delete ' +
+                                 server + "'s key?"):
             self.client.delete_key(server)
             self.update_servers_list()
 
@@ -274,8 +288,10 @@ class KeyWindow(Tk.Tk, object):
         # key text box
         key = ''
         if server:
-            frame_list = Tk.LabelFrame(frame_key, text=server + "'s Public Key")
-            key = self.client.gpg.export_keys(self.client.retrieve_servers()[server])
+            frame_list = Tk.LabelFrame(frame_key,
+                                       text=server + "'s Public Key")
+            key = self.client.gpg.export_keys(
+                self.client.retrieve_servers()[server])
         else:
             frame_list = Tk.LabelFrame(frame_key, text='New Server Public Key')
         frame_list.grid(sticky='we')
@@ -287,8 +303,9 @@ class KeyWindow(Tk.Tk, object):
         text_key.insert(Tk.INSERT, key)
 
         # save button
-        button_save_key = Tk.Button(frame_key, text='Save',
-                                    command=lambda: self.save_key(text_key.get(1.0, Tk.END), server))
+        button_save_key = Tk.Button(
+            frame_key, text='Save',
+            command=lambda: self.save_key(text_key.get(1.0, Tk.END), server))
         button_save_key.grid(pady=(10, 0))
 
         text_key.mark_set(Tk.INSERT, 1.0)
@@ -332,10 +349,12 @@ class MainWindow(Tk.Tk, object):
         self.tab_configure = ConfigTab(self.gui, self.client, self.notebook)
         self.tabs.append(self.tab_configure)
 
-        self.tab_unread = UnreadCounterTab(self.gui, self.client, self.notebook)
+        self.tab_unread = UnreadCounterTab(self.gui, self.client,
+                                           self.notebook)
         self.tabs.append(self.tab_unread)
 
-        self.tab_inbox = InboxTab(self.gui, self.client, self.tab_send, self.tab_unread, self.notebook)
+        self.tab_inbox = InboxTab(self.gui, self.client, self.tab_send,
+                                  self.tab_unread, self.notebook)
         self.tabs.append(self.tab_inbox)
 
         self.notebook.add(self.tab_inbox, text='Inbox')
@@ -367,14 +386,19 @@ class MainWindow(Tk.Tk, object):
             frame_chain.pack(fill=Tk.X, expand=True)
             label_chain = Tk.Label(frame_chain, text=self.client.chain_info)
             label_chain.pack(side=Tk.LEFT)
-        button_change_nym = Tk.Button(frame_footer, text='Change Nym', command=self.gui.end_session)
+        button_change_nym = Tk.Button(frame_footer, text='Change Nym',
+                                      command=self.gui.end_session)
         button_change_nym.pack(side=Tk.RIGHT)
 
         # move window to the center
         self.update_idletasks()
         window_w, window_h = self.winfo_width(), self.winfo_height()
-        screen_w, screen_h = self.winfo_screenwidth(), self.winfo_screenheight()
-        self.geometry('%dx%d+%d+%d' % (window_w, window_h, (screen_w - window_w) / 2, (screen_h - window_h) / 2))
+        screen_w, screen_h = self.winfo_screenwidth(), \
+            self.winfo_screenheight()
+        self.geometry('%dx%d+%d+%d' % (window_w,
+                                       window_h,
+                                       (screen_w - window_w) / 2,
+                                       (screen_h - window_h) / 2))
 
     def update_nym_info(self):
         text_nym = self.client.nym_address
@@ -478,7 +502,8 @@ class CreationTab(Tk.Frame, object):
         self.button_create.grid(pady=(10, 0))
 
         # message box
-        frame_text = Tk.LabelFrame(frame_tab, text='Nym Creation Headers and Configuration')
+        frame_text = Tk.LabelFrame(frame_tab, text='Nym Creation Headers and '
+                                                   'Configuration')
         frame_text.grid(sticky='we', pady=10)
         self.text_create = Tk.Text(frame_text, height=25)
         self.text_create.grid(row=0, column=0)
@@ -543,19 +568,23 @@ class InboxTab(Tk.Frame, object):
         frame_retrieve.grid(sticky='w', pady=(0, 10))
 
         # retrieve button
-        self.button_aampy_inbox = Tk.Button(frame_retrieve, width=14, text='Retrieve Messages',
-                                            command=self.start_retrieving_messages)
+        self.button_aampy_inbox = Tk.Button(
+            frame_retrieve, width=14, text='Retrieve Messages',
+            command=self.start_retrieving_messages)
         self.button_aampy_inbox.grid(row=0, sticky='w')
 
         # progress bar
-        self.progress_bar_inbox = ttk.Progressbar(frame_retrieve, mode='indeterminate', length=427)
+        self.progress_bar_inbox = ttk.Progressbar(frame_retrieve,
+                                                  mode='indeterminate',
+                                                  length=427)
 
         # messages list box
         frame_list = Tk.LabelFrame(frame_tab, text='Messages')
         frame_list.grid(sticky='we')
         self.list_messages_inbox = Tk.Listbox(frame_list, height=11, width=70)
         self.list_messages_inbox.grid(row=0, column=0, sticky='we')
-        scrollbar_list = Tk.Scrollbar(frame_list, command=self.list_messages_inbox.yview)
+        scrollbar_list = Tk.Scrollbar(frame_list,
+                                      command=self.list_messages_inbox.yview)
         scrollbar_list.grid(row=0, column=1, sticky='nsew')
         self.list_messages_inbox['yscrollcommand'] = scrollbar_list.set
         self.list_messages_inbox.bind('<<ListboxSelect>>', self.select_message)
@@ -570,15 +599,19 @@ class InboxTab(Tk.Frame, object):
         frame_headers = Tk.Frame(notebook)
 
         # body tab
-        self.text_body_inbox = Tk.Text(frame_body, height=22, state=Tk.DISABLED)
-        scrollbar_body = Tk.Scrollbar(frame_body, command=self.text_body_inbox.yview)
+        self.text_body_inbox = Tk.Text(frame_body, height=22,
+                                       state=Tk.DISABLED)
+        scrollbar_body = Tk.Scrollbar(frame_body,
+                                      command=self.text_body_inbox.yview)
         scrollbar_body.grid(row=0, column=1, sticky='nsew')
         self.text_body_inbox['yscrollcommand'] = scrollbar_body.set
         self.text_body_inbox.grid(row=0, column=0, sticky='we')
 
         # headers tab
-        self.text_headers_inbox = Tk.Text(frame_headers, height=22, state=Tk.DISABLED)
-        scrollbar_headers = Tk.Scrollbar(frame_headers, command=self.text_headers_inbox.yview)
+        self.text_headers_inbox = Tk.Text(frame_headers, height=22,
+                                          state=Tk.DISABLED)
+        scrollbar_headers = Tk.Scrollbar(frame_headers,
+                                         command=self.text_headers_inbox.yview)
         scrollbar_headers.grid(row=0, column=1, sticky='nsew')
         self.text_headers_inbox['yscrollcommand'] = scrollbar_headers.set
         self.text_headers_inbox.grid(row=0, column=0, sticky='we')
@@ -590,11 +623,15 @@ class InboxTab(Tk.Frame, object):
         buttons_row = frame_tab.grid_size()[1] + 1
 
         # save/delete button
-        self.button_save_del_inbox = Tk.Button(frame_tab, text='Save to Disk', command=self.save_and_update_interface)
-        self.button_save_del_inbox.grid(row=buttons_row, sticky='w', pady=(10, 0))
+        self.button_save_del_inbox = Tk.Button(
+            frame_tab, text='Save to Disk',
+            command=self.save_and_update_interface)
+        self.button_save_del_inbox.grid(row=buttons_row, sticky='w',
+                                        pady=(10, 0))
 
         # reply button
-        self.button_reply_inbox = Tk.Button(frame_tab, text='Reply Message', command=self.reply_message)
+        self.button_reply_inbox = Tk.Button(frame_tab, text='Reply Message',
+                                            command=self.reply_message)
         self.button_reply_inbox.grid(row=buttons_row, sticky='e', pady=(10, 0))
 
         # notification label
@@ -634,27 +671,35 @@ class InboxTab(Tk.Frame, object):
                 self.load_messages()
             else:
                 self.toggle_interface(False)
-                tkMessageBox.showerror('Socket Error', 'The news server cannot be found!')
+                tkMessageBox.showerror('Socket Error',
+                                       'The news server cannot be found!')
         else:
             if self.client.aampy.progress_ratio is not None:
                 self.progress_bar_inbox.stop()
-                self.progress_bar_inbox.config(mode='determinate', value=int(self.client.aampy.progress_ratio * 100))
-            self.gui.window_main.id_after = self.gui.window_main.after(1000, lambda: self.wait_for_retrieval())
+                self.progress_bar_inbox.config(
+                    mode='determinate',
+                    value=int(self.client.aampy.progress_ratio * 100))
+            self.gui.window_main.id_after = self.gui.window_main.after(
+                1000, lambda: self.wait_for_retrieval())
 
     def toggle_interface(self, retrieving_messages):
         self.button_save_del_inbox.config(state=Tk.DISABLED)
         self.button_reply_inbox.config(state=Tk.DISABLED)
         if retrieving_messages:
             self.list_messages_inbox.config(state=Tk.DISABLED)
-            self.progress_bar_inbox.grid(row=0, column=1, sticky='nswe', padx=(15, 0))
+            self.progress_bar_inbox.grid(row=0, column=1, sticky='nswe',
+                                         padx=(15, 0))
             self.progress_bar_inbox.config(mode='indeterminate')
             self.progress_bar_inbox.start(25)
-            self.button_aampy_inbox.config(text='Stop', command=self.stop_retrieving_messages)
+            self.button_aampy_inbox.config(
+                text='Stop', command=self.stop_retrieving_messages)
         else:
             self.list_messages_inbox.config(state=Tk.NORMAL)
             self.progress_bar_inbox.stop()
             self.progress_bar_inbox.grid_forget()
-            self.button_aampy_inbox.config(text='Retrieve Messages', command=self.start_retrieving_messages)
+            self.button_aampy_inbox.config(
+                text='Retrieve Messages',
+                command=self.start_retrieving_messages)
 
     def decrypt_e2ee_message(self, msg):
         pgp_message = search_pgp_message(msg.content)
@@ -673,7 +718,9 @@ class InboxTab(Tk.Frame, object):
                 self.button_reply_inbox.config(state=Tk.DISABLED)
 
                 try:
-                    self.messages[index] = self.client.decrypt_ephemeral_message(self.messages[index])
+                    self.messages[index] = \
+                        self.client.decrypt_ephemeral_message(
+                            self.messages[index])
                 except errors.UndecipherableMessageError as e:
                     tkMessageBox.showerror(e.title, e.message)
                     self.messages.pop(index)
@@ -682,7 +729,8 @@ class InboxTab(Tk.Frame, object):
                 else:
                     # Check for and decrypt an end-to-end encryption layer
                     try:
-                        self.messages[index] = self.decrypt_e2ee_message(self.messages[index])
+                        self.messages[index] = \
+                            self.decrypt_e2ee_message(self.messages[index])
                     except errors.UndecipherableMessageError:
                         pass
 
@@ -703,26 +751,34 @@ class InboxTab(Tk.Frame, object):
 
     def toggle_save_del_button(self, toggle_save):
         if toggle_save:
-            self.button_save_del_inbox.config(text='Save to Disk', command=self.save_and_update_interface)
+            self.button_save_del_inbox.config(
+                text='Save to Disk',
+                command=self.save_and_update_interface)
         else:
-            self.button_save_del_inbox.config(text='Delete from Disk', command=self.delete_and_update_interface)
+            self.button_save_del_inbox.config(
+                text='Delete from Disk',
+                command=self.delete_and_update_interface)
 
     def save_and_update_interface(self):
-        if self.client.save_message_to_disk(self.messages[self.current_message_index]):
+        if self.client.save_message_to_disk(
+                self.messages[self.current_message_index]):
             self.toggle_save_del_button(False)
             self.show_label_save_del('Message saved')
 
     def delete_and_update_interface(self):
-        if self.client.delete_message_from_disk(self.messages[self.current_message_index]):
+        if self.client.delete_message_from_disk(
+                self.messages[self.current_message_index]):
             self.toggle_save_del_button(True)
             self.show_label_save_del('Message deleted')
 
     def show_label_save_del(self, text):
         self.label_save_del_inbox.config(text=text)
-        self.gui.window_main.after(3000, lambda: self.label_save_del_inbox.config(text=''))
+        self.gui.window_main.after(
+            3000, lambda: self.label_save_del_inbox.config(text=''))
 
     def reply_message(self):
-        self.tab_send.compose_message(self.messages[self.current_message_index])
+        self.tab_send.compose_message(
+            self.messages[self.current_message_index])
 
 
 class SendTab(Tk.Frame, object):
@@ -753,7 +809,8 @@ class SendTab(Tk.Frame, object):
         frame_header.grid(pady=(10, 0))
         self.text_header = Tk.Text(frame_header, height=4)
         self.text_header.grid(row=0, column=0)
-        scrollbar_header = Tk.Scrollbar(frame_header, command=self.text_header.yview)
+        scrollbar_header = Tk.Scrollbar(frame_header,
+                                        command=self.text_header.yview)
         scrollbar_header.grid(row=0, column=1, sticky='ns')
         self.text_header['yscrollcommand'] = scrollbar_header.set
 
@@ -767,7 +824,8 @@ class SendTab(Tk.Frame, object):
         self.text_body['yscrollcommand'] = scrollbar_body.set
 
         # e2ee
-        frame_e2ee = Tk.LabelFrame(frame_tab, text='End-to-End Encryption (Recommended)')
+        frame_e2ee = Tk.LabelFrame(frame_tab,
+                                   text='End-to-End Encryption (Recommended)')
         frame_e2ee.grid(sticky='we', ipady=5, pady=(10, 0))
 
         # e2ee target
@@ -787,17 +845,19 @@ class SendTab(Tk.Frame, object):
         label_tip.grid(row=0)
 
         # throw key IDs checkbox
-        check_throw_keyids = Tk.Checkbutton(frame_e2ee, text='Throw Key IDs', variable=self.var_throw_keyids)
+        check_throw_keyids = Tk.Checkbutton(frame_e2ee, text='Throw Key IDs',
+                                            variable=self.var_throw_keyids)
         check_throw_keyids.grid(sticky='w', padx=(5, 0))
 
         # send button
         button_send = Tk.Button(frame_tab, text='Send',
-                                command=lambda: self.send_message(self.entry_target_send.get(),
-                                                                  self.entry_subject_send.get(),
-                                                                  self.text_header.get(1.0, Tk.END),
-                                                                  self.text_body.get(1.0, Tk.END),
-                                                                  self.entry_e2ee_target_send.get(),
-                                                                  self.entry_e2ee_signer_send.get()))
+                                command=lambda: self.send_message(
+                                    self.entry_target_send.get(),
+                                    self.entry_subject_send.get(),
+                                    self.text_header.get(1.0, Tk.END),
+                                    self.text_body.get(1.0, Tk.END),
+                                    self.entry_e2ee_target_send.get(),
+                                    self.entry_e2ee_signer_send.get()))
         button_send.grid(pady=(10, 0))
 
     def compose_message(self, msg):
@@ -894,15 +954,19 @@ class ConfigTab(Tk.Frame, object):
         buttons_row = frame_tab.grid_size()[1] + 1
 
         # config button
-        self.button_config = Tk.Button(frame_tab, text='Configure',
-                                       command=lambda: self.send_config(self.entry_ephemeral_config.get().strip(),
-                                                                        self.entry_hsub_config.get().strip(),
-                                                                        self.entry_name_config.get().strip()))
+        self.button_config = Tk.Button(
+            frame_tab, text='Configure',
+            command=lambda: self.send_config(
+                self.entry_ephemeral_config.get().strip(),
+                self.entry_hsub_config.get().strip(),
+                self.entry_name_config.get().strip()))
         self.button_config.grid(row=buttons_row, sticky='w', pady=(10, 0))
 
         # delete button
-        self.button_delete_config = Tk.Button(frame_tab, text='Delete Nym', command=self.send_delete)
-        self.button_delete_config.grid(row=buttons_row, sticky='e', pady=(10, 0))
+        self.button_delete_config = Tk.Button(frame_tab, text='Delete Nym',
+                                              command=self.send_delete)
+        self.button_delete_config.grid(row=buttons_row, sticky='e',
+                                       pady=(10, 0))
 
         # message box
         frame_text = Tk.LabelFrame(frame_tab, text='Nym Configuration Headers')
@@ -940,7 +1004,8 @@ class ConfigTab(Tk.Frame, object):
                 write_on_text(self.text_config, [info, ciphertext])
 
     def send_delete(self):
-        if tkMessageBox.askyesno('Confirm', 'Are you sure you want to delete the nym?'):
+        if tkMessageBox.askyesno('Confirm',
+                                 'Are you sure you want to delete the nym?'):
             success, info, ciphertext = self.client.send_delete()
             write_on_text(self.text_config, [info, ciphertext])
             if success:
@@ -964,14 +1029,16 @@ class UnreadCounterTab(Tk.Frame, object):
         frame_list.grid(sticky='we')
         self.list_unread = Tk.Listbox(frame_list, height=39, width=70)
         self.list_unread.grid(row=0, column=0, sticky='we')
-        scrollbar_list = Tk.Scrollbar(frame_list, command=self.list_unread.yview)
+        scrollbar_list = Tk.Scrollbar(frame_list,
+                                      command=self.list_unread.yview)
         scrollbar_list.grid(row=0, column=1, sticky='nsew')
         self.list_unread['yscrollcommand'] = scrollbar_list.set
 
         self.update_unread_counter()
 
     def update_unread_counter(self):
-        counter = sorted(self.client.count_unread_messages().items(), key=operator.itemgetter(0))
+        counter = sorted(self.client.count_unread_messages().items(),
+                         key=operator.itemgetter(0))
         self.list_unread.delete(0, Tk.END)
         if counter:
             for nym, count in counter:

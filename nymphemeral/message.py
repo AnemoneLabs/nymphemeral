@@ -56,7 +56,8 @@ class Message(object):
         if message.is_multipart():
             content = ''
             for part in message.walk():
-                if part['Content-Transfer-Encoding'] == 'base64' and part.get_content_type() in mtypes:
+                if part['Content-Transfer-Encoding'] == 'base64' and \
+                        part.get_content_type() in mtypes:
                     content += part.get_payload(decode=True)
                 elif part.get_content_type() in mtypes:
                     content += part.as_string()
