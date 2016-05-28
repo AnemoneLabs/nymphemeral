@@ -510,10 +510,10 @@ class CreationTab(Tk.Frame, object):
         scrollbar = Tk.Scrollbar(frame_text, command=self.text_create.yview)
         scrollbar.grid(row=0, column=1, sticky='ns')
         self.text_create['yscrollcommand'] = scrollbar.set
-        self.text_create.insert(Tk.INSERT,
-                                'Key generation may take a long time after '
-                                'you click the "Create Nym" button.' +
-                                LINESEP + 'Be prepared to wait...')
+        write_on_text(self.text_create,
+                      'Key generation may take a long time after you click '
+                      'the "Create Nym" button.' + LINESEP + 'Be prepared to '
+                      'wait...')
 
         self.entry_name_create.focus_set()
 
