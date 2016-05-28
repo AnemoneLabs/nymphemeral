@@ -505,7 +505,7 @@ class CreationTab(Tk.Frame, object):
         frame_text = Tk.LabelFrame(frame_tab, text='Nym Creation Headers and '
                                                    'Configuration')
         frame_text.grid(sticky='we', pady=10)
-        self.text_create = Tk.Text(frame_text, height=25)
+        self.text_create = Tk.Text(frame_text, height=25, state=Tk.DISABLED)
         self.text_create.grid(row=0, column=0)
         scrollbar = Tk.Scrollbar(frame_text, command=self.text_create.yview)
         scrollbar.grid(row=0, column=1, sticky='ns')
@@ -971,7 +971,7 @@ class ConfigTab(Tk.Frame, object):
         # message box
         frame_text = Tk.LabelFrame(frame_tab, text='Nym Configuration Headers')
         frame_text.grid(sticky='we', pady=(10, 0))
-        self.text_config = Tk.Text(frame_text, height=29)
+        self.text_config = Tk.Text(frame_text, height=29, state=Tk.DISABLED)
         self.text_config.grid(row=0, column=0)
         scrollbar = Tk.Scrollbar(frame_text, command=self.text_config.yview)
         scrollbar.grid(row=0, column=1, sticky='ns')
