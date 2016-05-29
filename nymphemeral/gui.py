@@ -506,6 +506,8 @@ class CreationTab(Tk.Frame, object):
                                                    'Configuration')
         frame_text.grid(sticky='we', pady=10)
         self.text_create = Tk.Text(frame_text, height=25, state=Tk.DISABLED)
+        self.text_create.bind(
+            '<1>', lambda event: self.text_create.focus_set())
         self.text_create.grid(row=0, column=0)
         scrollbar = Tk.Scrollbar(frame_text, command=self.text_create.yview)
         scrollbar.grid(row=0, column=1, sticky='ns')
@@ -601,6 +603,8 @@ class InboxTab(Tk.Frame, object):
         # body tab
         self.text_body_inbox = Tk.Text(frame_body, height=22,
                                        state=Tk.DISABLED)
+        self.text_body_inbox.bind(
+            '<1>', lambda event: self.text_body_inbox.focus_set())
         scrollbar_body = Tk.Scrollbar(frame_body,
                                       command=self.text_body_inbox.yview)
         scrollbar_body.grid(row=0, column=1, sticky='nsew')
@@ -610,6 +614,8 @@ class InboxTab(Tk.Frame, object):
         # headers tab
         self.text_headers_inbox = Tk.Text(frame_headers, height=22,
                                           state=Tk.DISABLED)
+        self.text_headers_inbox.bind(
+            '<1>', lambda event: self.text_headers_inbox.focus_set())
         scrollbar_headers = Tk.Scrollbar(frame_headers,
                                          command=self.text_headers_inbox.yview)
         scrollbar_headers.grid(row=0, column=1, sticky='nsew')
@@ -972,6 +978,8 @@ class ConfigTab(Tk.Frame, object):
         frame_text = Tk.LabelFrame(frame_tab, text='Nym Configuration Headers')
         frame_text.grid(sticky='we', pady=(10, 0))
         self.text_config = Tk.Text(frame_text, height=29, state=Tk.DISABLED)
+        self.text_config.bind(
+            '<1>', lambda event: self.text_config.focus_set())
         self.text_config.grid(row=0, column=0)
         scrollbar = Tk.Scrollbar(frame_text, command=self.text_config.yview)
         scrollbar.grid(row=0, column=1, sticky='ns')
