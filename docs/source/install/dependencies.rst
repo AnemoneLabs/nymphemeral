@@ -6,7 +6,7 @@ Main Dependencies
 Make sure that you have the following::
 
     sudo apt-get install python-dev python-tk # If using Debian/Ubuntu
-    sudo yum install python-devel tkinter # If using Fedora
+    sudo yum install python-devel redhat-rpm-config tkinter # If using Fedora
 
 If you use `pip`_ and `setuptools`_ (probably installed automatically
 with *pip*), you can easily install nymphemeral with::
