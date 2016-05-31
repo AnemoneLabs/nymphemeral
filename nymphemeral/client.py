@@ -728,6 +728,14 @@ class Client:
                 servers[server] = item['fingerprint']
         return servers
 
+    def retrieve_valid_nyms(self):
+        """Retrieve nyms that are not expired from the client keyring.
+
+        :rtype: list
+        """
+        return list(
+                filter(lambda nym: not nym.is_expired, self.retrieve_nyms()))
+
     def retrieve_nyms(self):
         """Retrieve nyms owned by the user by searching the keyring for secret
         keys with email addresses in their user IDs with the same domains as
