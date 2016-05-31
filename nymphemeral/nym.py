@@ -56,3 +56,7 @@ class Nym(object):
     @property
     def expiration_date(self):
         return self._expiration_date
+
+    @property
+    def is_expired(self):
+        return self.expiration_epoch != 0 and self.expiration_epoch < time.time()
