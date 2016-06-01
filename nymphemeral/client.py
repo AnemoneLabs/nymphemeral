@@ -864,10 +864,8 @@ class Client:
         if self._session.nym.fingerprint \
                 and (not os.path.exists(self.file_encrypted_hsub)
                      or self._decrypt_hsubs_file()):
-            nyms = self.retrieve_nyms()
-            recipients = []
-            for n in nyms:
-                recipients.append(n.address)
+            recipients = map(
+                lambda nym: nym.fingerprint, self.retrieve_valid_nyms())
             result = encrypt_data(self.gpg,
                                   data,
                                   recipients,
